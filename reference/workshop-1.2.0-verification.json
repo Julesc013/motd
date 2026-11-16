@@ -1,0 +1,1200 @@
+{
+  "artifact": "99-workshop-status",
+  "version": "1.2.0",
+  "sha256": "983a38ad78dc71f50317ae92f9355be228c5de38f5ff79d26ec1a1aeed14c9eb",
+  "script_bytes": 143433,
+  "verified_at_utc": "2026-11-16T05:44:58Z",
+  "environment": {
+    "os": "Linux",
+    "kernel": "6.18.57",
+    "machine": "x86_64",
+    "visible_logical_cpus": 9,
+    "bash": "GNU bash, version 5.2.37(1)-release (x86_64-pc-linux-gnu)"
+  },
+  "bash_syntax": "passed",
+  "focused_suites": [
+    {
+      "suite": "services",
+      "checks": 30,
+      "result": "passed"
+    },
+    {
+      "suite": "activity",
+      "checks": 25,
+      "result": "passed"
+    },
+    {
+      "suite": "core",
+      "checks": 36,
+      "result": "passed"
+    },
+    {
+      "suite": "fast-services",
+      "checks": 11,
+      "result": "passed"
+    },
+    {
+      "suite": "io",
+      "checks": 32,
+      "result": "passed"
+    },
+    {
+      "suite": "performance",
+      "checks": 58,
+      "result": "passed"
+    },
+    {
+      "suite": "primitives",
+      "checks": 38,
+      "result": "passed"
+    }
+  ],
+  "focused_assertions": 230,
+  "compact_fixture_cases": 99,
+  "public_cli_render_cases": [
+    {
+      "terminal_columns": 24,
+      "flags": [],
+      "rows": 24
+    },
+    {
+      "terminal_columns": 24,
+      "flags": [
+        "--plain"
+      ],
+      "rows": 24
+    },
+    {
+      "terminal_columns": 24,
+      "flags": [
+        "--ascii",
+        "--plain"
+      ],
+      "rows": 24
+    },
+    {
+      "terminal_columns": 24,
+      "flags": [
+        "--theme",
+        "amber"
+      ],
+      "rows": 24
+    },
+    {
+      "terminal_columns": 40,
+      "flags": [],
+      "rows": 24
+    },
+    {
+      "terminal_columns": 40,
+      "flags": [
+        "--plain"
+      ],
+      "rows": 24
+    },
+    {
+      "terminal_columns": 40,
+      "flags": [
+        "--ascii",
+        "--plain"
+      ],
+      "rows": 24
+    },
+    {
+      "terminal_columns": 40,
+      "flags": [
+        "--theme",
+        "amber"
+      ],
+      "rows": 24
+    },
+    {
+      "terminal_columns": 64,
+      "flags": [],
+      "rows": 24
+    },
+    {
+      "terminal_columns": 64,
+      "flags": [
+        "--plain"
+      ],
+      "rows": 24
+    },
+    {
+      "terminal_columns": 64,
+      "flags": [
+        "--ascii",
+        "--plain"
+      ],
+      "rows": 24
+    },
+    {
+      "terminal_columns": 64,
+      "flags": [
+        "--theme",
+        "amber"
+      ],
+      "rows": 24
+    },
+    {
+      "terminal_columns": 80,
+      "flags": [],
+      "rows": 24
+    },
+    {
+      "terminal_columns": 80,
+      "flags": [
+        "--plain"
+      ],
+      "rows": 24
+    },
+    {
+      "terminal_columns": 80,
+      "flags": [
+        "--ascii",
+        "--plain"
+      ],
+      "rows": 24
+    },
+    {
+      "terminal_columns": 80,
+      "flags": [
+        "--theme",
+        "amber"
+      ],
+      "rows": 24
+    },
+    {
+      "terminal_columns": 100,
+      "flags": [],
+      "rows": 24
+    },
+    {
+      "terminal_columns": 100,
+      "flags": [
+        "--plain"
+      ],
+      "rows": 24
+    },
+    {
+      "terminal_columns": 100,
+      "flags": [
+        "--ascii",
+        "--plain"
+      ],
+      "rows": 24
+    },
+    {
+      "terminal_columns": 100,
+      "flags": [
+        "--theme",
+        "amber"
+      ],
+      "rows": 24
+    },
+    {
+      "terminal_columns": 132,
+      "flags": [],
+      "rows": 24
+    },
+    {
+      "terminal_columns": 132,
+      "flags": [
+        "--plain"
+      ],
+      "rows": 24
+    },
+    {
+      "terminal_columns": 132,
+      "flags": [
+        "--ascii",
+        "--plain"
+      ],
+      "rows": 24
+    },
+    {
+      "terminal_columns": 132,
+      "flags": [
+        "--theme",
+        "amber"
+      ],
+      "rows": 24
+    }
+  ],
+  "cli_checks": "help, version, six invalid options, full inventory, verbose widths passed",
+  "configuration": {
+    "cases": 112,
+    "passed": 112,
+    "failed": 0,
+    "failures": []
+  },
+  "control_and_pty": {
+    "script": "/workspace/scratch/27c0444024cb/workshop-delivery/99-workshop-status",
+    "scope": "Temporary stall copies, CLI demo invocations, and controlling PTYs; no storage workload.",
+    "timing_note": "Observed elapsed time only; values above 400 ms are flagged, not treated as a universal deadline assertion.",
+    "deadline_cases": [
+      {
+        "name": "sleep_1",
+        "returncode": 0,
+        "duration_ms": 260.813,
+        "outer_timeout": false,
+        "observed_over_400ms": false,
+        "stdout_rows": 22,
+        "stderr": "",
+        "checks": {
+          "exit_zero": true,
+          "stderr_empty": true,
+          "fallback_visible": true,
+          "workshop_visible": true,
+          "partial_output_withheld": true,
+          "completion_marker_withheld": true,
+          "outer_timeout_not_reached": true
+        }
+      },
+      {
+        "name": "sleep_2",
+        "returncode": 0,
+        "duration_ms": 240.414,
+        "outer_timeout": false,
+        "observed_over_400ms": false,
+        "stdout_rows": 22,
+        "stderr": "",
+        "checks": {
+          "exit_zero": true,
+          "stderr_empty": true,
+          "fallback_visible": true,
+          "workshop_visible": true,
+          "partial_output_withheld": true,
+          "completion_marker_withheld": true,
+          "outer_timeout_not_reached": true
+        }
+      },
+      {
+        "name": "ignored_TERM_1",
+        "returncode": 0,
+        "duration_ms": 258.476,
+        "outer_timeout": false,
+        "observed_over_400ms": false,
+        "stdout_rows": 22,
+        "stderr": "",
+        "checks": {
+          "exit_zero": true,
+          "stderr_empty": true,
+          "fallback_visible": true,
+          "workshop_visible": true,
+          "partial_output_withheld": true,
+          "completion_marker_withheld": true,
+          "outer_timeout_not_reached": true
+        }
+      },
+      {
+        "name": "ignored_TERM_2",
+        "returncode": 0,
+        "duration_ms": 258.252,
+        "outer_timeout": false,
+        "observed_over_400ms": false,
+        "stdout_rows": 22,
+        "stderr": "",
+        "checks": {
+          "exit_zero": true,
+          "stderr_empty": true,
+          "fallback_visible": true,
+          "workshop_visible": true,
+          "partial_output_withheld": true,
+          "completion_marker_withheld": true,
+          "outer_timeout_not_reached": true
+        }
+      },
+      {
+        "name": "partial_output_1",
+        "returncode": 0,
+        "duration_ms": 257.825,
+        "outer_timeout": false,
+        "observed_over_400ms": false,
+        "stdout_rows": 22,
+        "stderr": "",
+        "checks": {
+          "exit_zero": true,
+          "stderr_empty": true,
+          "fallback_visible": true,
+          "workshop_visible": true,
+          "partial_output_withheld": true,
+          "completion_marker_withheld": true,
+          "outer_timeout_not_reached": true
+        }
+      },
+      {
+        "name": "partial_output_2",
+        "returncode": 0,
+        "duration_ms": 244.924,
+        "outer_timeout": false,
+        "observed_over_400ms": false,
+        "stdout_rows": 22,
+        "stderr": "",
+        "checks": {
+          "exit_zero": true,
+          "stderr_empty": true,
+          "fallback_visible": true,
+          "workshop_visible": true,
+          "partial_output_withheld": true,
+          "completion_marker_withheld": true,
+          "outer_timeout_not_reached": true
+        }
+      }
+    ],
+    "mode_order_cases": [
+      {
+        "name": "--verbose --concise",
+        "returncode": 0,
+        "duration_ms": 40.468,
+        "outer_timeout": false,
+        "observed_over_400ms": false,
+        "stdout_rows": 24,
+        "stderr": "",
+        "checks": {
+          "exit_zero": true,
+          "stderr_empty": true,
+          "last_mode_wins": true,
+          "workshop_visible": true,
+          "completion_marker_withheld": true,
+          "outer_timeout_not_reached": true
+        },
+        "expected_mode": "concise",
+        "observed_mode": "concise"
+      },
+      {
+        "name": "--concise --verbose",
+        "returncode": 0,
+        "duration_ms": 64.521,
+        "outer_timeout": false,
+        "observed_over_400ms": false,
+        "stdout_rows": 110,
+        "stderr": "",
+        "checks": {
+          "exit_zero": true,
+          "stderr_empty": true,
+          "last_mode_wins": true,
+          "workshop_visible": true,
+          "completion_marker_withheld": true,
+          "outer_timeout_not_reached": true
+        },
+        "expected_mode": "verbose",
+        "observed_mode": "verbose"
+      },
+      {
+        "name": "--services all --concise",
+        "returncode": 0,
+        "duration_ms": 38.579,
+        "outer_timeout": false,
+        "observed_over_400ms": false,
+        "stdout_rows": 24,
+        "stderr": "",
+        "checks": {
+          "exit_zero": true,
+          "stderr_empty": true,
+          "last_mode_wins": true,
+          "workshop_visible": true,
+          "completion_marker_withheld": true,
+          "outer_timeout_not_reached": true
+        },
+        "expected_mode": "concise",
+        "observed_mode": "concise"
+      },
+      {
+        "name": "--concise --services all",
+        "returncode": 0,
+        "duration_ms": 68.655,
+        "outer_timeout": false,
+        "observed_over_400ms": false,
+        "stdout_rows": 108,
+        "stderr": "",
+        "checks": {
+          "exit_zero": true,
+          "stderr_empty": true,
+          "last_mode_wins": true,
+          "workshop_visible": true,
+          "completion_marker_withheld": true,
+          "outer_timeout_not_reached": true
+        },
+        "expected_mode": "verbose",
+        "observed_mode": "verbose"
+      },
+      {
+        "name": "--with-fastfetch --concise",
+        "returncode": 0,
+        "duration_ms": 48.738,
+        "outer_timeout": false,
+        "observed_over_400ms": false,
+        "stdout_rows": 24,
+        "stderr": "",
+        "checks": {
+          "exit_zero": true,
+          "stderr_empty": true,
+          "last_mode_wins": true,
+          "workshop_visible": true,
+          "completion_marker_withheld": true,
+          "outer_timeout_not_reached": true
+        },
+        "expected_mode": "concise",
+        "observed_mode": "concise"
+      },
+      {
+        "name": "--concise --with-fastfetch",
+        "returncode": 0,
+        "duration_ms": 59.383,
+        "outer_timeout": false,
+        "observed_over_400ms": false,
+        "stdout_rows": 110,
+        "stderr": "",
+        "checks": {
+          "exit_zero": true,
+          "stderr_empty": true,
+          "last_mode_wins": true,
+          "workshop_visible": true,
+          "completion_marker_withheld": true,
+          "outer_timeout_not_reached": true
+        },
+        "expected_mode": "verbose",
+        "observed_mode": "verbose"
+      }
+    ],
+    "pty_cases": [
+      {
+        "name": "PTY_40x25",
+        "returncode": 0,
+        "duration_ms": 49.893,
+        "outer_timeout": false,
+        "observed_over_400ms": false,
+        "stdout_rows": 24,
+        "stderr": "",
+        "checks": {
+          "exit_zero": true,
+          "stderr_empty": true,
+          "controlling_tty_width_detected": true,
+          "prompt_row_reserved": true,
+          "workshop_visible": true,
+          "completion_marker_withheld": true,
+          "outer_timeout_not_reached": true
+        },
+        "columns": 40,
+        "terminal_rows": 25,
+        "observed_widths": [
+          40
+        ]
+      },
+      {
+        "name": "PTY_80x24",
+        "returncode": 0,
+        "duration_ms": 45.884,
+        "outer_timeout": false,
+        "observed_over_400ms": false,
+        "stdout_rows": 23,
+        "stderr": "",
+        "checks": {
+          "exit_zero": true,
+          "stderr_empty": true,
+          "controlling_tty_width_detected": true,
+          "prompt_row_reserved": true,
+          "workshop_visible": true,
+          "completion_marker_withheld": true,
+          "outer_timeout_not_reached": true
+        },
+        "columns": 80,
+        "terminal_rows": 24,
+        "observed_widths": [
+          80
+        ]
+      },
+      {
+        "name": "PTY_132x50",
+        "returncode": 0,
+        "duration_ms": 50.818,
+        "outer_timeout": false,
+        "observed_over_400ms": false,
+        "stdout_rows": 24,
+        "stderr": "",
+        "checks": {
+          "exit_zero": true,
+          "stderr_empty": true,
+          "controlling_tty_width_detected": true,
+          "prompt_row_reserved": true,
+          "workshop_visible": true,
+          "completion_marker_withheld": true,
+          "outer_timeout_not_reached": true
+        },
+        "columns": 132,
+        "terminal_rows": 50,
+        "observed_widths": [
+          132
+        ]
+      }
+    ],
+    "skipped": [],
+    "missing_argument": {
+      "name": "missing_--_tty-size",
+      "returncode": 2,
+      "duration_ms": 24.032,
+      "outer_timeout": false,
+      "observed_over_400ms": false,
+      "stdout_rows": 0,
+      "stderr": "Invalid workshop-status options or configuration; use --help.\n",
+      "checks": {
+        "invalid_argument_exit_two": true,
+        "stdout_empty": true,
+        "error_explained": true,
+        "outer_timeout_not_reached": true
+      }
+    },
+    "summary": {
+      "cases": 16,
+      "checks": 103,
+      "passed": 103,
+      "failed": 0,
+      "skipped_groups": 0,
+      "observed_over_400ms": []
+    }
+  },
+  "benchmark": {
+    "previous_v1_1": {
+      "runs": 25,
+      "median_ms": 123.23,
+      "p95_ms": 145.38,
+      "min_ms": 106.71,
+      "max_ms": 258.13,
+      "deadline_fallbacks": 1,
+      "visible_budget_notices": 0,
+      "samples_ms": [
+        123.226,
+        143.176,
+        121.537,
+        116.277,
+        114.418,
+        135.968,
+        116.029,
+        126.13,
+        132.291,
+        118.332,
+        137.612,
+        134.111,
+        115.247,
+        128.662,
+        112.781,
+        106.713,
+        258.132,
+        130.175,
+        125.628,
+        120.632,
+        118.321,
+        114.97,
+        131.161,
+        116.997,
+        145.382
+      ],
+      "colour_enabled": false
+    },
+    "concise": {
+      "runs": 25,
+      "median_ms": 137.53,
+      "p95_ms": 173.9,
+      "min_ms": 120.54,
+      "max_ms": 192.1,
+      "deadline_fallbacks": 0,
+      "visible_budget_notices": 0,
+      "samples_ms": [
+        162.91,
+        131.046,
+        137.531,
+        137.724,
+        129.72,
+        155.033,
+        142.505,
+        133.113,
+        141.454,
+        134.554,
+        158.054,
+        131.994,
+        134.526,
+        132.056,
+        132.632,
+        192.1,
+        173.903,
+        147.468,
+        153.645,
+        137.984,
+        126.009,
+        128.905,
+        140.081,
+        120.542,
+        134.2
+      ],
+      "colour_enabled": false
+    },
+    "verbose": {
+      "runs": 25,
+      "median_ms": 340.19,
+      "p95_ms": 1049.97,
+      "min_ms": 292.73,
+      "max_ms": 1628.47,
+      "deadline_fallbacks": 0,
+      "visible_budget_notices": 0,
+      "samples_ms": [
+        310.695,
+        293.401,
+        348.389,
+        316.488,
+        351.719,
+        335.427,
+        350.75,
+        304.09,
+        295.679,
+        398.424,
+        295.269,
+        292.733,
+        321.866,
+        336.796,
+        345.104,
+        340.193,
+        1628.473,
+        656.639,
+        1049.97,
+        466.277,
+        511.576,
+        475.202,
+        316.996,
+        349.872,
+        299.058
+      ],
+      "colour_enabled": false
+    },
+    "previous_v1_1_color": {
+      "runs": 25,
+      "colour_enabled": true,
+      "median_ms": 149.29,
+      "p95_ms": 298.18,
+      "min_ms": 118.75,
+      "max_ms": 298.71,
+      "deadline_fallbacks": 2,
+      "visible_budget_notices": 0,
+      "samples_ms": [
+        157.374,
+        160.519,
+        135.903,
+        167.506,
+        122.364,
+        171.476,
+        298.179,
+        298.706,
+        175.973,
+        152.411,
+        149.288,
+        161.021,
+        151.631,
+        118.752,
+        134.971,
+        131.008,
+        133.39,
+        149.202,
+        126.024,
+        130.622,
+        137.276,
+        149.919,
+        139.01,
+        180.932,
+        138.746
+      ]
+    },
+    "concise_color": {
+      "runs": 25,
+      "colour_enabled": true,
+      "median_ms": 143.4,
+      "p95_ms": 201.06,
+      "min_ms": 125.2,
+      "max_ms": 261.32,
+      "deadline_fallbacks": 1,
+      "visible_budget_notices": 0,
+      "samples_ms": [
+        143.093,
+        177.849,
+        152.135,
+        129.795,
+        142.136,
+        143.404,
+        127.527,
+        154.594,
+        143.916,
+        181.818,
+        162.275,
+        149.978,
+        135.922,
+        138.549,
+        129.698,
+        126.92,
+        141.651,
+        125.2,
+        143.069,
+        144.545,
+        174.169,
+        261.325,
+        148.592,
+        127.85,
+        201.055
+      ]
+    },
+    "verbose_color": {
+      "runs": 25,
+      "colour_enabled": true,
+      "median_ms": 309.16,
+      "p95_ms": 371.39,
+      "min_ms": 275.7,
+      "max_ms": 422.97,
+      "deadline_fallbacks": 0,
+      "visible_budget_notices": 0,
+      "samples_ms": [
+        311.734,
+        300.756,
+        281.301,
+        286.777,
+        315.788,
+        332.185,
+        313.162,
+        314.404,
+        422.97,
+        300.136,
+        314.111,
+        298.867,
+        293.408,
+        279.565,
+        309.158,
+        289.944,
+        320.223,
+        275.699,
+        320.382,
+        282.294,
+        289.662,
+        287.11,
+        312.77,
+        311.006,
+        371.391
+      ]
+    }
+  },
+  "budget": {
+    "worker_ms": 200,
+    "kill_grace_ms": 20,
+    "collection_ms": 140,
+    "helper_max_ms": 75
+  },
+  "benchmark_scope": "Local execution workspace only: no usable systemd/logind manager, limited mount/sysfs visibility. Wall-clock process launch, collection, formatting and concise watchdog included; terminal painting, SSH, PAM, Fastfetch and workshop hardware excluded. Warm filesystem cache; fresh Bash process per run. These are observations, not a universal latency guarantee.",
+  "limits": [
+    "Normal sub-100ms and ~10ms targets are not established by these measurements.",
+    "A general-purpose OS cannot guarantee completion under scheduler starvation or uninterruptible kernel I/O.",
+    "Deterministic I/O fixtures verify rates, ranking, identity and fallbacks. Positive live storage throughput/ranking was not observable in this workspace.",
+    "Short I/O samples describe the measured interval, not sustained performance; process byte attribution is not a physical-device trace.",
+    "Linux Bash/GNU runtime only. The workshop machines have not been tested end-to-end."
+  ],
+  "controlled_io": {
+    "test": "controlled temporary-file I/O against the integrated collector",
+    "date_utc": "2026-11-16",
+    "fixture_bytes": 16777216,
+    "storage_attribution_note": "The child /proc/self/io and collector /proc/PID/io both exposed zero read_bytes/write_bytes changes despite file writes with fsync and reads after POSIX_FADV_DONTNEED.",
+    "phases": [
+      {
+        "phase": "write and fsync",
+        "interval_ms": 98,
+        "pid_identity": "stable",
+        "child_read_bytes_delta": 0,
+        "child_write_bytes_delta": 0,
+        "collector_read_bytes_delta": 0,
+        "collector_write_bytes_delta": 0,
+        "counter_agreement": "passed",
+        "positive_throughput_assertion": "skipped"
+      },
+      {
+        "phase": "read after POSIX_FADV_DONTNEED",
+        "interval_ms": 49,
+        "pid_identity": "stable",
+        "child_read_bytes_delta": 0,
+        "child_write_bytes_delta": 0,
+        "collector_read_bytes_delta": 0,
+        "collector_write_bytes_delta": 0,
+        "counter_agreement": "passed",
+        "positive_throughput_assertion": "skipped"
+      }
+    ],
+    "cleanup": {
+      "temporary_file_removed": true,
+      "child_exited": true
+    },
+    "scope": "This workspace only. No workshop host or block device was tested. Nonzero live storage throughput/ranking remains unverified here.",
+    "deterministic_suite": {
+      "path": "checks/test-io.sh",
+      "checks": 32,
+      "result": "passed"
+    }
+  },
+  "development_deadline_observation": {
+    "earlier_worker_ms": 250,
+    "earlier_ignored_TERM_max_ms": 422.784,
+    "reason_for_change": "An observed outlier prompted a lower 200ms worker deadline and 140ms collection budget; final observations are recorded in control_and_pty."
+  },
+  "phase_profile": {
+    "scope": "Five sequential diagnostic runs per mode; plain output at 80 columns. No whole-report watchdog or collection budget; helper-specific caps retained. Excludes shell startup and supervision. Render includes section registry validation and row allocation. Phase medians are not additive end-to-end evidence.",
+    "measurements": {
+      "concise": {
+        "display": {
+          "median_ms": 0.42,
+          "samples_ms": [
+            0.41,
+            0.423,
+            0.287,
+            0.529,
+            0.779
+          ]
+        },
+        "io_begin": {
+          "median_ms": 6.41,
+          "samples_ms": [
+            5.478,
+            6.887,
+            9.374,
+            6.411,
+            5.082
+          ]
+        },
+        "identity": {
+          "median_ms": 7.77,
+          "samples_ms": [
+            11.434,
+            12.807,
+            7.772,
+            6.66,
+            7.288
+          ]
+        },
+        "health": {
+          "median_ms": 6.55,
+          "samples_ms": [
+            6.571,
+            8.684,
+            6.463,
+            6.554,
+            6.068
+          ]
+        },
+        "memory": {
+          "median_ms": 1.22,
+          "samples_ms": [
+            2.089,
+            1.947,
+            1.057,
+            1.223,
+            1.003
+          ]
+        },
+        "swap": {
+          "median_ms": 0.13,
+          "samples_ms": [
+            0.124,
+            0.121,
+            0.256,
+            0.129,
+            0.132
+          ]
+        },
+        "zram": {
+          "median_ms": 0.07,
+          "samples_ms": [
+            0.071,
+            0.068,
+            0.068,
+            0.079,
+            0.067
+          ]
+        },
+        "zswap": {
+          "median_ms": 0.04,
+          "samples_ms": [
+            0.043,
+            0.042,
+            0.043,
+            0.12,
+            0.042
+          ]
+        },
+        "storage": {
+          "median_ms": 12.54,
+          "samples_ms": [
+            14.29,
+            12.544,
+            8.536,
+            12.665,
+            8.501
+          ]
+        },
+        "services": {
+          "median_ms": 19.16,
+          "samples_ms": [
+            22.477,
+            24.386,
+            19.16,
+            14.81,
+            13.949
+          ]
+        },
+        "processes": {
+          "median_ms": 12.68,
+          "samples_ms": [
+            30.247,
+            12.683,
+            11.091,
+            12.303,
+            12.787
+          ]
+        },
+        "sessions": {
+          "median_ms": 21.5,
+          "samples_ms": [
+            28.137,
+            21.498,
+            19.064,
+            27.783,
+            15.561
+          ]
+        },
+        "connections": {
+          "median_ms": 12.57,
+          "samples_ms": [
+            10.931,
+            12.571,
+            14.775,
+            11.793,
+            14.396
+          ]
+        },
+        "io_finish": {
+          "median_ms": 6.28,
+          "samples_ms": [
+            8.534,
+            5.768,
+            4.712,
+            7.625,
+            6.276
+          ]
+        },
+        "derive": {
+          "median_ms": 0.32,
+          "samples_ms": [
+            0.271,
+            0.324,
+            0.317,
+            0.36,
+            0.435
+          ]
+        },
+        "view": {
+          "median_ms": 1.81,
+          "samples_ms": [
+            2.504,
+            1.425,
+            1.344,
+            1.813,
+            2.241
+          ]
+        },
+        "render": {
+          "median_ms": 22.56,
+          "samples_ms": [
+            23.284,
+            20.116,
+            21.694,
+            29.549,
+            22.56
+          ]
+        }
+      },
+      "verbose": {
+        "display": {
+          "median_ms": 0.36,
+          "samples_ms": [
+            0.434,
+            0.336,
+            0.883,
+            0.363,
+            0.235
+          ]
+        },
+        "io_begin": {
+          "median_ms": 5.47,
+          "samples_ms": [
+            5.474,
+            11.823,
+            5.734,
+            4.711,
+            4.317
+          ]
+        },
+        "identity": {
+          "median_ms": 7.14,
+          "samples_ms": [
+            10.819,
+            11.546,
+            6.877,
+            7.144,
+            7.14
+          ]
+        },
+        "health": {
+          "median_ms": 5.71,
+          "samples_ms": [
+            4.891,
+            4.871,
+            5.712,
+            7.778,
+            6.166
+          ]
+        },
+        "memory": {
+          "median_ms": 1.03,
+          "samples_ms": [
+            0.892,
+            0.866,
+            1.29,
+            1.46,
+            1.029
+          ]
+        },
+        "swap": {
+          "median_ms": 0.2,
+          "samples_ms": [
+            0.106,
+            0.196,
+            0.259,
+            0.124,
+            0.243
+          ]
+        },
+        "zram": {
+          "median_ms": 0.07,
+          "samples_ms": [
+            0.066,
+            0.068,
+            0.072,
+            0.395,
+            0.071
+          ]
+        },
+        "zswap": {
+          "median_ms": 0.04,
+          "samples_ms": [
+            0.039,
+            0.04,
+            0.041,
+            0.051,
+            0.041
+          ]
+        },
+        "storage": {
+          "median_ms": 9.26,
+          "samples_ms": [
+            9.926,
+            7.222,
+            13.695,
+            8.876,
+            9.256
+          ]
+        },
+        "services": {
+          "median_ms": 195.85,
+          "samples_ms": [
+            180.985,
+            217.261,
+            195.852,
+            232.004,
+            182.139
+          ]
+        },
+        "processes": {
+          "median_ms": 14.98,
+          "samples_ms": [
+            11.092,
+            12.119,
+            19.453,
+            14.979,
+            19.434
+          ]
+        },
+        "sessions": {
+          "median_ms": 18.68,
+          "samples_ms": [
+            24.621,
+            18.446,
+            23.86,
+            16.965,
+            18.681
+          ]
+        },
+        "connections": {
+          "median_ms": 10.27,
+          "samples_ms": [
+            25.362,
+            10.269,
+            8.09,
+            10.854,
+            10.089
+          ]
+        },
+        "io_finish": {
+          "median_ms": 5.22,
+          "samples_ms": [
+            4.396,
+            5.097,
+            9.418,
+            5.218,
+            5.844
+          ]
+        },
+        "journal": {
+          "median_ms": 12.19,
+          "samples_ms": [
+            15.693,
+            17.308,
+            10.477,
+            12.188,
+            11.157
+          ]
+        },
+        "derive": {
+          "median_ms": 0.3,
+          "samples_ms": [
+            0.28,
+            0.293,
+            0.302,
+            0.365,
+            0.355
+          ]
+        },
+        "view": {
+          "median_ms": 1.66,
+          "samples_ms": [
+            2.496,
+            1.273,
+            1.655,
+            3.303,
+            1.509
+          ]
+        },
+        "render": {
+          "median_ms": 36.12,
+          "samples_ms": [
+            36.121,
+            30.95,
+            37.362,
+            36.089,
+            36.666
+          ]
+        }
+      }
+    }
+  },
+  "additional_colour_benchmark_at_utc": "2026-11-16T05:51:36Z"
+}

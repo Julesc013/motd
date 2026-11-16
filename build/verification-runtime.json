@@ -1,0 +1,495 @@
+{
+  "schema_version": 1,
+  "started_at_utc": "2026-11-16T09:57:29.314813+00:00",
+  "completed_at_utc": "2026-11-16T09:57:33.045804+00:00",
+  "scope": "Synthetic demos, local execution smoke checks and controlled killable faults only.",
+  "not_validated": [
+    "real Debian SSH/PAM/agetty integration",
+    "usable systemd/logind providers",
+    "positive storage I/O attribution",
+    "reference-host latency",
+    "hard elapsed-time guarantee under uninterruptible waits/backpressure"
+  ],
+  "python_version": "3.12.14",
+  "bash_version": "GNU bash, version 5.2.37(1)-release (x86_64-pc-linux-gnu)",
+  "configurator_sha256": "73023cd9be8f8552ac38834ed3c399bdc8d8ec21aaa3d79f1af8a0a0856fea39",
+  "configurator_unchanged_during_suite": true,
+  "template_sha256": "dab1a421c9ef2169358a02f27450428ddc6978bc7d5a129a318aa7b92da1d644",
+  "template_matches_runtime_file": true,
+  "summary": {
+    "tests_run": 15,
+    "passed": 15,
+    "failed": 0,
+    "observations": 34
+  },
+  "tests": [
+    {
+      "test": "test_adaptive_geometry_preserves_sections_and_rankings",
+      "status": "passed"
+    },
+    {
+      "test": "test_cli_recipe_and_known_artifact_previews_skip_hooks",
+      "status": "passed"
+    },
+    {
+      "test": "test_display_timeout_runs_outer_hooks_once",
+      "status": "passed"
+    },
+    {
+      "test": "test_help_has_one_layout_and_no_old_mode_options",
+      "status": "passed"
+    },
+    {
+      "test": "test_home_lab_and_plain_ascii",
+      "status": "passed"
+    },
+    {
+      "test": "test_hook_argv_does_not_implicitly_execute_shell_text",
+      "status": "passed"
+    },
+    {
+      "test": "test_hook_stop_policy_preserves_exit_code",
+      "status": "passed"
+    },
+    {
+      "test": "test_hooks_skip_demos_and_informational_commands",
+      "status": "passed"
+    },
+    {
+      "test": "test_live_hooks_run_once_around_supervised_display",
+      "status": "passed"
+    },
+    {
+      "test": "test_no_hooks_flag_skips_all_calls",
+      "status": "passed"
+    },
+    {
+      "test": "test_runtime_rejects_non_numeric_options_and_removed_modes",
+      "status": "passed"
+    },
+    {
+      "test": "test_terminal_size_handoff_and_configured_width_cap",
+      "status": "passed"
+    },
+    {
+      "test": "test_timed_out_hook_keeps_partial_output_and_runs_after_once",
+      "status": "passed"
+    },
+    {
+      "test": "test_visibility_and_custom_order",
+      "status": "passed"
+    },
+    {
+      "test": "test_worker_reentry_skips_hooks",
+      "status": "passed"
+    }
+  ],
+  "observations": [
+    {
+      "case": "geometry-40x25---demo",
+      "arguments": [
+        "--demo",
+        "--width",
+        "40",
+        "--rows",
+        "25"
+      ],
+      "returncode": 0,
+      "elapsed_ms": 50.876,
+      "output_rows": 24,
+      "deadline_fallback": false
+    },
+    {
+      "case": "geometry-40x25---demo-alerts",
+      "arguments": [
+        "--demo-alerts",
+        "--width",
+        "40",
+        "--rows",
+        "25"
+      ],
+      "returncode": 0,
+      "elapsed_ms": 57.875,
+      "output_rows": 24,
+      "deadline_fallback": false
+    },
+    {
+      "case": "geometry-80x25---demo",
+      "arguments": [
+        "--demo",
+        "--width",
+        "80",
+        "--rows",
+        "25"
+      ],
+      "returncode": 0,
+      "elapsed_ms": 95.761,
+      "output_rows": 24,
+      "deadline_fallback": false
+    },
+    {
+      "case": "geometry-80x25---demo-alerts",
+      "arguments": [
+        "--demo-alerts",
+        "--width",
+        "80",
+        "--rows",
+        "25"
+      ],
+      "returncode": 0,
+      "elapsed_ms": 59.221,
+      "output_rows": 24,
+      "deadline_fallback": false
+    },
+    {
+      "case": "geometry-100x32---demo",
+      "arguments": [
+        "--demo",
+        "--width",
+        "100",
+        "--rows",
+        "32"
+      ],
+      "returncode": 0,
+      "elapsed_ms": 60.688,
+      "output_rows": 30,
+      "deadline_fallback": false
+    },
+    {
+      "case": "geometry-100x32---demo-alerts",
+      "arguments": [
+        "--demo-alerts",
+        "--width",
+        "100",
+        "--rows",
+        "32"
+      ],
+      "returncode": 0,
+      "elapsed_ms": 69.316,
+      "output_rows": 31,
+      "deadline_fallback": false
+    },
+    {
+      "case": "geometry-132x50---demo",
+      "arguments": [
+        "--demo",
+        "--width",
+        "132",
+        "--rows",
+        "50"
+      ],
+      "returncode": 0,
+      "elapsed_ms": 79.154,
+      "output_rows": 39,
+      "deadline_fallback": false
+    },
+    {
+      "case": "geometry-132x50---demo-alerts",
+      "arguments": [
+        "--demo-alerts",
+        "--width",
+        "132",
+        "--rows",
+        "50"
+      ],
+      "returncode": 0,
+      "elapsed_ms": 138.285,
+      "output_rows": 42,
+      "deadline_fallback": false
+    },
+    {
+      "case": "cli-preview-hooks-skipped",
+      "source": "--config",
+      "live": false,
+      "returncode": 0,
+      "elapsed_ms": 373.502,
+      "output_rows": 24
+    },
+    {
+      "case": "cli-preview-hooks-skipped",
+      "source": "--config",
+      "live": true,
+      "returncode": 0,
+      "elapsed_ms": 399.209,
+      "output_rows": 22
+    },
+    {
+      "case": "cli-preview-hooks-skipped",
+      "source": "--artifact",
+      "live": false,
+      "returncode": 0,
+      "elapsed_ms": 230.324,
+      "output_rows": 24
+    },
+    {
+      "case": "cli-preview-hooks-skipped",
+      "source": "--artifact",
+      "live": true,
+      "returncode": 0,
+      "elapsed_ms": 435.19,
+      "output_rows": 22
+    },
+    {
+      "case": "controlled-killable-display-timeout",
+      "arguments": [
+        "--plain",
+        "--width",
+        "132",
+        "--rows",
+        "50"
+      ],
+      "returncode": 0,
+      "elapsed_ms": 171.733,
+      "output_rows": 35,
+      "deadline_fallback": true
+    },
+    {
+      "case": "test_help_has_one_layout_and_no_old_mode_options",
+      "arguments": [
+        "--help"
+      ],
+      "returncode": 0,
+      "elapsed_ms": 15.858,
+      "output_rows": 20,
+      "deadline_fallback": false
+    },
+    {
+      "case": "test_home_lab_and_plain_ascii",
+      "arguments": [
+        "--demo",
+        "--plain",
+        "--ascii",
+        "--width",
+        "80",
+        "--rows",
+        "25"
+      ],
+      "returncode": 0,
+      "elapsed_ms": 38.239,
+      "output_rows": 15,
+      "deadline_fallback": false
+    },
+    {
+      "case": "test_hook_argv_does_not_implicitly_execute_shell_text",
+      "arguments": [
+        "--plain",
+        "--width",
+        "80"
+      ],
+      "returncode": 0,
+      "elapsed_ms": 165.405,
+      "output_rows": 23,
+      "deadline_fallback": false
+    },
+    {
+      "case": "test_hook_stop_policy_preserves_exit_code",
+      "arguments": [
+        "--plain"
+      ],
+      "returncode": 7,
+      "elapsed_ms": 10.035,
+      "output_rows": 0,
+      "deadline_fallback": false
+    },
+    {
+      "case": "test_hooks_skip_demos_and_informational_commands",
+      "arguments": [
+        "--demo"
+      ],
+      "returncode": 0,
+      "elapsed_ms": 60.562,
+      "output_rows": 24,
+      "deadline_fallback": false
+    },
+    {
+      "case": "test_hooks_skip_demos_and_informational_commands",
+      "arguments": [
+        "--demo-alerts"
+      ],
+      "returncode": 0,
+      "elapsed_ms": 57.236,
+      "output_rows": 24,
+      "deadline_fallback": false
+    },
+    {
+      "case": "test_hooks_skip_demos_and_informational_commands",
+      "arguments": [
+        "--help"
+      ],
+      "returncode": 0,
+      "elapsed_ms": 25.554,
+      "output_rows": 20,
+      "deadline_fallback": false
+    },
+    {
+      "case": "test_hooks_skip_demos_and_informational_commands",
+      "arguments": [
+        "--version"
+      ],
+      "returncode": 0,
+      "elapsed_ms": 17.019,
+      "output_rows": 1,
+      "deadline_fallback": false
+    },
+    {
+      "case": "test_hooks_skip_demos_and_informational_commands",
+      "arguments": [
+        "--list-sections"
+      ],
+      "returncode": 0,
+      "elapsed_ms": 18.071,
+      "output_rows": 9,
+      "deadline_fallback": false
+    },
+    {
+      "case": "test_live_hooks_run_once_around_supervised_display",
+      "arguments": [
+        "--plain",
+        "--width",
+        "80"
+      ],
+      "returncode": 0,
+      "elapsed_ms": 247.75,
+      "output_rows": 26,
+      "deadline_fallback": false
+    },
+    {
+      "case": "test_no_hooks_flag_skips_all_calls",
+      "arguments": [
+        "--no-hooks",
+        "--plain",
+        "--width",
+        "80"
+      ],
+      "returncode": 0,
+      "elapsed_ms": 174.018,
+      "output_rows": 22,
+      "deadline_fallback": false
+    },
+    {
+      "case": "test_runtime_rejects_non_numeric_options_and_removed_modes",
+      "arguments": [
+        "--demo",
+        "--width",
+        "1+1"
+      ],
+      "returncode": 2,
+      "elapsed_ms": 15.855,
+      "output_rows": 0,
+      "deadline_fallback": false
+    },
+    {
+      "case": "test_runtime_rejects_non_numeric_options_and_removed_modes",
+      "arguments": [
+        "--demo",
+        "--rows",
+        "$(touch /tmp/motd-runtime-n6uk6nfr/argument-injection)"
+      ],
+      "returncode": 2,
+      "elapsed_ms": 23.952,
+      "output_rows": 0,
+      "deadline_fallback": false
+    },
+    {
+      "case": "test_runtime_rejects_non_numeric_options_and_removed_modes",
+      "arguments": [
+        "--demo",
+        "--top",
+        "0"
+      ],
+      "returncode": 2,
+      "elapsed_ms": 17.058,
+      "output_rows": 0,
+      "deadline_fallback": false
+    },
+    {
+      "case": "test_runtime_rejects_non_numeric_options_and_removed_modes",
+      "arguments": [
+        "--demo",
+        "--verbose"
+      ],
+      "returncode": 2,
+      "elapsed_ms": 34.792,
+      "output_rows": 0,
+      "deadline_fallback": false
+    },
+    {
+      "case": "test_runtime_rejects_non_numeric_options_and_removed_modes",
+      "arguments": [
+        "--demo",
+        "--concise"
+      ],
+      "returncode": 2,
+      "elapsed_ms": 17.671,
+      "output_rows": 0,
+      "deadline_fallback": false
+    },
+    {
+      "case": "test_terminal_size_handoff_and_configured_width_cap",
+      "arguments": [
+        "--demo",
+        "--plain",
+        "--_tty-size",
+        "20 40"
+      ],
+      "returncode": 0,
+      "elapsed_ms": 47.595,
+      "output_rows": 19,
+      "deadline_fallback": false
+    },
+    {
+      "case": "test_terminal_size_handoff_and_configured_width_cap",
+      "arguments": [
+        "--demo",
+        "--plain",
+        "--width",
+        "132",
+        "--rows",
+        "25"
+      ],
+      "returncode": 0,
+      "elapsed_ms": 49.118,
+      "output_rows": 24,
+      "deadline_fallback": false
+    },
+    {
+      "case": "test_timed_out_hook_keeps_partial_output_and_runs_after_once",
+      "arguments": [
+        "--plain",
+        "--width",
+        "80"
+      ],
+      "returncode": 0,
+      "elapsed_ms": 237.755,
+      "output_rows": 23,
+      "deadline_fallback": false
+    },
+    {
+      "case": "test_visibility_and_custom_order",
+      "arguments": [
+        "--demo",
+        "--plain",
+        "--width",
+        "80"
+      ],
+      "returncode": 0,
+      "elapsed_ms": 38.489,
+      "output_rows": 15,
+      "deadline_fallback": false
+    },
+    {
+      "case": "test_worker_reentry_skips_hooks",
+      "arguments": [
+        "--_worker",
+        "--plain",
+        "--width",
+        "80"
+      ],
+      "returncode": 0,
+      "elapsed_ms": 130.999,
+      "output_rows": 23,
+      "deadline_fallback": false
+    }
+  ],
+  "timing_note": "Elapsed samples are smoke-test observations, not a performance benchmark."
+}

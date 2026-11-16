@@ -1,0 +1,371 @@
+WORKSHOP MOTD 1.2.0
+Prepared 16 November 2026
+
+QUICK START
+
+99-workshop-status is the complete Linux runtime. Copy that one file; no Python,
+companion configuration file or background daemon is needed. Preview before
+installation:
+
+    bash ./99-workshop-status --demo --width 80
+    bash ./99-workshop-status --demo-alerts --width 40
+    bash ./99-workshop-status
+    bash ./99-workshop-status --rows 50
+    bash ./99-workshop-status --verbose
+
+Concise now preserves named section dividers, aligned columns, resource bars,
+colour-coded states and emphasis. It fits by shortening labels and prioritising
+records within each section. At 80 columns or wider, the default 25-row layout
+can show three CPU, three RSS and three I/O leaders side by side. Narrow screens
+show fewer records while retaining each enabled category. Missing records remain
+explicit unknown/unavailable states.
+
+The default reserves one row for the shell prompt: at most 24 MOTD rows.
+--rows 20..60 sets the concise terminal-height budget; --rows 50 adds detail.
+A smaller detected terminal reduces the default budget. Width adapts up to
+MAX_WIDTH=132; --width 24..240 makes the input width explicit, still subject to
+that cap. Longer values are ellipsized; verbose exposes fuller tables and notes.
+
+    bash ./99-workshop-status --services all
+    bash ./99-workshop-status --plain --ascii
+    bash ./99-workshop-status --theme green
+    bash ./99-workshop-status --help
+
+--services all and --with-fastfetch select verbose. Mode options are processed
+left to right; the last wins. Fastfetch is optional and off by default.
+
+DISPLAY CONTROLS: ONE POLICY FOR BOTH MODES
+
+SECTIONS controls order and inclusion in concise AND verbose:
+
+    SECTIONS=(system resources services processes sessions connections attention hints)
+
+The default sections cover identity/domain/IP/platform, resources, service
+states, task rankings, distinct sessions, connection totals, attention and hints.
+Verbose adds installed service definitions, boot flags, journal information,
+separate I/O read/write columns, device activity and explanations. Concise queries
+resident units and skips journal I/O. Optional io is a separate detailed I/O
+section; processes already includes I/O by default.
+
+Inspect and change the view without editing the file:
+
+    bash ./99-workshop-status --list-sections
+    bash ./99-workshop-status --list-items
+    bash ./99-workshop-status --hide connections,hints
+    bash ./99-workshop-status --show connections
+    bash ./99-workshop-status --hide-item resources.swap,services.FTP
+    bash ./99-workshop-status --show-item resources.swap
+    bash ./99-workshop-status --verbose --hide-item sessions.peer
+    bash ./99-workshop-status --show io --hide-item processes.io --rows 50
+
+--sections ID,ID,... replaces the order and inclusion list. --hide hides named
+sections; --show enables them and appends any absent from that list. Item flags
+apply in both modes; a hidden parent section remains hidden. --list-items gives
+valid keys, including configured roles and hints. Put --verbose before
+--list-sections to inspect verbose configuration.
+
+Persistent examples, after the corresponding array declarations in SETTINGS:
+
+    SECTION_VISIBLE[connections]=0
+    SECTION_TITLE[sessions]='USERS / SESSIONS'
+    ITEM_VISIBLE[resources.swap]=0
+    ITEM_VISIBLE[services.FTP]=0
+    ITEM_VISIBLE[hints.devices]=0
+    SECTION_ROWS[concise.processes]=5
+    SECTION_ROWS[verbose.services]=20
+
+Explicit SECTION_ROWS[mode.ID] values are HARD CAPS, including the named divider.
+The layout may allocate fewer rows; expansion never exceeds an explicit cap.
+A zero cap hides that section in that mode. Other caps such as --top N,
+--sessions N and --connections N bound available records; neither mode exceeds
+those record limits merely because more screen space is available.
+
+SECTION_SPEC registers each section using:
+
+    title | callback | concise base rows | concise minimum | concise maximum
+
+For example:
+
+    SECTION_SPEC[processes]='TOP PROCESSES|ui_tasks|5|3|10'
+
+Base rows are the ordinary allocation. Minimum protects framing/essential
+content while fitting a smaller screen; maximum limits automatic expansion
+with a larger row budget. Explicit SECTION_ROWS caps take precedence.
+COMPACT_TRIM_ORDER and COMPACT_EXPAND_ORDER set allocation priorities. Attention
+retains space for its first notice. If configured minimums cannot fit, the script
+reports a configuration error: increase --rows or hide a section.
+
+Hiding is presentation policy. Resource/service warning checks still collect;
+hiding a metric must not silently declare it healthy. Hiding notice categories
+is explicit through attention.ERROR, attention.WARN or attention.INFO. Reports
+retain the distinction between no configured alerts and hidden notices.
+
+THEMES, ROLES AND HINTS
+
+Common settings:
+
+    SITE_LABEL='Interactive Workshop'
+    MODE=concise
+    COMPACT_ROWS=25
+    MAX_WIDTH=132
+    THEME=cyan
+    REQUIRED_UNITS=(ssh.service cron.service)
+    MESSAGES=('INFO|Bench 3: drive testing in progress.')
+
+Themes are cyan, amber, green and mono. COLOR_CODE holds semantic colours;
+THEME_COLOR_CODE supplies theme-specific overrides. For example:
+
+    THEME_NAMES+=(blue)
+    THEME_COLOR_CODE[blue.border]=34
+    THEME_COLOR_CODE[blue.heading]='1;34'
+
+DISK_COLOR_CODES controls filesystem segments. CPU, RSS and I/O have separate
+colour roles. --plain disables ANSI colour; --ascii selects ordinary characters;
+NO_COLOR is respected. Plain/mono bars retain distinguishable characters.
+
+Service aliases are data. Extend the overview without editing its renderer:
+
+    SERVICE_ROLE_ORDER+=(BACKUP)
+    SERVICE_ROLE_UNITS[BACKUP]='workshop-backup.service'
+    SERVICE_ROLE_LABEL[BACKUP]='Backup'
+
+An observed role becomes eligible for display; absent software is not presumed
+installed or stopped. Required units are a separate host policy. Use canonical
+names; socket-activated SSH may require ssh.socket rather than ssh.service.
+Optional inactive, disabled or masked units are not automatically faults.
+Verbose separates RUN/DONE/LISTEN/WAIT/STOP/FAIL/MASK/UNLOADED states from boot
+flags such as /e enabled, /d disabled and /s static. --services all exposes the
+full discovered nonexcluded inventory. AI name patterns remain configurable.
+The system-manager query does not enumerate every user's service manager.
+
+HINTS entries use id|label|command|note:
+
+    HINTS+=('storage|Storage|df -h|filesystem capacity')
+    ITEM_VISIBLE[hints.storage]=0
+
+The stable ID controls visibility. Legacy label|command|note entries also work,
+using the label as ID. Commands and messages are displayed text; never executed.
+
+ADDING A SECTION
+
+Add its registration and position in SETTINGS:
+
+    SECTION_SPEC[bench]='BENCH|ui_bench|2|2|5'
+    SECTIONS+=(bench)
+
+Define the callback alongside the UI functions, before the final main invocation:
+
+    ui_bench() {
+        ui_begin bench "$1"
+        ui_row "Machine: ${MODEL[host]:-unknown}"
+    }
+
+The first argument is its row allowance, including its divider. ui_begin creates
+the titled frame; ui_row clips/pads plain data, and ui_text wraps longer text
+within the remaining budget. Existing column/cell helpers provide aligned grids.
+Callbacks only consume MODEL/VIEW data. Keep collection, validation and rendering
+separate; collect a new metric once instead of duplicating it for each mode.
+Register custom switchable keys in UI_ITEM_KEYS and gate their rows through
+ui_item_enabled. Preview custom sections with --rows 50 before tightening caps.
+
+DISK I/O AND METRIC MEANINGS
+
+Filesystem capacity and I/O are separate measurements. Task I/O uses Linux
+read_bytes/write_bytes, with ranking by their combined activity. Concise shows
+the combined value; verbose separates reads and writes. The script brackets
+other collection with two I/O snapshots, with no sampling sleep. Rates require
+matching PID/start time, valid counters and a suitable measured interval.
+Resets, missing pairs and detected clock steps prevent invalid rates.
+
+Intervals shorter than 20 ms, longer than 30 seconds or otherwise unsuitable
+use labelled cumulative totals. A short sample can vary sharply for bursty jobs;
+it is not sustained throughput. Kernel storage attribution differs from logical
+rchar/wchar counts and durable platter traffic. Buffered writes/cancellations
+matter; waited-for children can be included. Do not sum task rows into a host
+I/O total. Cancelled-write accounting remains separate.
+
+/proc/PID/io permissions, hidepid, security policy and namespaces restrict
+coverage. Readable/examined/denied/changing records and capped scans are reported.
+Per pass, concise examines up to 512 PID directories with a 35 ms cooperative
+budget; verbose permits 8192 and 200 ms. A capped ranking covers its examined
+subset. These scan budgets are checked in batches, not hard per-read deadlines.
+
+Device observations cover eligible whole leaf devices. Partitions, loop/RAM,
+zram and device-mapper/MD stack nodes are excluded to avoid obvious double
+counting. Rates require stable identity including diskseq; otherwise device
+lifetime totals remain labelled. Current requests in flight are a snapshot.
+At most 64 device records are retained by default. No process-to-physical-drive
+mapping, SMART, media certification or complete controller audit is implied.
+Use installed iotop/iostat tools for continuous inspection with suitable access.
+
+CPU percentages are ps lifetime averages; multithreaded jobs can exceed 100%.
+RSS includes shared pages and is not exclusive additive ownership. Local account
+names come from /etc/passwd; unresolved owners remain numeric UIDs. D/Z denote
+uninterruptible-wait/zombie counts. Online CPUs are host-online CPUs, not a
+cgroup quota or affinity allowance. Load is demand, not CPU percentage.
+
+RAM used is MemTotal minus MemAvailable. Compression pools already occupy RAM;
+logical swap is separate. Storage uses one df query, deduplicates ordinary bind
+mounts and checks bytes/inodes per measured filesystem. Shared pools, network
+mounts and unsupported accounting are not guessed. Aggregate filesystem capacity
+does not promise unique physical bytes or thin-provisioning headroom.
+
+PSI reports stalled time. OOM counts are since boot; journal counts are historical,
+caller-visible and capped. Domain means local configuration, not verified AD
+trust. An empty alert list means no configured alerts in the collected scope.
+
+SHARED ACCOUNT, DISTINCT SESSIONS
+
+Session IDs, TTY/display and recorded peers distinguish multiple SSH/RDP logins
+using workshop. One account can have many sessions. These fields do not identify
+the human behind a shared credential; NAT/jump hosts can obscure peers.
+
+Logind uses a list plus a batched property query. Labels use reported PAM service
+names; a pseudo-terminal alone does not prove SSH. Disconnected RDP sessions may
+remain registered, and an incoming login may not yet appear while PAM builds its
+MOTD. The who/utmp fallback is labelled and has incomplete GUI/RDP coverage.
+TCP sockets are separate observations; port hints do not establish protocol,
+authenticated identity, service health or reachability.
+
+PERFORMANCE AND DEADLINES
+
+The runtime uses batched queries, kernel files and fixed-size rankings. Version
+1.2 also replaces repeated integer regex checks with bounded digit validation
+and counts sysfs online-CPU ranges arithmetically, retaining a /proc/stat fallback.
+Formatting aligns plain cells before adding colour where possible.
+
+    CONCISE_WORKER_SECONDS=0.20
+    CONCISE_KILL_SECONDS=0.02
+    COLLECTION_BUDGET_MS=140
+    CONCISE_HELPER_MAX_MS=75
+
+Optional collection stops as its budget expires; helpers are bounded by remaining
+time. The supervisor allows 200 ms plus a 20 ms kill grace, publishes only complete
+output, and otherwise shows fresh local counters with omissions marked unknown.
+A private temporary regular file avoids a stuck descendant retaining an output
+pipe. It is removed after use; there is no persistent cache.
+
+The design targets concise execution below 400 ms. Scheduler starvation or
+uninterruptible kernel operations can exceed a userspace timeout, so this is not
+a universal real-time guarantee. Verbose permits slower work. Final timings,
+checks, scope and script hash are in verification.json; do not infer performance
+from provisional phase samples. Workshop hardware and end-to-end logins are not
+claimed tested. The workspace's positive live-I/O limitation is recorded there.
+
+FINAL LOCAL MEASUREMENTS — 16 November 2026
+
+Each row below uses 25 fresh Bash invocations at 80 columns, with a warm-up.
+The first three rows enable ANSI colour; these match the normal colour path.
+
+    v1.1 concise, colour: median 149.29 ms; p95 298.18; max 298.71; 2 fallbacks.
+    v1.2 concise, colour: median 143.40 ms; p95 201.06; max 261.32; 1 fallback.
+    v1.2 verbose, colour: median 309.16 ms; p95 371.39; max 422.97; 0 fallbacks.
+    v1.1 concise, plain:  median 123.23 ms; p95 145.38; max 258.13; 1 fallback.
+    v1.2 concise, plain:  median 137.53 ms; p95 173.90; max 192.10; 0 fallbacks.
+    v1.2 verbose, plain:  median 340.19 ms; p95 1049.97; max 1628.47; 0 fallbacks.
+
+These sequential batches show variability, not a consistent overall speed gain.
+Sub-100 ms and approximately 10 ms normal execution were not established. The
+concise colour maximum includes its deadline fallback. Six deliberately stalled
+worker cases returned in 240.41-260.81 ms with complete fallback output; none
+exposed the interrupted report. Verbose has a different, slower-work budget.
+
+Five-run plain-output phase medians put section setup/rendering at 22.56 ms,
+sessions at 21.50 ms and service collection at 19.16 ms in concise mode. Full
+service-definition collection dominated verbose at 195.85 ms. Those diagnostic
+runs exclude launch/supervision and the whole-report budget, so their medians
+must not be summed or substituted for the wall-clock measurements above.
+
+INSTALLATION
+
+Target: Linux, /bin/bash 4.3+ and GNU coreutils. GNU df, procps ps, iproute2 ip/ss
+and systemd tools supply their corresponding measurements. Missing tools and
+permissions remain explicit unknown/partial states. This is not native Windows,
+macOS/BSD or a BusyBox-only script. Collection is read-only: no service changes,
+workload killing, DNS/LDAP queries, file-content scans or privilege escalation.
+
+For a machine already using /etc/update-motd.d, back up the existing file:
+
+    workshop_stamp=$(date -u +%Y%m%dT%H%M%SZ)
+    if sudo test -e /etc/update-motd.d/99-workshop-status; then
+        sudo cp --archive -- /etc/update-motd.d/99-workshop-status \
+            "/root/99-workshop-status.$workshop_stamp"
+    fi
+    sudo install -m 0755 -- 99-workshop-status \
+        /etc/update-motd.d/99-workshop-status
+    run-parts --test /etc/update-motd.d
+
+The extensionless name is accepted by run-parts. Open a new login. If an older
+99-status dashboard also prints, disable only that confirmed older file.
+PAM may generate a shared /run/motd.dynamic as root. Operational names/endpoints
+are shown, but full process arguments and raw journal messages are omitted.
+Without a usable TTY the display defaults to 80 columns and 25 rows. A shared
+snapshot cannot adapt to every concurrent reader's terminal.
+
+For other interactive Linux shells:
+
+    sudo install -m 0755 -- 99-workshop-status /usr/local/bin/workshop-status
+
+Add this invocation to the appropriate existing shell startup file:
+
+    case $- in
+        *i*)
+            if [ -t 1 ] && [ -x /usr/local/bin/workshop-status ]; then
+                /usr/local/bin/workshop-status
+            fi
+            ;;
+    esac
+
+Execute the script; do not source it into the login shell. Bash ~/.bashrc covers
+interactive shells; the active login file controls login setup. Avoid duplicate
+hooks or both shell and PAM displays for the same login. A shell hook runs on
+each interactive shell, not exactly once per SSH transport. Copying into
+/etc/update-motd.d alone does not enable that facility on another distribution.
+This is post-login output, not an SSH pre-authentication Banner or /etc/issue.
+An RDP desktop needs a terminal invocation to show the text report.
+
+VALIDATION AND PREVIEWS
+
+    bash -n 99-workshop-status
+    bash 99-workshop-status --demo-alerts --width 40
+    bash 99-workshop-status --demo --rows 50 --width 80
+    bash 99-workshop-status --demo --verbose --width 132
+    python3 checks/verify.py
+    bash checks/profile.sh concise
+
+Optional fixtures live in checks/. Python verification uses the standard library;
+preview generation also needs Pillow, fontconfig and DejaVu Sans Mono. The phase
+profiler needs Bash 5+ and excludes startup/supervision; it is diagnostic only.
+None of these development tools is a runtime dependency.
+
+Open previews/index.html for the offline gallery, comparison and transcripts.
+Images come from the actual demo renderer; readings are synthetic. Viewports
+reserve a prompt and identify scrolled content. Font/palette are illustrative.
+
+PRIMARY REFERENCES (consulted 16 November 2026)
+
+Unit states and socket activation:
+https://www.freedesktop.org/software/systemd/man/latest/systemctl.html
+https://www.freedesktop.org/software/systemd/man/latest/systemd.socket.html
+Process CPU/RSS and Linux process/I/O counters:
+https://manpages.debian.org/trixie/procps/ps.1.en.html
+https://docs.kernel.org/filesystems/proc.html
+https://www.kernel.org/doc/Documentation/ABI/testing/sysfs-devices-system-cpu
+https://man7.org/linux/man-pages/man5/proc_pid_io.5.html
+https://docs.kernel.org/admin-guide/iostats.html
+Sessions, PAM classes and XRDP:
+https://www.freedesktop.org/software/systemd/man/latest/loginctl.html
+https://www.freedesktop.org/software/systemd/man/latest/pam_systemd.html
+https://github.com/neutrinolabs/xrdp/discussions/3070
+Sockets, pressure and compressed-memory accounting:
+https://manpages.debian.org/trixie/iproute2/ss.8.en.html
+https://docs.kernel.org/accounting/psi.html
+https://docs.kernel.org/admin-guide/blockdev/zram.html
+Journal filtering/access and timeout behavior:
+https://www.freedesktop.org/software/systemd/man/latest/journalctl.html
+https://www.gnu.org/software/coreutils/manual/html_node/timeout-invocation.html
+Dynamic MOTD and signed filesystem availability:
+https://wiki.debian.org/motd
+https://manpages.debian.org/trixie/libpam-runtime/pam_motd.8.en.html
+https://sources.debian.org/src/pam/1.7.0-5/debian/patches/update-motd
+https://github.com/coreutils/coreutils/blob/master/src/df.c

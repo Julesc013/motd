@@ -1,0 +1,161 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="884" height="322" role="img" aria-label="Synthetic MOTD preview">
+<rect width="100%" height="100%" rx="10" fill="#111827"/>
+<g font-family="DejaVu Sans Mono,Consolas,monospace" font-size="14" xml:space="preserve">
+<text x="20.00" y="37" fill="#74d19b" font-weight="normal">╔═</text>
+<text x="36.90" y="37" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="45.35" y="37" fill="#74d19b" font-weight="bold">HOME LAB | ws-bench-07 | Home lab</text>
+<text x="324.20" y="37" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="332.65" y="37" fill="#74d19b" font-weight="normal">═══════════════════════════════════════════════</text>
+<text x="729.80" y="37" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="738.25" y="37" fill="#8390a3" font-weight="normal">DEMO 13:30:00</text>
+<text x="848.10" y="37" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="856.55" y="37" fill="#74d19b" font-weight="normal">╗</text>
+<text x="20.00" y="54" fill="#74d19b" font-weight="normal">╠═</text>
+<text x="36.90" y="54" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="45.35" y="54" fill="#74d19b" font-weight="bold">SYSTEM</text>
+<text x="96.05" y="54" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="104.50" y="54" fill="#74d19b" font-weight="normal">══════════════════════════════════════════════════════════════════════════</text>
+<text x="729.80" y="54" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="738.25" y="54" fill="#8390a3" font-weight="normal">up 4d 06h 12m</text>
+<text x="848.10" y="54" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="856.55" y="54" fill="#74d19b" font-weight="normal">╣</text>
+<text x="20.00" y="71" fill="#74d19b" font-weight="normal">║</text>
+<text x="28.45" y="71" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="36.90" y="71" fill="#74d19b" font-weight="bold">Domain workshop.example                       </text>
+<text x="425.60" y="71" fill="#8390a3" font-weight="normal"> │ </text>
+<text x="450.95" y="71" fill="#e4e9f0" font-weight="normal">IP eno1 192.0.2.17/24                          </text>
+<text x="848.10" y="71" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="856.55" y="71" fill="#74d19b" font-weight="normal">║</text>
+<text x="20.00" y="88" fill="#74d19b" font-weight="normal">║</text>
+<text x="28.45" y="88" fill="#e4e9f0" font-weight="normal"> Debian GNU/Linux 13 (trixie)                  </text>
+<text x="425.60" y="88" fill="#8390a3" font-weight="normal"> │ </text>
+<text x="450.95" y="88" fill="#e4e9f0" font-weight="normal">Kernel 6.12.57-amd64                           </text>
+<text x="848.10" y="88" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="856.55" y="88" fill="#74d19b" font-weight="normal">║</text>
+<text x="20.00" y="105" fill="#74d19b" font-weight="normal">╠═</text>
+<text x="36.90" y="105" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="45.35" y="105" fill="#74d19b" font-weight="bold">RESOURCES</text>
+<text x="121.40" y="105" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="129.85" y="105" fill="#74d19b" font-weight="normal">══════════════════════════════════════════════════════════════════════════</text>
+<text x="755.15" y="105" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="763.60" y="105" fill="#8390a3" font-weight="normal">Max FS 38%</text>
+<text x="848.10" y="105" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="856.55" y="105" fill="#74d19b" font-weight="normal">╣</text>
+<text x="20.00" y="122" fill="#74d19b" font-weight="normal">║</text>
+<text x="28.45" y="122" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="36.90" y="122" fill="#74d19b" font-weight="bold">RAM  </text>
+<text x="79.15" y="122" fill="#e4e9f0" font-weight="normal">8.0Gi/32.0Gi   </text>
+<text x="205.90" y="122" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="214.35" y="122" fill="#76a9fa" font-weight="bold">████</text>
+<text x="248.15" y="122" fill="#63d1df" font-weight="normal">████</text>
+<text x="281.95" y="122" fill="#c19deb" font-weight="normal">█</text>
+<text x="290.40" y="122" fill="#8390a3" font-weight="normal">░░░░░░░░░</text>
+<text x="366.45" y="122" fill="#e4e9f0" font-weight="normal">  avail 24.0Gi  25.0%                                     </text>
+<text x="856.55" y="122" fill="#74d19b" font-weight="normal">║</text>
+<text x="20.00" y="139" fill="#74d19b" font-weight="normal">║</text>
+<text x="28.45" y="139" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="36.90" y="139" fill="#74d19b" font-weight="bold">DISK </text>
+<text x="79.15" y="139" fill="#e4e9f0" font-weight="normal">220Gi/600Gi    </text>
+<text x="205.90" y="139" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="214.35" y="139" fill="#76a9fa" font-weight="bold">█</text>
+<text x="222.80" y="139" fill="#63d1df" font-weight="normal">██████</text>
+<text x="273.50" y="139" fill="#8390a3" font-weight="normal">░░░░░░░░░░░</text>
+<text x="366.45" y="139" fill="#e4e9f0" font-weight="normal">  free 375Gi                                              </text>
+<text x="856.55" y="139" fill="#74d19b" font-weight="normal">║</text>
+<text x="20.00" y="156" fill="#74d19b" font-weight="normal">║</text>
+<text x="28.45" y="156" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="36.90" y="156" fill="#63d1df" font-weight="normal">Cache 8.3Gi</text>
+<text x="129.85" y="156" fill="#e4e9f0" font-weight="normal">  </text>
+<text x="146.75" y="156" fill="#c19deb" font-weight="normal">Comp 640Mi</text>
+<text x="231.25" y="156" fill="#e4e9f0" font-weight="normal">  Swap 2.0Gi/8.0Gi                                                        </text>
+<text x="856.55" y="156" fill="#74d19b" font-weight="normal">║</text>
+<text x="20.00" y="173" fill="#74d19b" font-weight="normal">╠═</text>
+<text x="36.90" y="173" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="45.35" y="173" fill="#74d19b" font-weight="bold">SERVICES</text>
+<text x="112.95" y="173" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="121.40" y="173" fill="#74d19b" font-weight="normal">═══════════════════════════════════════════════════</text>
+<text x="552.35" y="173" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="560.80" y="173" fill="#8390a3" font-weight="normal">16 run / 21 load / 0 fail +5 roles</text>
+<text x="848.10" y="173" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="856.55" y="173" fill="#74d19b" font-weight="normal">╣</text>
+<text x="20.00" y="190" fill="#74d19b" font-weight="normal">║</text>
+<text x="28.45" y="190" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="36.90" y="190" fill="#74d19b" font-weight="bold">SSH      </text>
+<text x="112.95" y="190" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="121.40" y="190" fill="#74d19b" font-weight="normal">RUN</text>
+<text x="146.75" y="190" fill="#8390a3" font-weight="normal"> │ </text>
+<text x="172.10" y="190" fill="#74d19b" font-weight="bold">RDP      </text>
+<text x="248.15" y="190" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="256.60" y="190" fill="#74d19b" font-weight="normal">RUN</text>
+<text x="281.95" y="190" fill="#8390a3" font-weight="normal"> │ </text>
+<text x="307.30" y="190" fill="#74d19b" font-weight="bold">SMB      </text>
+<text x="383.35" y="190" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="391.80" y="190" fill="#74d19b" font-weight="normal">RUN</text>
+<text x="417.15" y="190" fill="#8390a3" font-weight="normal"> │ </text>
+<text x="442.50" y="190" fill="#74d19b" font-weight="bold">FTP     </text>
+<text x="510.10" y="190" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="518.55" y="190" fill="#8390a3" font-weight="normal">STOP</text>
+<text x="552.35" y="190" fill="#8390a3" font-weight="normal"> │ </text>
+<text x="577.70" y="190" fill="#74d19b" font-weight="bold">TFTP     </text>
+<text x="653.75" y="190" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="662.20" y="190" fill="#74d19b" font-weight="normal">RUN</text>
+<text x="687.55" y="190" fill="#8390a3" font-weight="normal"> │ </text>
+<text x="712.90" y="190" fill="#74d19b" font-weight="bold">GUI        </text>
+<text x="805.85" y="190" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="814.30" y="190" fill="#8390a3" font-weight="normal">STOP</text>
+<text x="848.10" y="190" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="856.55" y="190" fill="#74d19b" font-weight="normal">║</text>
+<text x="20.00" y="207" fill="#74d19b" font-weight="normal">║</text>
+<text x="28.45" y="207" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="36.90" y="207" fill="#74d19b" font-weight="bold">OOM      </text>
+<text x="112.95" y="207" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="121.40" y="207" fill="#74d19b" font-weight="normal">RUN</text>
+<text x="146.75" y="207" fill="#8390a3" font-weight="normal"> │ </text>
+<text x="172.10" y="207" fill="#74d19b" font-weight="bold">WEB      </text>
+<text x="248.15" y="207" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="256.60" y="207" fill="#74d19b" font-weight="normal">RUN</text>
+<text x="281.95" y="207" fill="#8390a3" font-weight="normal"> │ </text>
+<text x="307.30" y="207" fill="#74d19b" font-weight="bold">DB       </text>
+<text x="383.35" y="207" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="391.80" y="207" fill="#74d19b" font-weight="normal">RUN</text>
+<text x="417.15" y="207" fill="#8390a3" font-weight="normal"> │ </text>
+<text x="442.50" y="207" fill="#74d19b" font-weight="bold">NET      </text>
+<text x="518.55" y="207" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="527.00" y="207" fill="#74d19b" font-weight="normal">RUN</text>
+<text x="552.35" y="207" fill="#8390a3" font-weight="normal"> │ </text>
+<text x="577.70" y="207" fill="#74d19b" font-weight="bold">DNS      </text>
+<text x="653.75" y="207" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="662.20" y="207" fill="#74d19b" font-weight="normal">RUN</text>
+<text x="687.55" y="207" fill="#8390a3" font-weight="normal"> │ </text>
+<text x="712.90" y="207" fill="#74d19b" font-weight="bold">AUTH        </text>
+<text x="814.30" y="207" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="822.75" y="207" fill="#74d19b" font-weight="normal">RUN</text>
+<text x="848.10" y="207" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="856.55" y="207" fill="#74d19b" font-weight="normal">║</text>
+<text x="20.00" y="224" fill="#74d19b" font-weight="normal">╠═</text>
+<text x="36.90" y="224" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="45.35" y="224" fill="#74d19b" font-weight="bold">ATTENTION</text>
+<text x="121.40" y="224" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="129.85" y="224" fill="#74d19b" font-weight="normal">════════════════════════════════════════════════════════════════════════════</text>
+<text x="772.05" y="224" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="780.50" y="224" fill="#74d19b" font-weight="normal">E0 W0 I0</text>
+<text x="848.10" y="224" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="856.55" y="224" fill="#74d19b" font-weight="normal">╣</text>
+<text x="20.00" y="241" fill="#74d19b" font-weight="normal">║</text>
+<text x="28.45" y="241" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="36.90" y="241" fill="#74d19b" font-weight="normal">No configured alerts in collected scope.                                                        </text>
+<text x="848.10" y="241" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="856.55" y="241" fill="#74d19b" font-weight="normal">║</text>
+<text x="20.00" y="258" fill="#74d19b" font-weight="normal">╠═</text>
+<text x="36.90" y="258" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="45.35" y="258" fill="#74d19b" font-weight="bold">HINTS</text>
+<text x="87.60" y="258" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="96.05" y="258" fill="#74d19b" font-weight="normal">════════════════════════════</text>
+<text x="332.65" y="258" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="341.10" y="258" fill="#8390a3" font-weight="normal">top | iotop -o | systemctl --failed | loginctl list-sessions</text>
+<text x="848.10" y="258" fill="#e4e9f0" font-weight="normal"> </text>
+<text x="856.55" y="258" fill="#74d19b" font-weight="normal">╣</text>
+<text x="20.00" y="275" fill="#74d19b" font-weight="normal">╚══════════════════════════════════════════════════════════════════════════════════════════════════╝</text>
+<text x="20" y="300" fill="#8390a3" font-size="11">Synthetic fixture · generated by the actual Bash renderer</text>
+</g>
+</svg>

@@ -1,0 +1,26 @@
+[
+  {
+    "file": "workshop-1.2.0.bash",
+    "sha256": "983a38ad78dc71f50317ae92f9355be228c5de38f5ff79d26ec1a1aeed14c9eb",
+    "bytes": 143433,
+    "origin": "Saved project artifact, imported unchanged 2026-11-16"
+  },
+  {
+    "file": "home-lab-2026-11-15.bash",
+    "sha256": "ccfae7f7e78a34c5bbef6fd6886f8212df98ce0fdcfca50087146a0a8d571da9",
+    "bytes": 39235,
+    "origin": "Saved project artifact, imported unchanged 2026-11-16"
+  },
+  {
+    "file": "workshop-1.2.0-guide.txt",
+    "sha256": "af636f9ea76936c40c4b3454fdec2c7f9f53aeb394923f3be0016cec4a98c961",
+    "bytes": 18457,
+    "origin": "Saved project artifact, imported unchanged 2026-11-16"
+  },
+  {
+    "file": "workshop-1.2.0-verification.json",
+    "sha256": "d6faac4b77131d852ff5fd667ccb9519339eed7d75d703136640d3a1d9ec945a",
+    "bytes": 27733,
+    "origin": "Saved project artifact, imported unchanged 2026-11-16"
+  }
+]

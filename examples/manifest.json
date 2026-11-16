@@ -1,0 +1,20 @@
+{
+  "generator": "0.1.0",
+  "examples": [
+    {
+      "preset": "workshop",
+      "path": "examples/workshop.bash",
+      "sha256": "29a9d1bc640e32a27034dc4c800a12d9b108865914438cee888fe4b9a766e6ef"
+    },
+    {
+      "preset": "home-lab",
+      "path": "examples/home-lab.bash",
+      "sha256": "9f7f74b28ae42302c558f3c00b6f8d5065b5318db95fe5df637e738e0507fa78"
+    },
+    {
+      "preset": "public-console",
+      "path": "examples/public-console.issue",
+      "sha256": "781f5cd19056f1014b61c223e9396ed617b81d6b97931dd2cd73a53e9e9f2699"
+    }
+  ]
+}
