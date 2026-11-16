@@ -1,6 +1,6 @@
 # Configuration
 
-Recipes use TOML schema version 1. Start from `workshop`, `home-lab`, or `public-console`; omitted settings inherit that preset's defaults. Unknown keys are errors. The configurator writes supported settings back to TOML, but does not retain your original comments, spacing, or ordering.
+Recipes use TOML schema version 1. Start from `workshop`, `home-lab`, or `public-console`; omitted settings inherit that preset's defaults. The additive `shell` setting defaults to `bash`, so older recipes retain their interpreter. Unknown keys are errors. The configurator writes supported settings back to TOML, but does not retain your original comments, spacing, or ordering.
 
 ```sh
 python3 motd.py build --preset workshop --output ./workshop.bash --save-config ./workshop.toml
@@ -15,6 +15,7 @@ schema_version = 1
 preset = "home-lab"
 name = "home-lab"
 target = "shell"
+shell = "bash"
 audience = "ssh"
 frequency = "login"
 messages = ["Maintenance: check the backup report."]
@@ -52,7 +53,8 @@ Installation scope, destination paths, shell startup file, and state directory a
 | Setting | Accepted values |
 |---|---|
 | `name` | 1–40 characters; starts with a lowercase letter, followed by lowercase letters, digits, or hyphens. |
-| `target` | `shell`, `issue`, `ssh-banner`. |
+| `target` | `shell`, `issue`, `ssh-banner`, `text`. |
+| `shell` | `bash` (default), `zsh`, `sh`, `powershell`; selects executable syntax when `target = "shell"`. |
 | `audience` | `all`, `ssh`, `local`; filters eligible shell sessions. |
 | `frequency` | `login`, `interactive`; shell display frequency. |
 | `messages` | Up to 24 display-only strings. |
@@ -68,9 +70,21 @@ Installation scope, destination paths, shell startup file, and state directory a
 | `collection.process_limit`, `io_scan_ms` | Integers: process limit 32–65,536; I/O scan budget 5–1,000 milliseconds. |
 | `collection.journal` | Boolean; journal collection defaults to `false`. |
 
-Section IDs are `system`, `resources`, `services`, `processes`, `sessions`, `connections`, `attention`, `hints`, and `io`. The validator rejects a row budget too small for the selected sections and framing. Enabling a section does not grant access to unavailable system information. Collection budgets control intended work; they are not a measured wall-clock promise for every machine.
+Section IDs are `system`, `resources`, `services`, `processes`, `sessions`, `connections`, `attention`, `hints`, and `io`. The validator rejects a row budget too small for the selected sections and framing. Enabling a section does not grant access to unavailable system information.
 
-`frequency = "login"` requires Bash's login-shell flag. `"interactive"` also permits non-login interactive Bash sessions, such as many terminal windows, when they read the installed hook. Both require terminal output, honor `~/.hushlogin`, and suppress duplicate attachment within one shell process. User scope attaches to `.bashrc` and the active login file. The default system hook uses `/etc/profile.d`; extending it to non-login shells requires an explicit `--shell-file` read by those shells.
+The full collection settings describe the Bash renderer (also used by Zsh).
+Portable sh and PowerShell provide smaller native collectors and label unsupported
+sections. They do not turn Bash's `worker_ms` setting into an equivalent global
+deadline. Collection settings are not a measured wall-clock promise for every
+machine. See [coverage and dependencies](compatibility.md).
+
+`frequency = "login"` selects login-shell attachment; `"interactive"` also permits
+eligible non-login shells that read the chosen startup file. Bash and Zsh use their
+native login-state tests. Portable sh relies on its selected login profile and
+does not claim a universal non-login rc-file route. Hooks check interactive state,
+terminal output, `~/.hushlogin` and duplicate invocation. `audience = "local"`
+means no SSH environment marker was found, not proven physical-console access.
+See [installation](install.md) for startup paths and PowerShell's manual boundary.
 
 ## Before/after commands
 
@@ -94,7 +108,14 @@ timeout_seconds = 1
 on_failure = "continue"
 ```
 
-Hook time is additional to the dashboard's collection budget. Both ordinary preview and `preview --live` suppress hooks. The `issue` and `ssh-banner` targets reject them.
+Hook time is additional to display collection time. Both ordinary preview and
+`preview --live` suppress hooks for generated recipes. All static targets reject
+them. Native sh needs a GNU-compatible `timeout` for configured hooks; its base
+display does not need that utility. PowerShell hooks launch executable programs
+or explicit interpreters: a bare PowerShell cmdlet is not an external executable.
+Windows PowerShell5.1 can terminate the direct hook process but does not provide
+the same descendant-tree kill operation as current PowerShell/.NET. Avoid treating
+these hook limits as a sandbox or a hard deadline for arbitrary descendant trees.
 
 ## Hints and public text
 
@@ -108,4 +129,16 @@ command = "systemctl --failed"
 note = "List failed units"
 ```
 
-Set `hints = []` at the top level to remove every hint. For public destinations, use `public_text` with the display title. Generated output is static text, with literal agetty backslashes escaped for the `issue` target. Imported static artifacts are already serialized bytes and are installed unchanged, including any existing escapes. Keep the recipe: public text outputs do not contain configuration metadata.
+Set `hints = []` at the top level to remove every hint. PowerShell's built-in hints
+use `Get-Process`, `Get-Service` and `Get-PSDrive`. Changing the shell in the CLI or
+wizard adapts an untouched built-in hint set; customized hints remain unchanged.
+Custom hints and executable hooks are not translated between operating systems.
+Review their commands when changing the destination.
+
+For public destinations, use `public_text` with the display title. Generated output
+is static text, with literal agetty backslashes escaped for `issue`; `ssh-banner`
+and generic `text` preserve literal text without agetty conversion. Generic text
+does not promise another getty's escaping, code page or newline convention.
+Imported static artifacts are already serialized bytes and are installed
+unchanged, including existing escapes. Keep the recipe: static outputs do not
+contain configuration metadata.

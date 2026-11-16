@@ -6,3 +6,5 @@ build/*
 !build/README.md
 !build/verification-runtime.json
 !build/verification.json
+!build/verification-bash32.json
+!build/verification-bash43.json

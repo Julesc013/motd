@@ -4,6 +4,7 @@ schema_version = 1
 preset = "public-console"
 name = "public-console"
 target = "issue"
+shell = "bash"
 audience = "all"
 frequency = "login"
 public_text = "Authorised access only.\nContact the system administrator."

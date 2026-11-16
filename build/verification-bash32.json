@@ -1,0 +1,325 @@
+{
+  "checked_at_utc": "2026-11-16T11:10:22.410992+00:00",
+  "scope": "Actual historical interpreter boundary and native POSIX sh fallback; no system shell installed or login files changed.",
+  "source": {
+    "url": "https://ftp.gnu.org/gnu/bash/bash-3.2.tar.gz",
+    "archive_sha256": "26c99025b59e30779300b68adb764f824974d267a4d7cc1b347d14a2393f9fb4",
+    "source_patches": []
+  },
+  "build": {
+    "configure": "CFLAGS='-g -O2 -std=gnu89' ./configure --without-bash-malloc --disable-nls --disable-readline",
+    "make": "make -j2 CFLAGS_FOR_BUILD='-g -O2 -std=gnu89'",
+    "interpreter_version": "GNU bash, version 3.2.0(2)-release (x86_64-unknown-linux-gnu)",
+    "binary_sha256": "551db68f59daed86b0e7785bec902255a850ee49f5e13db897ad82c9eb7d3faf",
+    "machine": "x86_64"
+  },
+  "implementation_sha256": {
+    "motd.py": "6dafeb3f8bd81ea363a63931a38806ecab2a29aeeb84c0eb52b1bdf957201874",
+    "runtime/motd.bash": "43e779af32cc59e7ff53dbfeee0576701e432a29a5156aa99b953faafaf7df68",
+    "runtime/motd.sh": "91eb18e8a42fa2c2efd6bfe162973eebdfeed8c9bc491956ae90fe109c35e7a1",
+    "tests/test_shell_compatibility.py": "cc83919525856945ae312f1bae98377862c3c58d313dc763aff61a879e84ff46"
+  },
+  "checks": [
+    {
+      "shell": "bash",
+      "artifact_sha256": "025001bd62a35b574024b097f585d4fe46c61f2b20cc6e76a0fff83e0f651cb7",
+      "recipe": {
+        "schema_version": 1,
+        "preset": "home-lab",
+        "name": "compatibility-probe",
+        "target": "shell",
+        "shell": "bash",
+        "audience": "all",
+        "frequency": "login",
+        "public_text": "Authorised access only. Contact the system administrator.",
+        "messages": [],
+        "display": {
+          "title": "HOME LAB",
+          "site": "Home lab",
+          "theme": "green",
+          "width": 100,
+          "rows": 25,
+          "top_entries": 3,
+          "sections": [
+            "system",
+            "resources",
+            "services",
+            "attention",
+            "hints"
+          ],
+          "show_swap": true,
+          "show_compression": true,
+          "show_pressure": true
+        },
+        "services": {
+          "required": [],
+          "exclude": []
+        },
+        "collection": {
+          "budget_ms": 140,
+          "worker_ms": 220,
+          "process_limit": 512,
+          "io_scan_ms": 35,
+          "journal": false
+        },
+        "hooks": {
+          "before": [
+            {
+              "argv": [
+                "/bin/sh",
+                "-c",
+                ": > hook-ran"
+              ],
+              "timeout_seconds": 1,
+              "on_failure": "continue"
+            }
+          ],
+          "after": []
+        },
+        "hints": [
+          {
+            "id": "tasks",
+            "label": "Tasks",
+            "command": "top",
+            "note": "CPU and memory"
+          },
+          {
+            "id": "io",
+            "label": "I/O",
+            "command": "iotop -o",
+            "note": "If installed and permitted"
+          },
+          {
+            "id": "services",
+            "label": "Services",
+            "command": "systemctl --failed",
+            "note": "Failed units"
+          },
+          {
+            "id": "sessions",
+            "label": "Sessions",
+            "command": "loginctl list-sessions",
+            "note": "Registered logins"
+          }
+        ]
+      },
+      "command": [
+        "<bash-3.2.0>",
+        "probe.bash",
+        "--plain"
+      ],
+      "returncode": 0,
+      "hook_executed": false,
+      "stdout": "",
+      "stderr": "MOTD status needs Bash 4.3 or newer.\n",
+      "passed": true,
+      "environment_overrides": {}
+    },
+    {
+      "shell": "zsh",
+      "artifact_sha256": "b4f78deec03d76841764ec282c013756f2d504b8f39c60d521cc33366cb78d3f",
+      "recipe": {
+        "schema_version": 1,
+        "preset": "home-lab",
+        "name": "compatibility-probe",
+        "target": "shell",
+        "shell": "zsh",
+        "audience": "all",
+        "frequency": "login",
+        "public_text": "Authorised access only. Contact the system administrator.",
+        "messages": [],
+        "display": {
+          "title": "HOME LAB",
+          "site": "Home lab",
+          "theme": "green",
+          "width": 100,
+          "rows": 25,
+          "top_entries": 3,
+          "sections": [
+            "system",
+            "resources",
+            "services",
+            "attention",
+            "hints"
+          ],
+          "show_swap": true,
+          "show_compression": true,
+          "show_pressure": true
+        },
+        "services": {
+          "required": [],
+          "exclude": []
+        },
+        "collection": {
+          "budget_ms": 140,
+          "worker_ms": 220,
+          "process_limit": 512,
+          "io_scan_ms": 35,
+          "journal": false
+        },
+        "hooks": {
+          "before": [
+            {
+              "argv": [
+                "/bin/sh",
+                "-c",
+                ": > hook-ran"
+              ],
+              "timeout_seconds": 1,
+              "on_failure": "continue"
+            }
+          ],
+          "after": []
+        },
+        "hints": [
+          {
+            "id": "tasks",
+            "label": "Tasks",
+            "command": "top",
+            "note": "CPU and memory"
+          },
+          {
+            "id": "io",
+            "label": "I/O",
+            "command": "iotop -o",
+            "note": "If installed and permitted"
+          },
+          {
+            "id": "services",
+            "label": "Services",
+            "command": "systemctl --failed",
+            "note": "Failed units"
+          },
+          {
+            "id": "sessions",
+            "label": "Sessions",
+            "command": "loginctl list-sessions",
+            "note": "Registered logins"
+          }
+        ]
+      },
+      "command": [
+        "<bash-3.2.0>",
+        "probe.zsh",
+        "--plain"
+      ],
+      "returncode": 0,
+      "hook_executed": false,
+      "stdout": "",
+      "stderr": "MOTD status needs Bash 4.3 or newer.\n",
+      "passed": true,
+      "environment_overrides": {}
+    },
+    {
+      "shell": "sh",
+      "artifact_sha256": "eae1225310ada483a724d2b6d88fa6b55e96bbeef42394cfcc6b86b10934a4ba",
+      "recipe": {
+        "schema_version": 1,
+        "preset": "home-lab",
+        "name": "compatibility-probe",
+        "target": "shell",
+        "shell": "sh",
+        "audience": "all",
+        "frequency": "login",
+        "public_text": "Authorised access only. Contact the system administrator.",
+        "messages": [],
+        "display": {
+          "title": "HOME LAB",
+          "site": "Home lab",
+          "theme": "green",
+          "width": 100,
+          "rows": 25,
+          "top_entries": 3,
+          "sections": [
+            "system",
+            "resources",
+            "services",
+            "attention",
+            "hints"
+          ],
+          "show_swap": true,
+          "show_compression": true,
+          "show_pressure": true
+        },
+        "services": {
+          "required": [],
+          "exclude": []
+        },
+        "collection": {
+          "budget_ms": 140,
+          "worker_ms": 220,
+          "process_limit": 512,
+          "io_scan_ms": 35,
+          "journal": false
+        },
+        "hooks": {
+          "before": [
+            {
+              "argv": [
+                "/bin/sh",
+                "-c",
+                ": > hook-ran"
+              ],
+              "timeout_seconds": 1,
+              "on_failure": "continue"
+            }
+          ],
+          "after": []
+        },
+        "hints": [
+          {
+            "id": "tasks",
+            "label": "Tasks",
+            "command": "top",
+            "note": "CPU and memory"
+          },
+          {
+            "id": "io",
+            "label": "I/O",
+            "command": "iotop -o",
+            "note": "If installed and permitted"
+          },
+          {
+            "id": "services",
+            "label": "Services",
+            "command": "systemctl --failed",
+            "note": "Failed units"
+          },
+          {
+            "id": "sessions",
+            "label": "Sessions",
+            "command": "loginctl list-sessions",
+            "note": "Registered logins"
+          }
+        ]
+      },
+      "command": [
+        "<bash-3.2.0>",
+        "probe.sh",
+        "--demo",
+        "--plain"
+      ],
+      "returncode": 0,
+      "hook_executed": false,
+      "stdout": "HOME LAB\nHome lab\nPortable sh baseline\nSYSTEM\nHost: demo-host | OS: Linux demo-kernel\nUptime: 86400 s | Load (1/5/15 min): 0.25 0.18 0.12\nRESOURCES\nMemory available: 12582912 KiB / 16777216 KiB total\nStorage, swap detail and pressure: unavailable in portable baseline\nservices: not collected by the portable sh backend\nNOTICES\nHINTS\nTasks: top - CPU and memory\nI/O: iotop -o - If installed and permitted\nServices: systemctl --failed - Failed units\nSessions: loginctl list-sessions - Registered logins\n",
+      "stderr": "",
+      "passed": true,
+      "environment_overrides": {
+        "PATH": "<empty helper directory>"
+      }
+    }
+  ],
+  "regression_suite": {
+    "command": "MOTD_TEST_BASH32=<built Bash 3.2 binary> python3 -m unittest discover -s tests -p test_shell_compatibility.py -v",
+    "observed_tests": 21,
+    "passed": 21,
+    "failed": 0,
+    "skipped": 0,
+    "includes": "Captured native sh theme colour plus --plain, NO_COLOR and mono precedence; Bash missing-helper fallback; actual Bash3.2 early guard and portable fallback."
+  },
+  "limits": [
+    "Bash 3.2.0 was built on the current Linux x86_64 host; this is not validation of a historical OS installation.",
+    "Zsh output was invoked by the historical Bash interpreter to test its shared runtime guard; native Zsh5.9 execution is covered by the shell regression suite.",
+    "The full Bash runtime remains Bash4.3+; returning zero on an unsupported interpreter preserves login usability while printing a diagnostic."
+  ]
+}

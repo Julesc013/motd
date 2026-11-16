@@ -91,7 +91,7 @@ class RuntimeTests(unittest.TestCase):
                              'arguments': list(args), 'returncode': result.returncode,
                              'elapsed_ms': round((time.monotonic() - start) * 1000, 3),
                              'output_rows': len(result.stdout.splitlines()),
-                             'deadline_fallback': 'Display deadline reached' in result.stdout})
+                             'partial_fallback': 'Full display unavailable' in result.stdout})
         return result
 
     @staticmethod
@@ -250,7 +250,7 @@ class RuntimeTests(unittest.TestCase):
             result = self.run_artifact(config, '--plain', '--width', '132', '--rows', '50',
                                        label='controlled-killable-display-timeout')
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn('Display deadline reached', result.stdout)
+        self.assertIn('Full display unavailable', result.stdout)
         self.assert_hook_order_once(result.stdout)
         self.assertNotIn('__WORKSHOP_COMPLETE_V2__', result.stdout)
 

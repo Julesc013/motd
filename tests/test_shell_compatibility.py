@@ -1,0 +1,376 @@
+"""Real shell execution and startup guards; all written files are temporary.
+
+The portable baseline is tested without external helpers. Zsh deliberately
+reuses Bash's full runtime, so execution equivalence matters more than a second
+set of copied collector expectations. No real startup file is installed.
+"""
+from __future__ import annotations
+
+import errno
+from contextlib import redirect_stdout
+import io
+import os
+from pathlib import Path
+import pty
+import shlex
+import shutil
+import subprocess
+import sys
+import tempfile
+import time
+import unittest
+from unittest.mock import patch
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+import motd
+
+
+class ShellCompatibilityTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory(prefix='motd-shell-compat-')
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        self.state = str(self.root / 'state')
+
+    def config(self, shell='sh'):
+        config = motd.preset_config('home-lab')
+        config['shell'] = shell
+        config['name'] = 'compat-test'
+        return config
+
+    def artifact(self, config):
+        path = self.root / ('dashboard.' + config['shell'])
+        path.write_text(motd.generate_artifact(config), encoding='utf-8')
+        return path
+
+    def run_shell(self, shell, path, *arguments, no_helpers=False):
+        executable = shutil.which(shell)
+        if not executable: self.skipTest(f'{shell} is not installed')
+        environment = os.environ.copy()
+        if no_helpers: environment['PATH'] = str(self.root / 'no-helpers')
+        return subprocess.run([executable, str(path), *arguments],
+                              capture_output=True, text=True, timeout=8, env=environment)
+
+    def pty_shell(self, shell, command, login=False, interactive=True):
+        executable = shutil.which(shell)
+        if not executable: self.skipTest(f'{shell} is not installed')
+        master, slave = pty.openpty()
+        try:
+            options = ['-f'] if shell == 'zsh' else []
+            if interactive: options.append('-i')
+            if login: options.append('-l')
+            result = subprocess.run([executable, *options, '-c', command],
+                                    stdin=slave, stdout=slave, stderr=slave, timeout=8)
+            os.close(slave)
+            slave = None
+            chunks = []
+            while True:
+                try: chunk = os.read(master, 4096)
+                except OSError as error:
+                    if error.errno == errno.EIO: break
+                    raise
+                if not chunk: break
+                chunks.append(chunk)
+            return result.returncode, b''.join(chunks).decode(errors='replace')
+        finally:
+            if slave is not None: os.close(slave)
+            os.close(master)
+
+    def test_old_recipe_still_defaults_to_bash(self):
+        config = motd.preset_config('home-lab')
+        config.pop('shell', None)
+        self.assertEqual(motd.validate_config(config)['shell'], 'bash')
+        self.assertTrue(motd.generate_artifact(config).startswith('#!/usr/bin/env bash\n'))
+
+    def test_cli_does_not_relabel_an_existing_generated_interpreter(self):
+        source = self.artifact(self.config('zsh'))
+        destination = self.root / 'relabeled.sh'
+        with self.assertRaises(motd.MotdError):
+            motd.main(['build', '--artifact', str(source), '--shell', 'sh',
+                       '--output', str(destination), '--state-dir', self.state])
+        self.assertFalse(destination.exists())
+        self.assertFalse(Path(self.state).exists())
+
+    def test_cli_can_rebuild_a_recipe_for_another_interpreter(self):
+        config = self.config('bash')
+        config['display']['title'] = 'PRESERVED RECIPE SETTINGS'
+        recipe = self.root / 'recipe.toml'
+        recipe.write_text(motd.dump_config(config), encoding='utf-8')
+        destination = self.root / 'rebuilt.sh'
+        with redirect_stdout(io.StringIO()):
+            status = motd.main(['build', '--config', str(recipe), '--shell', 'sh',
+                                '--output', str(destination), '--state-dir', self.state])
+        self.assertEqual(status, 0)
+        recovered = motd.extract_config(destination.read_text())
+        self.assertEqual(recovered['shell'], 'sh')
+        self.assertEqual(recovered['display']['title'], config['display']['title'])
+        self.assertEqual(motd.load_config(recipe)['shell'], 'bash')
+        result = self.run_shell('dash', destination, '--demo', '--plain')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn(config['display']['title'], result.stdout)
+
+    def test_bash_missing_timeout_uses_the_explicit_partial_fallback(self):
+        # The runtime intentionally fixes PATH. A Bash command-lookup fixture
+        # models an absent timeout without altering any host binaries or files.
+        startup = self.root / 'missing-timeout.bash'
+        startup.write_text(
+            'command() {\n'
+            '  if [[ ${1-} == -v && ${2-} == timeout ]]; then return 1; fi\n'
+            '  builtin command "$@"\n'
+            '}\n', encoding='utf-8')
+        environment = os.environ.copy()
+        environment['BASH_ENV'] = str(startup)
+        path = self.artifact(self.config('bash'))
+        result = subprocess.run(['bash', str(path), '--plain'],
+                                capture_output=True, text=True, timeout=5, env=environment)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('Full display unavailable', result.stdout)
+        self.assertNotIn('command not found', result.stderr)
+
+    @unittest.skipUnless(os.environ.get('MOTD_TEST_BASH32'),
+                         'Set MOTD_TEST_BASH32 to an actual Bash 3.2 binary for the historical boundary test')
+    def test_bash32_stops_before_hooks_and_can_use_the_native_sh_fallback(self):
+        interpreter = os.environ['MOTD_TEST_BASH32']
+        version = subprocess.run([interpreter, '--version'], capture_output=True,
+                                 text=True, timeout=5)
+        self.assertIn('version 3.2.', version.stdout)
+        sentinel = self.root / 'unsupported-interpreter-hook'
+        for shell in ('bash', 'zsh'):
+            with self.subTest(shell=shell):
+                config = self.config(shell)
+                config['hooks']['before'] = [{
+                    'argv': ['/bin/sh', '-c', ': > ' + shlex.quote(str(sentinel))],
+                    'timeout_seconds': 1, 'on_failure': 'continue'}]
+                path = self.artifact(config)
+                result = subprocess.run([interpreter, str(path), '--plain'],
+                                        capture_output=True, text=True, timeout=5)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(result.stdout, '')
+                self.assertIn('Bash 4.3 or newer', result.stderr)
+                self.assertFalse(sentinel.exists(), 'An unsupported interpreter reached executable hooks')
+        portable = self.artifact(self.config('sh'))
+        result = subprocess.run([interpreter, str(portable), '--demo', '--plain'],
+                                capture_output=True, text=True, timeout=5)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('demo-host', result.stdout)
+        self.assertIn('Portable sh baseline', result.stdout)
+
+    def test_sh_is_recoverable_and_runs_under_dash_without_helpers(self):
+        config = self.config()
+        sentinel = self.root / 'must-not-exist'
+        config['display']['title'] = f'Literal $(touch {sentinel})'
+        config['messages'] = ["quotes ' \" and `touch " + str(sentinel) + '`']
+        path = self.artifact(config)
+        recovered = motd.extract_config(path.read_text())
+        self.assertEqual(recovered, motd.validate_config(config))
+        syntax = subprocess.run(['dash', '-n', str(path)], capture_output=True, text=True, timeout=5)
+        self.assertEqual(syntax.returncode, 0, syntax.stderr)
+        result = self.run_shell('dash', path, '--demo', '--plain', no_helpers=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('demo-host', result.stdout)
+        self.assertIn('12582912 KiB', result.stdout)
+        self.assertIn('not collected by the portable sh backend', result.stdout)
+        self.assertFalse(sentinel.exists(), 'Displayed text executed as shell code')
+        self.assertNotIn('\x1b', result.stdout)
+
+    def test_sh_live_mode_has_no_external_collector_dependency(self):
+        path = self.artifact(self.config())
+        result = self.run_shell('dash', path, '--plain', no_helpers=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('Host:', result.stdout)
+        self.assertIn('Memory', result.stdout)
+        self.assertNotIn('demo-host', result.stdout)
+        self.assertNotIn('command not found', result.stderr)
+
+    def test_sh_captured_preview_color_respects_theme_and_plain_preferences(self):
+        config = self.config()
+        environment = os.environ.copy()
+        environment['TERM'] = 'xterm-256color'
+        environment.pop('NO_COLOR', None)
+        for theme, code in (('cyan', '36'), ('green', '32'), ('amber', '33'), ('mono', None)):
+            with self.subTest(theme=theme):
+                config['display']['theme'] = theme
+                path = self.artifact(config)
+                for options, no_color in ((['--color'], False), ([], False),
+                                          (['--color', '--plain'], False),
+                                          (['--plain', '--color'], False),
+                                          (['--color'], True)):
+                    with self.subTest(options=options, no_color=no_color):
+                        active_environment = environment.copy()
+                        if no_color: active_environment['NO_COLOR'] = ''
+                        result = subprocess.run(['dash', str(path), '--demo', *options],
+                                                capture_output=True, text=True, timeout=5,
+                                                env=active_environment)
+                        self.assertEqual(result.returncode, 0, result.stderr)
+                        self.assertIn('HOME LAB', result.stdout)
+                        if code and options == ['--color'] and not no_color:
+                            self.assertIn('\x1b[1;' + code + 'm', result.stdout)
+                            self.assertIn('\x1b[0m', result.stdout)
+                        else:
+                            self.assertNotIn('\x1b', result.stdout)
+
+    def test_sh_hooks_run_once_and_preview_options_suppress_them(self):
+        config = self.config()
+        trace = self.root / "hook trace's.txt"
+        for phase in ('before', 'after'):
+            command = 'printf "%s\\n" ' + shlex.quote(phase) + ' >> ' + shlex.quote(str(trace))
+            config['hooks'][phase] = [{'argv': ['/bin/sh', '-c', command],
+                                       'timeout_seconds': 1, 'on_failure': 'stop'}]
+        path = self.artifact(config)
+        for options in (('--demo',), ('--demo-alerts',), ('--no-hooks',), ('--help',)):
+            result = self.run_shell('dash', path, *options)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertFalse(trace.exists(), f'Hook ran for {options}')
+        result = self.run_shell('dash', path, '--plain')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(trace.read_text().splitlines(), ['before', 'after'])
+
+    def test_sh_missing_timeout_does_not_execute_the_hook(self):
+        config = self.config()
+        sentinel = self.root / 'hook-was-run'
+        config['hooks']['before'] = [{'argv': ['/bin/sh', '-c', ': > ' + shlex.quote(str(sentinel))],
+                                      'timeout_seconds': 0.1, 'on_failure': 'continue'}]
+        result = self.run_shell('dash', self.artifact(config), '--plain', no_helpers=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('hook 1 failed (127)', result.stderr)
+        self.assertFalse(sentinel.exists())
+        self.assertIn('Portable sh baseline', result.stdout)
+
+    def test_sh_hook_deadline_keeps_partial_output_and_stops_when_requested(self):
+        config = self.config()
+        config['hooks']['before'] = [{'argv': ['/bin/sh', '-c', 'printf partial; sleep 5'],
+                                      'timeout_seconds': 0.05, 'on_failure': 'stop'}]
+        started = time.monotonic()
+        result = self.run_shell('dash', self.artifact(config), '--plain')
+        self.assertLess(time.monotonic() - started, 3)
+        self.assertIn(result.returncode, (124, 137))
+        self.assertEqual(result.stdout, 'partial')
+        self.assertIn('hook 1 failed', result.stderr)
+
+    def test_sh_rejects_invalid_width_before_hooks_or_arithmetic(self):
+        config = self.config()
+        path = self.artifact(config)
+        for value in ('$(id)', '-1', '999999999999999999999999', '12', '241'):
+            with self.subTest(value=value):
+                result = self.run_shell('dash', path, '--width', value)
+                self.assertEqual(result.returncode, 2)
+                self.assertEqual(result.stdout, '')
+
+    @unittest.skipUnless(shutil.which('zsh'), 'Zsh is not installed')
+    def test_zsh_launcher_matches_the_shared_bash_demo(self):
+        bash_config = self.config('bash')
+        zsh_config = self.config('zsh')
+        bash = self.artifact(bash_config)
+        zsh = self.artifact(zsh_config)
+        expected = self.run_shell('bash', bash, '--demo', '--plain', '--ascii')
+        actual = self.run_shell('zsh', zsh, '--demo', '--plain', '--ascii')
+        self.assertEqual(expected.returncode, 0, expected.stderr)
+        self.assertEqual(actual.returncode, 0, actual.stderr)
+        self.assertEqual(actual.stdout, expected.stdout)
+        self.assertEqual(motd.extract_config(zsh.read_text())['shell'], 'zsh')
+
+    @unittest.skipUnless(shutil.which('zsh'), 'Zsh is not installed')
+    def test_zsh_before_and_after_hooks_are_not_repeated_by_bash_workers(self):
+        config = self.config('zsh')
+        trace = self.root / 'zsh-hook-trace'
+        for phase in ('before', 'after'):
+            config['hooks'][phase] = [{
+                'argv': ['/bin/sh', '-c', 'printf "%s\\n" ' + shlex.quote(phase)
+                         + ' >> ' + shlex.quote(str(trace))],
+                'timeout_seconds': 1, 'on_failure': 'stop'}]
+        path = self.artifact(config)
+        result = self.run_shell('zsh', path, '--demo', '--plain')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertFalse(trace.exists())
+        result = self.run_shell('zsh', path, '--plain')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(trace.read_text().splitlines(), ['before', 'after'])
+
+    def test_zsh_launcher_does_not_reexec_forever_for_inherited_version_text(self):
+        path = self.artifact(self.config('zsh'))
+        environment = os.environ.copy()
+        environment['ZSH_VERSION'] = 'inherited-environment-text'
+        result = subprocess.run(['bash', str(path), '--demo', '--plain'],
+                                capture_output=True, text=True, timeout=3, env=environment)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('HOME LAB', result.stdout)
+
+    def test_startup_guards_require_interactivity_and_run_once(self):
+        for shell in ('sh', 'zsh'):
+            if not shutil.which(shell): continue
+            with self.subTest(shell=shell):
+                config = self.config(shell)
+                config['frequency'] = 'interactive'
+                script = self.root / f"quoted {shell}'s output"
+                script.write_text("#!/bin/sh\nprintf '%s\\n' COMPAT-DISPLAY\n")
+                startup = self.root / f'{shell}rc'
+                startup.write_text(motd.shell_block(config, str(script)))
+                command = '. ' + shlex.quote(str(startup)) + '; . ' + shlex.quote(str(startup))
+                code, text = self.pty_shell(shell, command, interactive=False)
+                self.assertEqual(code, 0, text)
+                self.assertNotIn('COMPAT-DISPLAY', text)
+                code, text = self.pty_shell(shell, command)
+                self.assertEqual(code, 0, text)
+                self.assertEqual(text.count('COMPAT-DISPLAY'), 1, text)
+
+    @unittest.skipUnless(shutil.which('zsh'), 'Zsh is not installed')
+    def test_zsh_login_frequency_does_not_run_in_nonlogin_interactive_shell(self):
+        config = self.config('zsh')
+        script = self.root / 'zsh-output'
+        script.write_text("#!/bin/sh\nprintf '%s\\n' LOGIN-ONLY-DISPLAY\n")
+        startup = self.root / 'zshrc'
+        startup.write_text(motd.shell_block(config, str(script)))
+        command = '. ' + shlex.quote(str(startup))
+        code, text = self.pty_shell('zsh', command)
+        self.assertEqual(code, 0, text)
+        self.assertNotIn('LOGIN-ONLY-DISPLAY', text)
+        code, text = self.pty_shell('zsh', command, login=True)
+        self.assertEqual(code, 0, text)
+        self.assertEqual(text.count('LOGIN-ONLY-DISPLAY'), 1, text)
+
+    def test_zsh_default_startup_files_respect_zdotdir(self):
+        directory = self.root / 'zsh-settings'
+        directory.mkdir()
+        config = self.config('zsh')
+        with patch.object(Path, 'home', return_value=self.root), patch.dict(os.environ, {'ZDOTDIR': str(directory)}):
+            plan = motd.installation_plan(config, motd.generate_artifact(config), state_dir=self.state)
+        self.assertEqual(set(plan['metadata']['hook_paths']),
+                         {str(directory / '.zshrc'), str(directory / '.zprofile')})
+        self.assertFalse(Path(self.state).exists())
+        self.assertFalse((directory / '.zshrc').exists())
+
+    def test_zsh_refuses_empty_or_relative_zdotdir(self):
+        config = self.config('zsh')
+        for value in ('', 'relative-directory'):
+            with self.subTest(value=value), patch.dict(os.environ, {'ZDOTDIR': value}), self.assertRaises(motd.MotdError):
+                motd.installation_plan(config, motd.generate_artifact(config), state_dir=self.state)
+
+    def test_sh_interactive_frequency_requires_explicit_startup_location(self):
+        config = self.config()
+        config['frequency'] = 'interactive'
+        with patch.object(Path, 'home', return_value=self.root), self.assertRaises(motd.MotdError):
+            motd.installation_plan(config, motd.generate_artifact(config), state_dir=self.state)
+
+    def test_sh_and_zsh_installation_restore_explicit_startup_files(self):
+        for shell in ('sh', 'zsh'):
+            with self.subTest(shell=shell):
+                config = self.config(shell)
+                config['name'] = 'lifecycle-' + shell
+                startup = self.root / (shell + 'rc')
+                original = '# Existing local configuration\n'
+                startup.write_text(original)
+                destination = self.root / ('installed.' + shell)
+                plan = motd.installation_plan(config, motd.generate_artifact(config),
+                                              destination=str(destination), shell_file=str(startup),
+                                              state_dir=self.state)
+                motd.tx_apply(plan)
+                self.assertTrue(destination.exists())
+                self.assertIn('# >>> motd', startup.read_text())
+                motd.tx_apply(motd.uninstall_plan(config['name'], self.state))
+                self.assertFalse(destination.exists())
+                self.assertEqual(startup.read_text(), original)
+
+
+if __name__ == '__main__':
+    unittest.main()

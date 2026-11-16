@@ -1,20 +1,38 @@
 {
-  "generator": "0.1.0",
+  "generator": "0.2.0",
   "examples": [
     {
       "preset": "workshop",
       "path": "examples/workshop.bash",
-      "sha256": "29a9d1bc640e32a27034dc4c800a12d9b108865914438cee888fe4b9a766e6ef"
+      "sha256": "576c01764d3a223ec51c540774c3047d9091dea50df86e26f96d350206b63e52"
     },
     {
       "preset": "home-lab",
       "path": "examples/home-lab.bash",
-      "sha256": "9f7f74b28ae42302c558f3c00b6f8d5065b5318db95fe5df637e738e0507fa78"
+      "sha256": "a0cb55e39ccc59fc3a022f8514a8632c895a221d7581762a5d233b99a8e1c267"
     },
     {
       "preset": "public-console",
       "path": "examples/public-console.issue",
       "sha256": "781f5cd19056f1014b61c223e9396ed617b81d6b97931dd2cd73a53e9e9f2699"
+    },
+    {
+      "preset": "workshop",
+      "shell": "zsh",
+      "path": "examples/workshop.zsh",
+      "sha256": "f61dbd6aeac6585ad3895c0987c7279592add74c521d4aba9e1c27131f97e38a"
+    },
+    {
+      "preset": "workshop",
+      "shell": "sh",
+      "path": "examples/workshop.sh",
+      "sha256": "06432e98f576e1632d00aeab54148dffb77027a9d7a80e403def35a2fdd77bb9"
+    },
+    {
+      "preset": "workshop",
+      "shell": "powershell",
+      "path": "examples/workshop.ps1",
+      "sha256": "95ccbab02c04b90b240b2210633c481dd2a214f65a9fc21b4c99bb9ab3eeec67"
     }
   ]
 }

@@ -12,8 +12,31 @@ jobs:
           python-version: '3.11'
       - run: python3 tools/embed_runtime.py --check
       - run: bash -n runtime/motd.bash
+      - run: sh -n runtime/motd.sh
+      - name: Install Zsh for interpreter and startup tests
+        run: sudo apt-get update && sudo apt-get install -y zsh
+      - name: Require native PowerShell coverage
+        run: pwsh -NoProfile -Command '$PSVersionTable.PSVersion.ToString()'
       - run: python3 -m unittest discover -s tests -v
         env:
           MOTD_TEST_WRITE_RECORD: '0'
       - run: python3 tools/build_examples.py
       - run: git diff --exit-code -- examples presets
+  powershell-windows:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        interpreter: [powershell, pwsh]
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.11'
+      - name: Verify native output in the selected PowerShell
+        shell: pwsh
+        run: |
+          $env:MOTD_TEST_POWERSHELL = (Get-Command '${{ matrix.interpreter }}' -CommandType Application).Source
+          & $env:MOTD_TEST_POWERSHELL -NoProfile -Command '$PSVersionTable | Format-List'
+          python -m unittest discover -s tests -p test_powershell.py -v
+          exit $LASTEXITCODE

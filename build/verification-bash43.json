@@ -1,0 +1,126 @@
+{
+  "schema_version": 1,
+  "verified_at_utc": "2026-11-16T11:10:07.920765+00:00",
+  "purpose": "Bash minimum-interpreter compatibility smoke",
+  "interpreter": {
+    "version": "GNU bash, version 4.3.0(1)-release (x86_64-unknown-linux-gnu)",
+    "binary_sha256": "62033d0d94602f79c5b5913d9c59b37039e44f4777bcc036738d12d9d4ae78fd"
+  },
+  "source_archive": {
+    "url": "https://ftp.gnu.org/gnu/bash/bash-4.3.tar.gz",
+    "sha256": "afc687a28e0e24dc21b988fa159ff9dbcf6b7caa92ade8645cc6d5605cd024d4",
+    "source_modifications": false,
+    "build_commands": [
+      "CFLAGS='-g -O2 -std=gnu89' ./configure --without-bash-malloc --disable-nls",
+      "make -j2"
+    ]
+  },
+  "environment": {
+    "os_release": {
+      "NAME": "Debian GNU/Linux",
+      "ID": "debian",
+      "PRETTY_NAME": "Debian GNU/Linux 13 (trixie)",
+      "VERSION_ID": "13",
+      "VERSION": "13 (trixie)",
+      "VERSION_CODENAME": "trixie",
+      "DEBIAN_VERSION_FULL": "13.6",
+      "HOME_URL": "https://www.debian.org/",
+      "SUPPORT_URL": "https://www.debian.org/support",
+      "BUG_REPORT_URL": "https://bugs.debian.org/"
+    },
+    "machine": "x86_64",
+    "python": "3.12.14"
+  },
+  "motd_version": "0.2.0",
+  "canonical_template": {
+    "path": "runtime/motd.bash",
+    "sha256": "43e779af32cc59e7ff53dbfeee0576701e432a29a5156aa99b953faafaf7df68",
+    "matches_embedded_template": true
+  },
+  "generated_artifact": {
+    "preset": "workshop",
+    "shell": "bash",
+    "config_sha256": "eb3b58853b1b4a5327e103fb38d1ae8e62c67f4eb2c6b9853d304a20ccf76baa",
+    "sha256": "576c01764d3a223ec51c540774c3047d9091dea50df86e26f96d350206b63e52",
+    "matches_tracked_example": "examples/workshop.bash"
+  },
+  "checks": [
+    {
+      "name": "syntax",
+      "argv": [
+        "<bash-4.3.0>",
+        "-n",
+        "<generated-workshop.bash>"
+      ],
+      "exit_code": 0,
+      "stdout_lines": 0,
+      "stderr": "",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "synthetic-ascii",
+      "argv": [
+        "<bash-4.3.0>",
+        "--noprofile",
+        "--norc",
+        "<generated-workshop.bash>",
+        "--demo",
+        "--plain",
+        "--ascii",
+        "--width",
+        "132",
+        "--rows",
+        "40"
+      ],
+      "exit_code": 0,
+      "stdout_lines": 35,
+      "stderr": "",
+      "stdout_sha256": "9ebd97b861ec219cd9d2ac91f7f3fa59b13bd756f6ece98f2ea54c3fd7d8d4c2"
+    },
+    {
+      "name": "synthetic-alerts",
+      "argv": [
+        "<bash-4.3.0>",
+        "--noprofile",
+        "--norc",
+        "<generated-workshop.bash>",
+        "--demo-alerts",
+        "--plain",
+        "--width",
+        "100",
+        "--rows",
+        "40"
+      ],
+      "exit_code": 0,
+      "stdout_lines": 37,
+      "stderr": "",
+      "stdout_sha256": "873557c84f143cd92a435282d5412f55ac82e0f065341bf2d03dde4f2ae2fb2b"
+    },
+    {
+      "name": "direct-live-worker",
+      "argv": [
+        "<bash-4.3.0>",
+        "--noprofile",
+        "--norc",
+        "<generated-workshop.bash>",
+        "--_worker",
+        "--plain",
+        "--width",
+        "100",
+        "--rows",
+        "40"
+      ],
+      "exit_code": 0,
+      "stdout_lines": 27,
+      "stderr": "",
+      "stdout_sha256": "7b168c146ba9db7513591ea0a8b8337c9d9593e7be4ee07eff8c03c91da5d17a"
+    }
+  ],
+  "limitations": [
+    "Runs Bash 4.3 on the current Linux/container environment, not an old Linux distribution.",
+    "Smoke coverage only; does not certify every version between 4.3 and current Bash.",
+    "The live worker is invoked directly to prevent the outer bootstrap from testing the host /bin/bash instead.",
+    "No real SSH, getty, PAM or login-file installation performed.",
+    "Observed output hashes identify this run; live system values are not reproducible fixtures."
+  ]
+}

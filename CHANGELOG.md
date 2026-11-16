@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.2.0 - 2026-11-16
+
+- Page-by-page terminal wizard with synthetic previews, grouped settings,
+  navigation and a line-interface fallback; `--ui auto|screen|line`.
+- Additive schema1 `shell` setting and `--shell bash|zsh|sh|powershell`.
+- Zsh launcher/integration reuses the Bash renderer and declares that dependency.
+- Reduced native POSIX-sh and native PowerShell output templates. Collector
+  coverage and version boundaries are documented rather than assumed identical.
+- Generic static `text` export for explicitly chosen consumers/destinations.
+- Compatibility and surface specification covering other gettys, PAM, SSH,
+  existing Telnet sessions, RDP, Windows profiles/policy and legacy platforms.
+
+The configurator and transaction engine remain Linux-specific. Native PowerShell
+generation does not imply automatic Windows or PowerShell-profile installation.
+Exact tested interpreters and host limitations belong in the verification record.
+
 ## 0.1.0 - 2026-11-16
 
 Initial development version for `Julesc013/motd`.

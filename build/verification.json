@@ -1,41 +1,59 @@
 {
-  "version": "0.1.0",
-  "verified_at_utc": "2026-11-16T09:58:29.851753+00:00",
-  "command": "python3 -m unittest discover -s tests -v",
-  "tests_run": 84,
-  "passed": 83,
+  "version": "0.2.0",
+  "verified_at_utc": "2026-11-16T11:11:30.337810+00:00",
+  "command": "MOTD_TEST_BASH32=<GNU Bash 3.2.0> MOTD_TEST_POWERSHELL=<PowerShell 7.7.0> python3 -m unittest discover -s tests -v",
+  "tests_run": 128,
+  "passed": 127,
   "failures": 0,
   "errors": 0,
-  "skipped": 1,
-  "observed_suite_seconds": 6.493,
-  "skip_reason": "Numeric UID/GID restoration requires root; environment was unprivileged.",
+  "skipped": [
+    {
+      "test": "test_existing_numeric_ownership_is_preserved_and_restored (test_transactions.TransactionTests.test_existing_numeric_ownership_is_preserved_and_restored)",
+      "reason": "numeric ownership restoration requires root"
+    }
+  ],
+  "observed_suite_seconds": 16.984,
   "python": "3.12.14",
-  "platform": "Linux",
+  "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
   "machine": "x86_64",
-  "configurator_sha256": "73023cd9be8f8552ac38834ed3c399bdc8d8ec21aaa3d79f1af8a0a0856fea39",
-  "runtime_sha256": "dab1a421c9ef2169358a02f27450428ddc6978bc7d5a129a318aa7b92da1d644",
+  "configurator_sha256": "6dafeb3f8bd81ea363a63931a38806ecab2a29aeeb84c0eb52b1bdf957201874",
+  "canonical_runtimes_sha256": {
+    "runtime/motd.bash": "43e779af32cc59e7ff53dbfeee0576701e432a29a5156aa99b953faafaf7df68",
+    "runtime/motd.ps1": "695832935f82973d8e2aaa136dc1201a5a2af1f7367eb6efa7a9dd3f025042f5",
+    "runtime/motd.sh": "91eb18e8a42fa2c2efd6bfe162973eebdfeed8c9bc491956ae90fe109c35e7a1"
+  },
   "test_sources_sha256": {
-    "tests/test_cli.py": "c4fa43022b6958c1165734dbff330aee01dea18a23af3c631a8cfa3d3e3d64af",
+    "tests/test_cli.py": "4f06251027c93eb1b2c85f6364d3dad2ce9d47d6361161c1a431f69afba6af09",
     "tests/test_generation.py": "cb7e5bd3191bd1c51824a7b0bc0915aa98560b57518865c7303b30b4409da16b",
     "tests/test_installation.py": "0c207ca08c72d4d52b67a5e7924151fac58af6f366af97fb8762ac504a98b482",
-    "tests/test_runtime.py": "a48c309b92d2b7b86f7cc8a762c4420ce47ef6af00c84e8487ff22ff70c167cd",
-    "tests/test_transactions.py": "f260a911d50972c3de1d59d85e4c2d15c6a27d3b3af86e082c3b149716ef6871"
+    "tests/test_powershell.py": "823f2e55db226a1680aa246dbe2676a9b9459e99df567666ecfebc2bbd2376ef",
+    "tests/test_runtime.py": "7208f2af79659adac1f97df65b3d37be9b84d2ecdd516f270fe6a505b07423e3",
+    "tests/test_shell_compatibility.py": "cc83919525856945ae312f1bae98377862c3c58d313dc763aff61a879e84ff46",
+    "tests/test_transactions.py": "f260a911d50972c3de1d59d85e4c2d15c6a27d3b3af86e082c3b149716ef6871",
+    "tests/test_wizard.py": "74730435da7b594535c0bbdae423c659ad319fdad3a870a2c31d4dd91d1a37e6"
+  },
+  "interpreters": {
+    "bash": "GNU bash, version 5.2.37(1)-release (x86_64-pc-linux-gnu)",
+    "zsh": "zsh 5.9 (x86_64-debian-linux-gnu)",
+    "portable_sh": "dash plus actual GNU Bash 3.2.0",
+    "powershell": "PowerShell 7.7.0 on Linux"
   },
   "checks": [
-    "Python compilation",
-    "Bash syntax",
-    "Embedded template matches canonical runtime",
-    "TOML recipes and metadata recovery",
-    "Generation and hooks",
-    "PTY wizard smoke",
-    "Temporary-file lifecycle and crash injection",
-    "Noninteractive Bash guards",
-    "Examples rendered from synthetic fixtures; SVG gallery visually inspected"
+    "Canonical templates match readable embedded copies",
+    "Native Bash, Zsh, dash and PowerShell execution",
+    "Bash 3.2 guard before hooks and portable fallback",
+    "Bash 4.3 minimum-version smoke (separate record)",
+    "Quoted argv, hook deadlines and preview suppression",
+    "Line and screen wizard PTY preview/save/build/cancel",
+    "Screen resizing fallback, theme redraw, back navigation, invalid-value retention",
+    "Temporary-file install/uninstall, drift, undo/redo and injected crash recovery",
+    "SVG wizard gallery rendered by actual UI and PNG visually inspected"
   ],
   "limits": [
-    "No real SSH/PAM/agetty/systemd integration was installed or proven.",
-    "No reference-host performance benchmark or physical power-loss test.",
-    "No root-only ownership restoration executed.",
-    "ACLs, xattrs and security labels are outside the preservation contract."
+    "Windows PowerShell5.1/7 evidence belongs to Windows CI jobs, not this Linux run.",
+    "No real SSH/PAM/agetty/Telnet/RDP installation was performed.",
+    "No current reference-host latency benchmark or complete historical OS matrix.",
+    "Root numeric ownership restoration skipped; ACLs/xattrs/security labels remain outside restoration contract.",
+    "PowerShell and portable sh have reduced collector coverage; PowerShell lacks the Bash whole-render deadline."
   ]
 }

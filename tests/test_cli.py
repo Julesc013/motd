@@ -5,6 +5,9 @@ The PTY smoke only previews, saves, builds, and cancels.
 """
 from contextlib import redirect_stderr, redirect_stdout
 import errno
+import fcntl
+import struct
+import termios
 import importlib.util
 import io
 import json
@@ -215,8 +218,16 @@ class CliTests(unittest.TestCase):
 
     @unittest.skipUnless(os.name == "posix" and shutil.which("bash"), "PTY smoke requires POSIX and Bash")
     def test_wizard_preview_save_build_cancel_smoke(self):
+        self.wizard_smoke('line')
+
+    @unittest.skipUnless(os.name == "posix" and shutil.which("bash"), "PTY smoke requires POSIX and Bash")
+    def test_screen_wizard_preview_save_build_cancel_smoke(self):
+        self.wizard_smoke('screen')
+
+    def wizard_smoke(self, mode):
         master, slave = pty.openpty()
-        process = subprocess.Popen([sys.executable, str(SOURCE), "wizard", "--state-dir", self.state],
+        fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack('HHHH', 38, 100, 0, 0))
+        process = subprocess.Popen([sys.executable, str(SOURCE), "wizard", "--ui", mode, "--state-dir", self.state],
                                    cwd=self.root, stdin=slave, stdout=slave, stderr=slave,
                                    start_new_session=True)
         os.close(slave)
@@ -258,26 +269,30 @@ class CliTests(unittest.TestCase):
                 ("Choice [1]:", "1"),  # Create.
                 ("Choice [1]:", "1"),  # User scope, isolated state directory.
                 ("Choice [1]:", "1"),  # Workshop preset.
-                ("Configuration/installation name", "wizard-test"),
-                ("Choice [1]:", "1"),  # Bash output.
-                ("Heading", "Wizard smoke"),
-                ("Choice [1]:", "1"),  # All audiences.
-                ("Choice [1]:", "1"),  # Login frequency.
-                ("Site label", ""),
-                ("Choice [1]:", "1"),  # Cyan theme.
-                ("Maximum columns", "80"),
-                ("Rows including one prompt row", "25"),
-                ("Sections, comma separated", ""),
-                ("Required systemd units", "-"),
-                ("Add a displayed notice", ""),
-                ("before command/program/script call?", "n"),
-                ("after command/program/script call?", "n"),
+                *([("Choice [1]:", "")] if mode == 'screen' else []),
+                ("Page choice:", "1"),  # Destination: edit name.
+                ("Name [", "wizard-test"),
+                ("Page choice:", "n"),  # Appearance.
+                ("Page choice:", "1"),
+                ("Heading [", "Wizard smoke"),
+                ("Page choice:", "3"),  # Theme.
+                ("Choice [1]:", "2"),  # Green.
+                *([("Choice [2]:", "")] if mode == 'screen' else []),
+                ("Page choice:", "4"),
+                ("Maximum columns [", "80"),
+                ("Page choice:", "n"),  # Sections.
+                ("Page choice:", "n"),  # Content.
+                ("Page choice:", "n"),  # Hooks.
+                ("Page choice:", "n"),  # Review.
                 ("Choice [1]:", "1"),  # Synthetic preview.
+                *([("Preview:", "")] if mode == 'screen' else []),
                 ("Choice [1]:", "3"),  # Save recipe.
                 ("Recipe path", str(recipe)),
+                *([("Press Enter to return to the wizard:", "")] if mode == 'screen' else []),
                 ("Choice [1]:", "4"),  # Build portable output.
                 ("Output path", str(output)),
-                ("Choice [1]:", "6"),  # Cancel; do not install.
+                *([("Press Enter to return to the wizard:", "")] if mode == 'screen' else []),
+                ("Choice [1]:", "7"),  # Cancel; do not install.
             ]:
                 respond(prompt, answer)
             while process.poll() is None and time.monotonic() < deadline:
@@ -287,9 +302,14 @@ class CliTests(unittest.TestCase):
                 pass
             text = transcript.decode("utf-8", errors="replace")
             self.assertEqual(process.returncode, 0, text[-4000:])
-            self.assertIn("Synthetic demonstration", text)
+            if mode == 'screen':
+                self.assertIn('PREVIEW | synthetic data', text)
+                self.assertIn('\x1b[2J\x1b[H', text)
+            else:
+                self.assertIn("Synthetic demonstration", text)
             self.assertNotIn("# MOTD-BODY-BEGIN", text, "Saving a recipe dumped the executable to the terminal")
             self.assertEqual(motd.load_config(recipe)["name"], "wizard-test")
+            self.assertEqual(motd.load_config(recipe)["display"]["theme"], "green")
             self.assertEqual(motd.extract_config(output.read_text()), motd.load_config(recipe))
             self.assertEqual(self.shell.read_bytes(), self.original_shell)
             self.assertFalse(self.output.exists())

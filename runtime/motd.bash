@@ -1,5 +1,5 @@
 #!/bin/bash
-# MOTD Bash runtime 0.1.0 | derived from Workshop MOTD 1.2.0, 2026-11-16.
+# MOTD Bash runtime 0.2.0 | derived from Workshop MOTD 1.2.0, 2026-11-16.
 # Bash 4.3+ and GNU timeout; optional GNU df, procps ps, iproute2, systemd.
 # Standalone output: generate settings with motd.py, then use --demo or --help.
 # No daemon, installation side effects, network requests, recursive disk scans,
@@ -10,6 +10,10 @@ if ((BASH_VERSINFO[0]<4 || (BASH_VERSINFO[0]==4 && BASH_VERSINFO[1]<3))); then
     printf '%s\n' 'MOTD status needs Bash 4.3 or newer.' >&2
     exit 0
 fi
+
+# Generated explicit hooks belong after the version guard: unsupported Bash
+# must return to the login shell before any configured command can execute.
+# @MOTD_HOOKS@
 
 # =========================== 1. SETTINGS =====================================
 # Legacy internal value retained for tested collectors/components. Public output
@@ -259,7 +263,7 @@ DISK_IDS=() ATTENTION=() HEALTH_NOTES=() HOST_IPS=()
 FASTFETCH_TEXT='' OUTPUT='' REPLY=''
 DEMO=0 PLAIN=0 ASCII=0 WIDTH_OVERRIDE='' FETCH_OVERRIDE='' THEME_OVERRIDE=''
 PROC_ROOT=/proc SYS_ROOT=/sys ETC_ROOT=/etc RUN_ROOT=/run
-VERSION=0.1.0
+VERSION=0.2.0
 
 usage() {
     printf '%s\n' \
@@ -597,7 +601,7 @@ prepare_attention() {
         ATTENTION+=('INFO|Collection budget reached; omitted measurements remain unknown.')
     fi
     if ((${MODEL[deadline_fallback]:-0})); then
-        ATTENTION+=('WARN|Display deadline reached; showing fresh local counters only. Retry for details.')
+        ATTENTION+=('WARN|Full display unavailable (deadline or helper failure); fresh local counters only.')
     fi
     if ((SHOW_JOURNAL)); then
         if [[ ${MODEL[journal_state]} == ok ]]; then

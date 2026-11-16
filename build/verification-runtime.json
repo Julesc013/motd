@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "started_at_utc": "2026-11-16T09:57:29.314813+00:00",
-  "completed_at_utc": "2026-11-16T09:57:33.045804+00:00",
+  "started_at_utc": "2026-11-16T11:11:25.913377+00:00",
+  "completed_at_utc": "2026-11-16T11:11:28.913475+00:00",
   "scope": "Synthetic demos, local execution smoke checks and controlled killable faults only.",
   "not_validated": [
     "real Debian SSH/PAM/agetty integration",
@@ -12,9 +12,9 @@
   ],
   "python_version": "3.12.14",
   "bash_version": "GNU bash, version 5.2.37(1)-release (x86_64-pc-linux-gnu)",
-  "configurator_sha256": "73023cd9be8f8552ac38834ed3c399bdc8d8ec21aaa3d79f1af8a0a0856fea39",
+  "configurator_sha256": "6dafeb3f8bd81ea363a63931a38806ecab2a29aeeb84c0eb52b1bdf957201874",
   "configurator_unchanged_during_suite": true,
-  "template_sha256": "dab1a421c9ef2169358a02f27450428ddc6978bc7d5a129a318aa7b92da1d644",
+  "template_sha256": "43e779af32cc59e7ff53dbfeee0576701e432a29a5156aa99b953faafaf7df68",
   "template_matches_runtime_file": true,
   "summary": {
     "tests_run": 15,
@@ -95,9 +95,9 @@
         "25"
       ],
       "returncode": 0,
-      "elapsed_ms": 50.876,
+      "elapsed_ms": 38.067,
       "output_rows": 24,
-      "deadline_fallback": false
+      "partial_fallback": false
     },
     {
       "case": "geometry-40x25---demo-alerts",
@@ -109,9 +109,9 @@
         "25"
       ],
       "returncode": 0,
-      "elapsed_ms": 57.875,
+      "elapsed_ms": 53.06,
       "output_rows": 24,
-      "deadline_fallback": false
+      "partial_fallback": false
     },
     {
       "case": "geometry-80x25---demo",
@@ -123,9 +123,9 @@
         "25"
       ],
       "returncode": 0,
-      "elapsed_ms": 95.761,
+      "elapsed_ms": 56.172,
       "output_rows": 24,
-      "deadline_fallback": false
+      "partial_fallback": false
     },
     {
       "case": "geometry-80x25---demo-alerts",
@@ -137,9 +137,9 @@
         "25"
       ],
       "returncode": 0,
-      "elapsed_ms": 59.221,
+      "elapsed_ms": 60.526,
       "output_rows": 24,
-      "deadline_fallback": false
+      "partial_fallback": false
     },
     {
       "case": "geometry-100x32---demo",
@@ -151,9 +151,9 @@
         "32"
       ],
       "returncode": 0,
-      "elapsed_ms": 60.688,
+      "elapsed_ms": 50.509,
       "output_rows": 30,
-      "deadline_fallback": false
+      "partial_fallback": false
     },
     {
       "case": "geometry-100x32---demo-alerts",
@@ -165,9 +165,9 @@
         "32"
       ],
       "returncode": 0,
-      "elapsed_ms": 69.316,
+      "elapsed_ms": 53.308,
       "output_rows": 31,
-      "deadline_fallback": false
+      "partial_fallback": false
     },
     {
       "case": "geometry-132x50---demo",
@@ -179,9 +179,9 @@
         "50"
       ],
       "returncode": 0,
-      "elapsed_ms": 79.154,
+      "elapsed_ms": 59.074,
       "output_rows": 39,
-      "deadline_fallback": false
+      "partial_fallback": false
     },
     {
       "case": "geometry-132x50---demo-alerts",
@@ -193,16 +193,16 @@
         "50"
       ],
       "returncode": 0,
-      "elapsed_ms": 138.285,
+      "elapsed_ms": 51.632,
       "output_rows": 42,
-      "deadline_fallback": false
+      "partial_fallback": false
     },
     {
       "case": "cli-preview-hooks-skipped",
       "source": "--config",
       "live": false,
       "returncode": 0,
-      "elapsed_ms": 373.502,
+      "elapsed_ms": 208.233,
       "output_rows": 24
     },
     {
@@ -210,7 +210,7 @@
       "source": "--config",
       "live": true,
       "returncode": 0,
-      "elapsed_ms": 399.209,
+      "elapsed_ms": 295.128,
       "output_rows": 22
     },
     {
@@ -218,7 +218,7 @@
       "source": "--artifact",
       "live": false,
       "returncode": 0,
-      "elapsed_ms": 230.324,
+      "elapsed_ms": 247.252,
       "output_rows": 24
     },
     {
@@ -226,7 +226,7 @@
       "source": "--artifact",
       "live": true,
       "returncode": 0,
-      "elapsed_ms": 435.19,
+      "elapsed_ms": 324.401,
       "output_rows": 22
     },
     {
@@ -239,9 +239,9 @@
         "50"
       ],
       "returncode": 0,
-      "elapsed_ms": 171.733,
+      "elapsed_ms": 167.163,
       "output_rows": 35,
-      "deadline_fallback": true
+      "partial_fallback": true
     },
     {
       "case": "test_help_has_one_layout_and_no_old_mode_options",
@@ -249,9 +249,9 @@
         "--help"
       ],
       "returncode": 0,
-      "elapsed_ms": 15.858,
+      "elapsed_ms": 14.952,
       "output_rows": 20,
-      "deadline_fallback": false
+      "partial_fallback": false
     },
     {
       "case": "test_home_lab_and_plain_ascii",
@@ -265,9 +265,9 @@
         "25"
       ],
       "returncode": 0,
-      "elapsed_ms": 38.239,
+      "elapsed_ms": 35.0,
       "output_rows": 15,
-      "deadline_fallback": false
+      "partial_fallback": false
     },
     {
       "case": "test_hook_argv_does_not_implicitly_execute_shell_text",
@@ -277,9 +277,9 @@
         "80"
       ],
       "returncode": 0,
-      "elapsed_ms": 165.405,
+      "elapsed_ms": 163.061,
       "output_rows": 23,
-      "deadline_fallback": false
+      "partial_fallback": false
     },
     {
       "case": "test_hook_stop_policy_preserves_exit_code",
@@ -287,9 +287,9 @@
         "--plain"
       ],
       "returncode": 7,
-      "elapsed_ms": 10.035,
+      "elapsed_ms": 8.522,
       "output_rows": 0,
-      "deadline_fallback": false
+      "partial_fallback": false
     },
     {
       "case": "test_hooks_skip_demos_and_informational_commands",
@@ -297,9 +297,9 @@
         "--demo"
       ],
       "returncode": 0,
-      "elapsed_ms": 60.562,
+      "elapsed_ms": 56.126,
       "output_rows": 24,
-      "deadline_fallback": false
+      "partial_fallback": false
     },
     {
       "case": "test_hooks_skip_demos_and_informational_commands",
@@ -307,9 +307,9 @@
         "--demo-alerts"
       ],
       "returncode": 0,
-      "elapsed_ms": 57.236,
+      "elapsed_ms": 59.259,
       "output_rows": 24,
-      "deadline_fallback": false
+      "partial_fallback": false
     },
     {
       "case": "test_hooks_skip_demos_and_informational_commands",
@@ -317,9 +317,9 @@
         "--help"
       ],
       "returncode": 0,
-      "elapsed_ms": 25.554,
+      "elapsed_ms": 18.089,
       "output_rows": 20,
-      "deadline_fallback": false
+      "partial_fallback": false
     },
     {
       "case": "test_hooks_skip_demos_and_informational_commands",
@@ -327,9 +327,9 @@
         "--version"
       ],
       "returncode": 0,
-      "elapsed_ms": 17.019,
+      "elapsed_ms": 19.534,
       "output_rows": 1,
-      "deadline_fallback": false
+      "partial_fallback": false
     },
     {
       "case": "test_hooks_skip_demos_and_informational_commands",
@@ -337,9 +337,9 @@
         "--list-sections"
       ],
       "returncode": 0,
-      "elapsed_ms": 18.071,
+      "elapsed_ms": 23.531,
       "output_rows": 9,
-      "deadline_fallback": false
+      "partial_fallback": false
     },
     {
       "case": "test_live_hooks_run_once_around_supervised_display",
@@ -349,9 +349,9 @@
         "80"
       ],
       "returncode": 0,
-      "elapsed_ms": 247.75,
+      "elapsed_ms": 173.208,
       "output_rows": 26,
-      "deadline_fallback": false
+      "partial_fallback": false
     },
     {
       "case": "test_no_hooks_flag_skips_all_calls",
@@ -362,9 +362,9 @@
         "80"
       ],
       "returncode": 0,
-      "elapsed_ms": 174.018,
+      "elapsed_ms": 151.312,
       "output_rows": 22,
-      "deadline_fallback": false
+      "partial_fallback": false
     },
     {
       "case": "test_runtime_rejects_non_numeric_options_and_removed_modes",
@@ -374,21 +374,21 @@
         "1+1"
       ],
       "returncode": 2,
-      "elapsed_ms": 15.855,
+      "elapsed_ms": 16.589,
       "output_rows": 0,
-      "deadline_fallback": false
+      "partial_fallback": false
     },
     {
       "case": "test_runtime_rejects_non_numeric_options_and_removed_modes",
       "arguments": [
         "--demo",
         "--rows",
-        "$(touch /tmp/motd-runtime-n6uk6nfr/argument-injection)"
+        "$(touch /tmp/motd-runtime-s1tbjzkf/argument-injection)"
       ],
       "returncode": 2,
-      "elapsed_ms": 23.952,
+      "elapsed_ms": 15.391,
       "output_rows": 0,
-      "deadline_fallback": false
+      "partial_fallback": false
     },
     {
       "case": "test_runtime_rejects_non_numeric_options_and_removed_modes",
@@ -398,9 +398,9 @@
         "0"
       ],
       "returncode": 2,
-      "elapsed_ms": 17.058,
+      "elapsed_ms": 15.186,
       "output_rows": 0,
-      "deadline_fallback": false
+      "partial_fallback": false
     },
     {
       "case": "test_runtime_rejects_non_numeric_options_and_removed_modes",
@@ -409,9 +409,9 @@
         "--verbose"
       ],
       "returncode": 2,
-      "elapsed_ms": 34.792,
+      "elapsed_ms": 12.639,
       "output_rows": 0,
-      "deadline_fallback": false
+      "partial_fallback": false
     },
     {
       "case": "test_runtime_rejects_non_numeric_options_and_removed_modes",
@@ -420,9 +420,9 @@
         "--concise"
       ],
       "returncode": 2,
-      "elapsed_ms": 17.671,
+      "elapsed_ms": 13.001,
       "output_rows": 0,
-      "deadline_fallback": false
+      "partial_fallback": false
     },
     {
       "case": "test_terminal_size_handoff_and_configured_width_cap",
@@ -433,9 +433,9 @@
         "20 40"
       ],
       "returncode": 0,
-      "elapsed_ms": 47.595,
+      "elapsed_ms": 50.003,
       "output_rows": 19,
-      "deadline_fallback": false
+      "partial_fallback": false
     },
     {
       "case": "test_terminal_size_handoff_and_configured_width_cap",
@@ -448,9 +448,9 @@
         "25"
       ],
       "returncode": 0,
-      "elapsed_ms": 49.118,
+      "elapsed_ms": 48.833,
       "output_rows": 24,
-      "deadline_fallback": false
+      "partial_fallback": false
     },
     {
       "case": "test_timed_out_hook_keeps_partial_output_and_runs_after_once",
@@ -460,9 +460,9 @@
         "80"
       ],
       "returncode": 0,
-      "elapsed_ms": 237.755,
+      "elapsed_ms": 209.686,
       "output_rows": 23,
-      "deadline_fallback": false
+      "partial_fallback": false
     },
     {
       "case": "test_visibility_and_custom_order",
@@ -473,9 +473,9 @@
         "80"
       ],
       "returncode": 0,
-      "elapsed_ms": 38.489,
+      "elapsed_ms": 35.818,
       "output_rows": 15,
-      "deadline_fallback": false
+      "partial_fallback": false
     },
     {
       "case": "test_worker_reentry_skips_hooks",
@@ -486,9 +486,9 @@
         "80"
       ],
       "returncode": 0,
-      "elapsed_ms": 130.999,
+      "elapsed_ms": 135.731,
       "output_rows": 23,
-      "deadline_fallback": false
+      "partial_fallback": false
     }
   ],
   "timing_note": "Elapsed samples are smoke-test observations, not a performance benchmark."

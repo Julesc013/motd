@@ -4,6 +4,7 @@ schema_version = 1
 preset = "home-lab"
 name = "home-lab"
 target = "shell"
+shell = "bash"
 audience = "all"
 frequency = "login"
 public_text = "Authorised access only. Contact the system administrator."

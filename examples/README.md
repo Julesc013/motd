@@ -8,8 +8,13 @@ files contain clearly labelled synthetic fixture data.
 | --- | --- |
 | `workshop.bash` | Standalone workshop dashboard with CPU/RSS/I/O and shared-account session detail |
 | `home-lab.bash` | Same runtime with the home-lab title, theme and service policy |
+| `workshop.zsh` | Zsh entry point for the shared Bash dashboard; still requires compatible Bash |
+| `workshop.sh` | Reduced native POSIX sh display for older/minimal shells |
+| `workshop.ps1` | Native PowerShell baseline; collector coverage differs from Bash |
 | `public-console.issue` | Static console pre-login text, serialized for agetty |
 | `public-ssh-banner.txt` | Static public SSH pre-authentication text |
+| `public-notice.txt` | Generic public text without consumer-specific escape conversion |
+| `wizard-theme.svg` / `.png` | An actual wizard page rendered with synthetic data |
 
 Preview before attaching a Bash output:
 
@@ -33,3 +38,23 @@ Review the plan before confirming. The explicit trust flag acknowledges that
 this path installs executable bytes; embedded metadata is not an authenticity
 signature. Use `--config ../presets/workshop.toml` to regenerate from a recipe
 instead. Static imports are already serialized bytes and are copied unchanged.
+
+The interpreter variants use the same workshop recipe with `shell` changed.
+Unmodified preset hints adapt to PowerShell commands. Try their demonstrations:
+
+```sh
+zsh workshop.zsh --demo
+sh workshop.sh --demo
+pwsh -NoProfile -File workshop.ps1 -Demo
+```
+
+On Windows PowerShell, invoke `powershell -NoProfile -File workshop.ps1 -Demo`
+under the machine's existing execution policy. The configurator does not change
+that policy. See [coverage and supported attachment routes](../docs/compatibility.md).
+
+`tools/build_examples.py` renders the SVG wizard page using the real UI and a
+fixed 100-by-38 terminal. Its PNG is a review/export copy, regenerated with:
+
+```sh
+inkscape examples/wizard-theme.svg --export-type=png --export-filename=examples/wizard-theme.png
+```

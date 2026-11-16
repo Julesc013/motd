@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""MOTD: one configurator, reusable TOML recipes, standalone Bash output.
+"""MOTD: one configurator, reusable TOML recipes, standalone shell output.
 
 Read this file in order: CONFIGURATION -> GENERATION -> INSTALLATION PLANS ->
 TRANSACTIONS -> CLI/WIZARD. Only transaction apply functions change installed
@@ -23,12 +23,16 @@ import stat
 import subprocess
 import sys
 import tempfile
+import textwrap
+import unicodedata
 
 if sys.version_info < (3, 11):
     raise SystemExit('The configurator requires Python 3.11+. Generated Bash does not.')
 import tomllib
 
-VERSION = '0.1.0'
+VERSION = '0.2.0'
+SHELLS = ('bash', 'zsh', 'sh', 'powershell')
+TARGETS = ('shell', 'issue', 'ssh-banner', 'text')
 SECTION_IDS = ('system', 'resources', 'services', 'processes', 'sessions',
                'connections', 'attention', 'hints', 'io')
 PRESET_NAMES = ('workshop', 'home-lab', 'public-console')
@@ -41,12 +45,12 @@ class MotdError(Exception):
 
 # ======================= 1. CONFIGURATION (NO EXECUTION) ======================
 
-def preset_config(name='workshop'):
+def preset_config(name='workshop', shell='bash'):
     """Return independent data. Presets select settings, never duplicate code."""
     if name not in PRESET_NAMES:
         raise MotdError(f'Unknown preset: {name}')
     c = {
-        'schema_version': 1, 'preset': name, 'name': name, 'target': 'shell',
+        'schema_version': 1, 'preset': name, 'name': name, 'target': 'shell', 'shell': shell,
         'audience': 'all', 'frequency': 'login',
         'public_text': 'Authorised access only. Contact the system administrator.',
         'messages': [],
@@ -72,7 +76,21 @@ def preset_config(name='workshop'):
     elif name == 'public-console':
         c.update(target='issue', public_text='Authorised access only.\nContact the system administrator.')
         c['display'].update(title='SYSTEM CONSOLE', site='', theme='mono', width=80)
+    if shell == 'powershell':
+        c['hints'] = [
+            {'id': 'tasks', 'label': 'Tasks', 'command': 'Get-Process', 'note': 'Local processes'},
+            {'id': 'services', 'label': 'Services', 'command': 'Get-Service', 'note': 'Windows services'},
+            {'id': 'storage', 'label': 'Storage', 'command': 'Get-PSDrive -PSProvider FileSystem', 'note': 'Filesystem drives'},
+        ]
     return c
+
+
+def select_shell(config, shell):
+    """Change output type; adapt only untouched built-in hint sets."""
+    old = preset_config(config['preset'], config['shell'])['hints']
+    if config['hints'] == old:
+        config['hints'] = preset_config(config['preset'], shell)['hints']
+    config['shell'] = shell
 
 
 def _keys(table, allowed, label):
@@ -112,7 +130,7 @@ def validate_config(data):
     """
     if not isinstance(data, dict):
         raise MotdError('Configuration must be a TOML table')
-    base = preset_config(data.get('preset', 'workshop'))
+    base = preset_config(data.get('preset', 'workshop'), data.get('shell', 'bash'))
     _keys(data, base, 'top-level')
     for key, value in data.items():
         if key in ('display', 'services', 'collection', 'hooks'):
@@ -125,7 +143,7 @@ def validate_config(data):
         raise MotdError('Only schema_version = 1 is supported')
     if not isinstance(c['name'], str) or not re.fullmatch(r'[a-z][a-z0-9-]{0,39}', c['name']):
         raise MotdError('name must be a lower-case identifier, at most 40 characters')
-    for key, choices in [('target', ('shell', 'issue', 'ssh-banner')),
+    for key, choices in [('target', TARGETS), ('shell', SHELLS),
                          ('audience', ('all', 'ssh', 'local')),
                          ('frequency', ('login', 'interactive'))]:
         if c[key] not in choices:
@@ -209,7 +227,7 @@ def dump_config(config):
         return json.dumps(v, ensure_ascii=False)
     out = ['# MOTD recipe. Edit by hand or pass back to motd.py.',
            '# Hooks are explicit executable calls; hints are display-only text.']
-    for key in ('schema_version', 'preset', 'name', 'target', 'audience', 'frequency', 'public_text', 'messages'):
+    for key in ('schema_version', 'preset', 'name', 'target', 'shell', 'audience', 'frequency', 'public_text', 'messages'):
         out.append(f'{key} = {value(c[key])}')
     for table in ('display', 'services', 'collection'):
         out += ['', f'[{table}]']
@@ -301,19 +319,107 @@ def hook_wrapper(config):
     return '\n'.join(lines) + '\n'
 
 
+def portable_runtime_assignments(config):
+    """Render validated data as POSIX assignments and literal display calls."""
+    c = validate_config(config)
+    d = c['display']
+    settings = {'TITLE': d['title'], 'SITE_LABEL': d['site'], 'THEME': d['theme'],
+                'MAX_WIDTH': d['width'], 'ROWS': d['rows'],
+                'SECTIONS': ' '.join(d['sections'])}
+    lines = [f'{key}={shlex.quote(str(value))}' for key, value in settings.items()]
+    for name, items in [('motd_messages', c['messages']),
+                        ('motd_hints', [f"{h['label']}: {h['command']} - {h['note']}" for h in c['hints']])]:
+        lines.append(name + '() {')
+        lines.extend('    motd_line ' + shlex.quote(item) for item in items)
+        if not items: lines.append('    :')
+        lines.append('}')
+    return '\n'.join(lines) + '\n' + portable_hook_wrapper(c)
+
+
+def portable_hook_wrapper(config):
+    """Explicit argv, once per phase; no eval and no unbounded fallback.
+
+    A missing or incompatible timeout causes hook failure before its command is
+    run. The native sh renderer has no worker reinvocation, so it needs no Bash
+    array wrapper. The renderer suppresses hooks for demo and --no-hooks.
+    """
+    lines = []
+    for phase in ('before', 'after'):
+        lines += [f'motd_{phase}_hooks() {{',
+                  '    if [ "$MOTD_HOOKS_ENABLED" -ne 1 ]; then return 0; fi']
+        for index, hook in enumerate(config['hooks'][phase], 1):
+            argv = ' '.join(shlex.quote(argument) for argument in hook['argv'])
+            lines += ['    motd_hook_rc=0',
+                      '    if command -v timeout >/dev/null 2>&1; then',
+                      f'        timeout --kill-after=0.2s {hook["timeout_seconds"]}s {argv} || motd_hook_rc=$?',
+                      '    else motd_hook_rc=127; fi',
+                      '    if [ "$motd_hook_rc" -ne 0 ]; then',
+                      f'        printf "%s\\n" "MOTD {phase} hook {index} failed ($motd_hook_rc)." >&2']
+            if hook['on_failure'] == 'stop': lines.append('        return "$motd_hook_rc"')
+            lines.append('    fi')
+        lines += ['    return 0', '}']
+    return '\n'.join(lines) + '\n'
+
+
+def zsh_launcher():
+    """Execute the same standalone file with Bash before Zsh parses its body.
+
+    Keep this before Bash-specific hook/collector syntax. Zsh integration uses
+    the shared Bash runtime; it is not a promise of a native Zsh collector port.
+    """
+    return ('# Zsh entry point; the shared dashboard requires /bin/bash 4.3+.\n'
+            'if [ -n "${ZSH_VERSION-}" ] && [ -z "${BASH_VERSION-}" ]; then\n'
+            '    exec /bin/bash "$0" "$@"\n'
+            'fi\n')
+
+
+def powershell_assignments(config):
+    """Use literal ASCII JSON so UTF-8 without BOM works in Windows PS 5.1.
+
+    Single quotes are doubled for PowerShell's literal string. JSON handles all
+    remaining quoting and Unicode, and ConvertFrom-Json only parses data.
+    """
+    c = validate_config(config)
+    payload = json.dumps(c, ensure_ascii=True, separators=(',', ':')).replace("'", "''")
+    return f"$MotdVersion = '{VERSION}'\n$MotdConfig = ConvertFrom-Json -InputObject '{payload}'"
+
+
+def generate_powershell_body(config):
+    """Return body only; caller adds the usual checked metadata/header."""
+    if PS_TEMPLATE.count('# @MOTD_CONFIG@') != 1:
+        raise MotdError('Embedded PowerShell template has an invalid configuration marker')
+    return PS_TEMPLATE.replace('# @MOTD_CONFIG@', powershell_assignments(config))
+
+
+def artifact_suffix(config):
+    return {"bash": ".bash", "zsh": ".zsh", "sh": ".sh", "powershell": ".ps1"}[config["shell"]] if config["target"] == "shell" else ".txt"
+
+
 def generate_artifact(config):
     c = validate_config(config)
     if c['target'] != 'shell':
         text = c['display']['title'] + '\n\n' + c['public_text'].strip() + '\n'
         # agetty interprets backslash escapes. Public user text is literal.
         return text.replace('\\', '\\\\') if c['target'] == 'issue' else text
-    if BASH_TEMPLATE.count('# @MOTD_CONFIG@') != 1:
-        raise MotdError('Embedded Bash template has an invalid configuration marker')
     recipe = base64.b64encode(dump_config(c).encode()).decode()
-    body = (f'# MOTD-CONFIG-BASE64: {recipe}\n' + hook_wrapper(c)
-            + BASH_TEMPLATE.replace('# @MOTD_CONFIG@', runtime_assignments(c)))
+    body = f'# MOTD-CONFIG-BASE64: {recipe}\n'
+    if c['shell'] == 'powershell':
+        body += generate_powershell_body(c)
+        header = '# Native PowerShell output; invoke with & ./message.ps1\n'
+    elif c['shell'] == 'sh':
+        if SH_TEMPLATE.count('# @MOTD_CONFIG@') != 1:
+            raise MotdError('Embedded sh template has an invalid configuration marker')
+        body += SH_TEMPLATE.replace('# @MOTD_CONFIG@', portable_runtime_assignments(c))
+        header = '#!/bin/sh\n'
+    else:
+        if BASH_TEMPLATE.count('# @MOTD_CONFIG@') != 1 or BASH_TEMPLATE.count('# @MOTD_HOOKS@') != 1:
+            raise MotdError('Embedded Bash template has invalid configuration/hook markers')
+        if c['shell'] == 'zsh': body += zsh_launcher()
+        # The canonical minimum-version guard runs before any configured call.
+        body += BASH_TEMPLATE.replace('# @MOTD_CONFIG@', runtime_assignments(c)).replace('# @MOTD_HOOKS@', hook_wrapper(c))
+        header = '#!/usr/bin/env ' + c['shell'] + '\n'
     digest = hashlib.sha256(body.encode()).hexdigest()
-    return (f'#!/usr/bin/env bash\n# Generated by MOTD {VERSION}; standalone Bash runtime.\n'
+    return (header + f'# Generated by MOTD {VERSION}; standalone {c["shell"]} output.\n'
             f'# MOTD-BODY-SHA256: {digest}\n'
             '# MOTD-BODY-BEGIN\n' + body)
 
@@ -402,26 +508,34 @@ def active_installs(state_dir):
 
 
 def shell_block(config, artifact_path):
-    """POSIX-parseable wrapper; only Bash reaches the Bash-specific guard.
+    """Interactive, terminal-only startup attachment for the selected shell.
 
-    The process-ID marker suppresses duplicate .bashrc/profile attachment within
-    one shell, without globally suppressing another user's or SSH session's view.
-    It does not replace the user's shell or alter its exit status.
+    POSIX sh has no portable login-shell query. Its login-frequency attachment
+    belongs in .profile; explicit custom locations retain that documented
+    responsibility. Bash and Zsh additionally test their native login option.
     """
     c = validate_config(config)
+    kind = c.get('shell', 'bash')
     marker = '_MOTD_SEEN_' + c['name'].replace('-', '_')
-    tests = ['[ -n "${BASH_VERSION-}" ]', '[ -t 1 ]', '[ ! -e "$HOME/.hushlogin" ]']
+    tests = ['[ -t 1 ]', '[ ! -e "$HOME/.hushlogin" ]']
+    if kind == 'bash': tests.insert(0, '[ -n "${BASH_VERSION-}" ]')
+    elif kind == 'zsh': tests.insert(0, '[ -n "${ZSH_VERSION-}" ]')
+    elif kind != 'sh': raise MotdError('This helper supports Bash, Zsh and POSIX sh startup files')
     if c['audience'] == 'ssh': tests.append('[ -n "${SSH_CONNECTION-}${SSH_TTY-}" ]')
     if c['audience'] == 'local': tests.append('[ -z "${SSH_CONNECTION-}${SSH_TTY-}" ]')
-    frequency = 'shopt -q login_shell' if c['frequency'] == 'login' else ':'
+    frequency = ':'
+    if c['frequency'] == 'login':
+        if kind == 'bash': frequency = 'shopt -q login_shell'
+        elif kind == 'zsh': frequency = '[[ -o login ]]'
+    executable = '/bin/bash' if kind == 'bash' else ('zsh' if kind == 'zsh' else '/bin/sh')
     return '\n'.join([
         f'# >>> motd {c["name"]} >>>',
-        '# Managed by motd.py; interactive Bash only, once per shell process.',
+        f'# Managed by motd.py; interactive {kind}, once per shell process.',
         'if ' + ' && '.join(tests) + '; then',
         '  case $- in', '    *i*)',
         f'      if {frequency} && [ "${{{marker}-}}" != "$$" ]; then',
         f'        {marker}=$$; export {marker}',
-        f'        /bin/bash {shlex.quote(artifact_path)} || :',
+        f'        {executable} {shlex.quote(artifact_path)} || :',
         '      fi', '      ;;', '  esac', 'fi',
         f'# <<< motd {c["name"]} <<<',
     ]) + '\n'
@@ -459,17 +573,23 @@ def installation_plan(config, artifact, *, scope='user', destination=None,
     if os.name != 'posix' or not sys.platform.startswith('linux'):
         raise MotdError('Installation currently supports Linux; build/export is separate')
     c = validate_config(config); name = c['name']; target = c['target']
+    kind = c['shell']
+    if target == 'shell' and kind == 'powershell':
+        raise MotdError('Native PowerShell output can be built and previewed; profile installation is not implemented. Export the .ps1 and attach it explicitly in the intended $PROFILE.')
     if scope == 'system' and os.geteuid() != 0:
         raise MotdError('System installation/planning requires root; export first and run the reviewed installer as root')
     state_dir = absolute(state_dir or default_state(scope))
     previous = active_installs(state_dir).get(name)
     old_meta = previous['metadata'] if previous else {}
-    if previous and (old_meta['target'] != target or old_meta['scope'] != scope):
-        raise MotdError('Uninstall the existing name before changing its target or scope')
+    if previous and (old_meta['target'] != target or old_meta['scope'] != scope
+                     or (target == 'shell' and old_meta.get('shell', 'bash') != kind)):
+        raise MotdError('Uninstall the existing name before changing its target, shell or scope')
     if destination:
         output = absolute(destination)
     elif target == 'shell':
-        output = f'/usr/local/bin/motd-{name}' if scope == 'system' else str(Path.home() / f'.motd-{name}.bash')
+        output = f'/usr/local/bin/motd-{name}' if scope == 'system' else str(Path.home() / (f'.motd-{name}' + artifact_suffix(c)))
+    elif target == 'text':
+        raise MotdError('Generic text needs an explicit --destination; consumer paths and formatting are not guessed')
     elif scope != 'system':
         raise MotdError('Static user installs require --destination; use --scope system for system paths')
     elif target == 'issue':
@@ -496,7 +616,20 @@ def installation_plan(config, artifact, *, scope='user', destination=None,
         if shell_file:
             hook_paths = [absolute(shell_file)]
         elif scope == 'system':
+            if kind == 'zsh':
+                raise MotdError('System Zsh startup paths vary; choose an explicit --shell-file')
+            if c['frequency'] == 'interactive':
+                raise MotdError('System non-login startup needs an explicit --shell-file')
             hook_paths = [f'/etc/profile.d/70-motd-{name}.sh']
+        elif kind == 'zsh':
+            zdotdir = os.environ.get('ZDOTDIR', str(Path.home()))
+            if not zdotdir or not Path(zdotdir).is_absolute():
+                raise MotdError('ZDOTDIR must be an absolute existing directory, or unset')
+            hook_paths = [str(Path(zdotdir) / '.zshrc'), str(Path(zdotdir) / '.zprofile')]
+        elif kind == 'sh':
+            if c['frequency'] == 'interactive':
+                raise MotdError('POSIX sh interactive startup needs an explicit --shell-file; ENV is not changed automatically')
+            hook_paths = [str(Path.home() / '.profile')]
         else:
             home = Path.home()
             login = next((home / x for x in ('.bash_profile', '.bash_login', '.profile')
@@ -517,11 +650,11 @@ def installation_plan(config, artifact, *, scope='user', destination=None,
         block = ''
     baseline_id = _initial_install(state_dir, previous)['id'] if previous else None
     metadata = {'operation': 'upgrade' if previous else 'install', 'name': name,
-                'target': target, 'scope': scope, 'artifact_path': output,
+                'target': target, 'shell': kind, 'scope': scope, 'artifact_path': output,
                 'hook_paths': hook_paths, 'hook_block': block,
                 'baseline_transaction_id': baseline_id,
                 'config_toml': dump_config(c), 'artifact_text': artifact,
-                'artifact_suffix': '.bash' if target == 'shell' else '.txt',
+                'artifact_suffix': artifact_suffix(c),
                 'generator_version': VERSION,
                 'artifact_origin': 'opaque-import' if opaque_artifact else 'recipe'}
     if opaque_artifact:
@@ -659,7 +792,10 @@ def apply_reviewed(plan, yes=False):
 import base64 as _tx_base64
 import contextlib as _tx_contextlib
 import datetime as _tx_datetime
-import fcntl as _tx_fcntl
+try:
+    import fcntl as _tx_fcntl
+except ImportError:
+    _tx_fcntl = None  # Generation/preview remain importable; mutation is POSIX-only.
 import hashlib as _tx_hashlib
 import json as _tx_json
 import os as _tx_os
@@ -714,6 +850,8 @@ def _tx_json_bytes(value):
 
 
 def _tx_path(path, *, state=False):
+    if _tx_fcntl is None:
+        raise TxError("unsupported_platform", "Journalled file operations require Linux/POSIX; generate on a supported host or use build --output -")
     if not isinstance(path, str) or not path or "\x00" in path or not path.startswith("/"):
         raise TxError("invalid_path", "Paths must be nonempty absolute paths without NUL bytes.")
     if any(part in (".", "..") for part in path.split("/")):
@@ -1059,8 +1197,8 @@ def _tx_metadata(metadata):
     for key in ("config_toml", "artifact_text"):
         if key in metadata and not isinstance(metadata[key], str):
             raise TxError("invalid_metadata", key + " must be text.")
-    if metadata.get("artifact_suffix", ".txt") not in (".bash", ".txt"):
-        raise TxError("invalid_metadata", "artifact_suffix must be .bash or .txt.")
+    if metadata.get("artifact_suffix", ".txt") not in (".bash", ".zsh", ".sh", ".ps1", ".txt"):
+        raise TxError("invalid_metadata", "Unsupported generated output suffix.")
     return metadata
 
 
@@ -1583,17 +1721,20 @@ def resolve_input(args):
             if '# MOTD-BODY-BEGIN' in artifact:
                 raise MotdError('Recover the recipe and rebuild to change the type of a generated artifact')
             config['target'] = args.target
+        if getattr(args, 'shell', None) and args.shell != config['shell'] and '# MOTD-BODY-BEGIN' in artifact:
+            raise MotdError('Recover the recipe and rebuild to change a generated artifact interpreter')
     elif getattr(args, 'config', None):
         config = load_config(args.config); artifact = None
     else:
         config = preset_config(getattr(args, 'preset', None) or 'workshop'); artifact = None
-    for key in ('name', 'target', 'audience'):
+    for key in ('name', 'target', 'shell', 'audience'):
         if getattr(args, key, None) is not None:
-            config[key] = getattr(args, key)
+            if key == 'shell': select_shell(config, args.shell)
+            else: config[key] = getattr(args, key)
     config = validate_config(config)
     if imported and config['target'] == 'shell' and args.command in ('install', 'upgrade', 'reconfigure'):
         if not args.trust_artifact:
-            raise MotdError('Imported Bash is executable code, even with metadata. Inspect it, then use --trust-artifact to install its exact bytes.')
+            raise MotdError('Imported shell output is executable code, even with metadata. Inspect it, then use --trust-artifact to install its exact bytes.')
     return config, artifact if artifact is not None else generate_artifact(config)
 
 
@@ -1614,7 +1755,7 @@ def export_files(config, artifact, output, recipe_path=None, *, state_dir=None, 
             raise MotdError(f'Output exists: {change["path"]}; choose another path or --replace (with backup)')
     if not changes: return None
     metadata = {'operation': 'build', 'name': config['name'],
-                'artifact_text': artifact, 'artifact_suffix': '.bash' if config['target'] == 'shell' else '.txt',
+                'artifact_text': artifact, 'artifact_suffix': artifact_suffix(config),
                 'artifact_origin': 'opaque-import' if opaque_artifact else 'recipe'}
     if not opaque_artifact: metadata['config_toml'] = dump_config(config)
     plan = tx_plan(changes, absolute(state_dir or default_state()), metadata)
@@ -1637,16 +1778,13 @@ def preview(config, artifact, *, live=False, imported=False, trust=False):
             print('Preview regenerated from the checked recipe; original imported code is not executed.', file=sys.stderr)
         except MotdError:
             if not (trust and live):
-                raise MotdError('Unknown Bash cannot provide a safe demo. Explicit --live --trust-artifact executes its code.')
+                raise MotdError('Unknown executable output cannot provide a safe demo. Explicit --live --trust-artifact executes its code.')
             print('Executing explicitly trusted imported code; its side effects cannot be suppressed.', file=sys.stderr)
-    if not shutil.which('bash'):
-        raise MotdError('Bash is required to preview executable output')
     if not live: print('Synthetic demonstration; before/after hooks are skipped.', file=sys.stderr)
     elif not imported: print('Live observations; configured before/after calls are skipped.', file=sys.stderr)
     with tempfile.TemporaryDirectory(prefix='motd-preview-') as folder:
-        script = Path(folder) / 'preview.bash'; script.write_text(artifact, encoding='utf-8')
-        cmd = ['bash', str(script)] + ([] if live else ['--demo'])
-        if not imported and any(config['hooks'].values()): cmd.append('--no-hooks')
+        script = Path(folder) / ('preview' + artifact_suffix(config)); script.write_text(artifact, encoding='utf-8')
+        cmd = preview_command(config, script, live=live, no_hooks=not imported)
         budget = 8 + sum(h['timeout_seconds'] + 0.3 for phase in config['hooks'].values() for h in phase)
         return subprocess.run(cmd, check=False, timeout=budget).returncode
 
@@ -1679,52 +1817,284 @@ def _ask(label, default):
     return answer if answer else default
 
 
-def _configure(config):
-    c = copy.deepcopy(config)
-    c['name'] = _ask('Configuration/installation name', c['name'])
-    c['target'] = _select('Where should it appear?', [
-        ('Authenticated Bash greeting', 'shell'), ('TTY pre-login issue text', 'issue'),
-        ('SSH pre-authentication banner text', 'ssh-banner')],
-        ('shell', 'issue', 'ssh-banner').index(c['target']))
-    c['display']['title'] = _ask('Heading', c['display']['title'])
-    if c['target'] == 'shell':
-        c['audience'] = _select('Which sessions?', [('SSH and local', 'all'), ('SSH only', 'ssh'), ('Local only', 'local')],
-                                ('all', 'ssh', 'local').index(c['audience']))
-        c['frequency'] = _select('When?', [('Login shells', 'login'), ('Every interactive Bash', 'interactive')],
-                                 ('login', 'interactive').index(c['frequency']))
-        c['display']['site'] = _ask('Site label', c['display']['site'])
-        c['display']['theme'] = _select('Theme', [(x, x) for x in ('cyan', 'green', 'amber', 'mono')],
-                                        ('cyan', 'green', 'amber', 'mono').index(c['display']['theme']))
-        c['display']['width'] = int(_ask('Maximum columns (40-240)', str(c['display']['width'])))
-        c['display']['rows'] = int(_ask('Rows including one prompt row (20-60)', str(c['display']['rows'])))
-        c['display']['sections'] = _ask('Sections, comma separated', ','.join(c['display']['sections'])).split(',')
-        c['display']['sections'] = [x.strip() for x in c['display']['sections']]
-        required = _ask('Required systemd units, comma separated; - clears', ','.join(c['services']['required']) or '-')
-        c['services']['required'] = [] if required == '-' else [x.strip() for x in required.split(',')]
-        message = input('Add a displayed notice (blank keeps existing notices): ').strip()
-        if message: c['messages'].append(message)
-        for phase in ('before', 'after'):
-            if c['hooks'][phase]:
-                print(f'Existing {phase} calls:', [h['argv'] for h in c['hooks'][phase]])
-                if confirm('Clear these calls?'): c['hooks'][phase] = []
-            while confirm(f'Add a {phase} command/program/script call?'):
-                raw = input('Command and arguments (shell quoting; no implicit expansion/pipes): ').strip()
-                argv = shlex.split(raw)
-                sec = float(_ask('Timeout in seconds', '1'))
-                policy = _select('On failure', [('Continue dashboard', 'continue'), ('Stop this display', 'stop')])
-                c['hooks'][phase].append({'argv': argv, 'timeout_seconds': sec, 'on_failure': policy})
+class WizardCancelled(Exception):
+    """Leave the draft without changing installed files."""
+
+
+def preview_command(config, path, *, live=False, no_hooks=True, width=None, color=None):
+    """One interpreter decision shared by CLI previews and wizard previews."""
+    kind = config['shell']
+    executable = (shutil.which('pwsh') or shutil.which('powershell')) if kind == 'powershell' else shutil.which(kind)
+    if not executable:
+        raise MotdError(f'{kind} is unavailable on this computer; build here and preview on a compatible host')
+    if kind == 'powershell':
+        command = [executable, '-NoLogo', '-NoProfile', '-File', str(path)]
+        if not live: command.append('-Demo')
+        if no_hooks: command.append('-NoHooks')
+        if width: command += ['-Width', str(width)]
+        if color and not live and 'NO_COLOR' not in os.environ: command.append('-Color')
+        if color is False or 'NO_COLOR' in os.environ: command.append('-Plain')
     else:
-        print('Public text is literal. Type \\n for a line break; no commands will run.')
-        c['public_text'] = _ask('Notice', c['public_text'].replace('\n', '\\n')).replace('\\n', '\n')
-        c['hooks'] = {'before': [], 'after': []}
-    return validate_config(c)
+        command = [executable, str(path)]
+        if not live: command.append('--demo')
+        if no_hooks and (kind == 'sh' or any(config['hooks'].values())): command.append('--no-hooks')
+        if width: command += ['--width', str(width)]
+        if color is False: command.append('--plain')
+        elif color and kind == 'sh': command.append('--color')
+    return command
 
 
-def _choose_record(state_dir, *, installs=False):
+def demo_text(config, width=None, *, color=False):
+    """Render our checked template with fixture data; never execute imported code.
+
+    This uses a temporary output only, not the transaction state directory. No
+    configured hook or live collector is enabled. Missing interpreters produce
+    an explicit unavailable preview instead of a different renderer's picture.
+    """
+    c = validate_config(config)
+    artifact = generate_artifact(c)
+    if c['target'] != 'shell':
+        # Show intended public text; agetty serialization is inspected in plan.
+        return c['display']['title'] + '\n\n' + c['public_text'].strip() + '\n'
+    with tempfile.TemporaryDirectory(prefix='motd-demo-') as folder:
+        path = Path(folder) / ('preview' + artifact_suffix(c))
+        path.write_text(artifact, encoding='utf-8')
+        command = preview_command(c, path, width=width, color=color)
+        result = subprocess.run(command, capture_output=True, text=True, timeout=8,
+                                encoding='utf-8', errors='replace')
+    if result.returncode:
+        raise MotdError('Preview failed: ' + (result.stderr.strip() or str(result.returncode))[:500])
+    return result.stdout
+
+
+_SGR = re.compile(r'\x1b\[[0-9;]*m')
+
+
+def terminal_line(text, columns, *, color=True):
+    """Clip by terminal cells and allow only SGR, never arbitrary terminal codes."""
+    output = []; used = 0; position = 0
+    while position < len(text):
+        match = _SGR.match(text, position)
+        if match:
+            if color: output.append(match[0])
+            position = match.end(); continue
+        ch = text[position]; position += 1
+        if ord(ch) < 32 or 0x7f <= ord(ch) < 0xa0: continue
+        cells = 0 if unicodedata.combining(ch) else (2 if unicodedata.east_asian_width(ch) in ('W', 'F') else 1)
+        if used + cells > columns: break
+        output.append(ch); used += cells
+    if color: output.append('\x1b[0m')
+    return ''.join(output)
+
+
+class WizardUI:
+    """Small page renderer; normal line input keeps the terminal recoverable.
+
+    No raw keyboard mode, curses dependency, hidden cursor or alternate screen.
+    The same choices and draft work in screen and transcript-friendly line mode.
+    Terminal size is re-read for every page, including after resize.
+    """
+    def __init__(self, mode='auto'):
+        self.mode = mode
+        self.cache = {}
+
+    @property
+    def screen(self):
+        if self.mode == 'line': return False
+        if not (sys.stdin.isatty() and sys.stdout.isatty()): return False
+        size = shutil.get_terminal_size((80, 24))
+        if size.columns < 60 or size.lines < 20: return False
+        term = os.environ.get('TERM', '')
+        supported = term.startswith(('xterm', 'screen', 'tmux', 'linux', 'vt', 'ansi', 'rxvt', 'alacritty', 'foot', 'wezterm', 'kitty'))
+        return self.mode == 'screen' or supported
+
+    def sample(self, config, width):
+        color = self.screen and 'NO_COLOR' not in os.environ
+        key = (dump_config(config), width, color)
+        if key not in self.cache:
+            try: self.cache[key] = demo_text(config, width, color=color).splitlines()
+            except (MotdError, OSError, subprocess.TimeoutExpired) as exc:
+                self.cache[key] = ['Preview unavailable: ' + str(exc)]
+            if len(self.cache) > 24: self.cache.pop(next(iter(self.cache)))
+        return self.cache[key]
+
+    def page(self, title, lines=(), *, config=None, notice='', footer=''):
+        size = shutil.get_terminal_size((80, 24))
+        width = max(20, size.columns - 1)
+        screen = self.screen
+        color = screen and 'NO_COLOR' not in os.environ
+        if screen: print('\x1b[2J\x1b[H', end='')
+        accent = '\x1b[1;36m' if color else ''
+        reset = '\x1b[0m' if color else ''
+        body = [accent + f'MOTD {VERSION} | {title}' + reset, '-' * min(width, 78)]
+        body.extend(lines)
+        if notice: body.extend(textwrap.wrap(notice, width)[:2])
+        if config is not None and screen:
+            sample = self.sample(config, max(40, min(width, config['display']['width'])))
+            available = max(0, size.lines - len(body) - 6)
+            if available:
+                body += ['', accent + 'PREVIEW | synthetic data; configured calls skipped' + reset]
+                body += sample[:available]
+                if len(sample) > available:
+                    body.append(f'... showing {available}/{len(sample)} lines; P opens the full preview.')
+        if footer: body += ['', footer]
+        for line in body:
+            print(terminal_line(line, width, color=color) if screen else _SGR.sub('', line))
+
+    def select(self, title, choices, default=0, *, preview_factory=None, config=None):
+        selected = default
+        while True:
+            current = preview_factory(choices[selected][1]) if preview_factory else config
+            self.page(title, [f' {i}. {label}' + (' [selected]' if i - 1 == selected and preview_factory else '')
+                              for i, (label, _) in enumerate(choices, 1)], config=current,
+                      footer='Number changes the preview; Enter accepts. P preview | Q cancel' if preview_factory and self.screen else '')
+            raw = input(f'Choice [{selected + 1}]: ').strip().lower()
+            if raw == 'q': raise WizardCancelled()
+            if raw == 'p' and current is not None: self.full_preview(current); continue
+            if not raw: return choices[selected][1]
+            if raw.isdigit() and 1 <= int(raw) <= len(choices):
+                selected = int(raw) - 1
+                if not (preview_factory and self.screen): return choices[selected][1]
+
+    def full_preview(self, config):
+        size = shutil.get_terminal_size((80, 24))
+        lines = self.sample(config, max(40, min(size.columns - 1, config['display']['width'])))
+        if not self.screen:
+            print('Synthetic demonstration; before/after hooks are skipped.')
+            print('\n'.join(lines)); return
+        start = 0
+        while True:
+            size = shutil.get_terminal_size((80, 24)); count = max(5, size.lines - 6)
+            self.page('Full preview', lines[start:start + count],
+                      footer=f'Lines {start + 1}-{min(start + count, len(lines))}/{len(lines)} | N next | B previous | Enter return')
+            raw = input('Preview: ').strip().lower()
+            if not raw: return
+            if raw == 'q': raise WizardCancelled()
+            if raw == 'n': start = min(max(0, len(lines) - count), start + count)
+            elif raw == 'b': start = max(0, start - count)
+
+    def pause(self):
+        if self.screen: input('Press Enter to return to the wizard: ')
+
+
+def _get_setting(config, path):
+    value = config
+    for part in path.split('.'): value = value[part]
+    return value
+
+
+def _set_setting(config, path, value):
+    if path == 'shell': select_shell(config, value); return
+    parts = path.split('.'); table = config
+    for part in parts[:-1]: table = table[part]
+    table[parts[-1]] = value
+
+
+def _configuration_pages(config):
+    """A short list of data-driven pages, shared by both UI modes."""
+    destination = [('Name', 'name', 'text'), ('Placement', 'target', 'choice')]
+    if config['target'] == 'shell':
+        destination += [('Output interpreter', 'shell', 'choice'), ('Session filter', 'audience', 'choice'),
+                        ('Display frequency', 'frequency', 'choice')]
+    appearance = [('Heading', 'display.title', 'text')]
+    pages = [('Destination', destination), ('Appearance', appearance)]
+    if config['target'] == 'shell':
+        appearance += [('Site label', 'display.site', 'text'), ('Theme', 'display.theme', 'choice'),
+                       ('Maximum columns', 'display.width', 'int'), ('Row budget', 'display.rows', 'int')]
+        pages.append(('Sections', [(name, name, 'section') for name in SECTION_IDS]))
+        pages.append(('Content', [('Required services', 'services.required', 'list'),
+                                  ('Excluded service patterns', 'services.exclude', 'list'),
+                                  ('Displayed notices', 'messages', 'messages')]))
+        pages.append(('Before and after calls', [('Add a before call', 'before', 'hook'), ('Add an after call', 'after', 'hook'),
+                                                ('Clear before calls', 'before', 'clear'), ('Clear after calls', 'after', 'clear')]))
+    else:
+        pages.append(('Public notice', [('Public text', 'public_text', 'multiline')]))
+    return pages
+
+
+def _configure(config, ui=None):
+    """Edit a validated in-memory draft. Back retains choices; cancel writes nothing."""
+    ui = ui or WizardUI()
+    c = validate_config(config); page_index = 0; notice = ''
+    choices = {
+        'target': [('Authenticated shell greeting', 'shell'), ('agetty pre-login issue text', 'issue'),
+                   ('SSH pre-authentication banner file', 'ssh-banner'), ('Generic static text', 'text')],
+        'shell': [('Bash: full Linux dashboard', 'bash'), ('Zsh: shared Bash dashboard', 'zsh'),
+                  ('POSIX sh: reduced portable display', 'sh'), ('PowerShell: native baseline', 'powershell')],
+        'audience': [('All eligible sessions', 'all'), ('SSH environment markers present', 'ssh'),
+                     ('Non-SSH sessions (not proof of a physical console)', 'local')],
+        'frequency': [('Login startup', 'login'), ('Every interactive shell', 'interactive')],
+        'display.theme': [(x.title(), x) for x in ('cyan', 'green', 'amber', 'mono')],
+    }
+    while True:
+        pages = _configuration_pages(c); page_index = min(page_index, len(pages) - 1)
+        title, fields = pages[page_index]
+        lines = []
+        for number, (label, path, kind) in enumerate(fields, 1):
+            if kind == 'section': value = '[x]' if path in c['display']['sections'] else '[ ]'
+            elif kind in ('hook', 'clear'): value = f'{len(c["hooks"][path])} configured'
+            else:
+                value = _get_setting(c, path)
+                if isinstance(value, list): value = ', '.join(value) or '(none)'
+                value = str(value).replace('\n', ' / ')
+            lines.append(f' {number}. {label}: {value}')
+        ui.page(f'{title} | page {page_index + 1}/{len(pages)}', lines, config=c, notice=notice,
+                footer='Number edits | Enter/N next | B back | P full preview | Q cancel')
+        notice = ''; raw = input('Page choice: ').strip().lower()
+        if raw == 'q': raise WizardCancelled()
+        if raw == 'p': ui.full_preview(c); continue
+        if raw == 'b': page_index = max(0, page_index - 1); continue
+        if raw in ('', 'n'):
+            if page_index == len(pages) - 1: return validate_config(c)
+            page_index += 1; continue
+        if not raw.isdigit() or not 1 <= int(raw) <= len(fields):
+            notice = 'Choose a listed field or navigation command.'; continue
+        label, path, kind = fields[int(raw) - 1]; candidate = copy.deepcopy(c)
+        try:
+            if kind == 'section':
+                selected = candidate['display']['sections']
+                if path in selected: selected.remove(path)
+                else: selected.append(path)
+            elif kind == 'choice':
+                values = choices[path]; current = _get_setting(c, path)
+                def variation(value):
+                    result = copy.deepcopy(c); _set_setting(result, path, value)
+                    if path == 'target' and value != 'shell': result['hooks'] = {'before': [], 'after': []}
+                    return result
+                value = ui.select(label, values, [v for _, v in values].index(current), preview_factory=variation)
+                _set_setting(candidate, path, value)
+                if path == 'target' and value != 'shell': candidate['hooks'] = {'before': [], 'after': []}
+            elif kind == 'hook':
+                print('Explicit argv as JSON, e.g. ["fastfetch"] or ["bash", "-c", "command | other"].')
+                argv = json.loads(input('Arguments: '))
+                seconds = float(_ask('Timeout seconds', '1'))
+                policy = ui.select('On call failure', [('Continue the display', 'continue'), ('Stop this display', 'stop')])
+                candidate['hooks'][path].append({'argv': argv, 'timeout_seconds': seconds, 'on_failure': policy})
+            elif kind == 'clear':
+                if confirm(f'Clear {path} calls in this draft?'): candidate['hooks'][path] = []
+            else:
+                current = _get_setting(c, path)
+                if kind == 'list': default = ','.join(current)
+                elif kind == 'messages': default = '\\n'.join(current)
+                else: default = str(current).replace('\n', '\\n')
+                print('Blank keeps the value; - clears text/lists. Use \\n between notice lines.' if kind != 'int' else 'Enter a whole number; blank keeps the value.')
+                value = _ask(label, default)
+                if kind != 'int' and value == '-': value = ''
+                if kind == 'int': value = int(value)
+                elif kind == 'list': value = [v.strip() for v in value.split(',') if v.strip()]
+                elif kind == 'messages': value = value.split('\\n') if value else []
+                elif kind == 'multiline': value = value.replace('\\n', '\n')
+                _set_setting(candidate, path, value)
+            c = validate_config(candidate)
+        except (MotdError, ValueError, TypeError) as exc:
+            notice = str(exc)
+
+
+def _choose_record(state_dir, *, installs=False, ui=None):
     records = list(active_installs(state_dir).values()) if installs else tx_history(state_dir)
     if not records: raise MotdError('No matching transactions or installations in this state directory')
     records.reverse()
-    return _select('Choose the item', [(f"{r['id'][:12]} {r['status']} {r['metadata'].get('operation')} {r['metadata'].get('name', '')}", r) for r in records])
+    return (ui.select if ui else _select)('Choose the item', [(f"{r['id'][:12]} {r['status']} {r['metadata'].get('operation')} {r['metadata'].get('name', '')}", r) for r in records])
 
 
 def _manage(command, state_dir, transaction_id=None, name=None, yes=False):
@@ -1772,20 +2142,21 @@ def _manage(command, state_dir, transaction_id=None, name=None, yes=False):
 def wizard(args):
     if not sys.stdin.isatty():
         raise MotdError('The wizard needs a terminal. Use --help for noninteractive commands.')
-    print(f'MOTD {VERSION} — configure once, copy the Bash output anywhere supported.')
-    action = _select('What do you want to do?', [
+    ui = WizardUI(getattr(args, 'ui', 'auto'))
+    action = ui.select('What do you want to do?', [
         ('Create/customise a message', 'create'), ('Install existing recipe or output', 'existing'),
         ('Reconfigure/upgrade an installed message', 'reconfigure'), ('Inspect/audit', 'audit'),
         ('Repair missing files', 'repair'), ('Recover interrupted changes', 'recover'),
         ('Roll back a transaction', 'rollback'), ('Uninstall', 'uninstall'), ('Exit', 'exit')])
     if action == 'exit': return 0
-    scope = _select('Installation scope', [('This user', 'user'), ('System-wide', 'system')], 1 if args.scope == 'system' else 0)
+    scope = ui.select('Installation scope', [('This user', 'user'), ('System-wide', 'system')],
+                      1 if args.scope == 'system' else 0)
     state_dir = absolute(args.state_dir or default_state(scope))
     if action == 'audit':
         print(json.dumps(tx_audit(state_dir), indent=2)); return 0
     if action in ('repair', 'rollback', 'recover', 'uninstall'):
         try:
-            r = _choose_record(state_dir, installs=action in ('uninstall', 'repair'))
+            r = _choose_record(state_dir, installs=action in ('uninstall', 'repair'), ui=ui)
         except TxError:
             if action != 'recover': raise
             transaction_id = input('History is incomplete. Enter the interrupted transaction ID: ').strip()
@@ -1794,57 +2165,80 @@ def wizard(args):
     artifact = None; imported = False; trusted = False; opaque = False
     install_options = {}
     if action == 'reconfigure':
-        r = _choose_record(state_dir, installs=True)
+        r = _choose_record(state_dir, installs=True, ui=ui)
         if r['metadata'].get('artifact_origin') == 'opaque-import':
             raise MotdError('This is an opaque import. Install a replacement artifact or supply an explicit new recipe.')
         config = validate_config(tomllib.loads(r['metadata']['config_toml']))
         install_options = {'destination': r['metadata']['artifact_path']}
         if len(r['metadata']['hook_paths']) == 1: install_options['shell_file'] = r['metadata']['hook_paths'][0]
-        config = _configure(config)
+        config = _configure(config, ui)
     elif action == 'existing':
-        kind = _select('What do you have?', [('A TOML recipe', 'config'), ('An existing generated/other output file', 'artifact')])
+        kind = ui.select('What do you have?', [('A TOML recipe', 'config'), ('An existing generated/other output file', 'artifact')])
         path = absolute(input('Path: ').strip())
         if kind == 'config': config = load_config(path)
         else:
             imported = True; artifact = _source_text(path)
             try: config = extract_config(artifact)
             except MotdError:
-                opaque = True
-                config = preset_config()
-                config['target'] = _select('Output type', [('Trusted Bash script', 'shell'), ('Issue text', 'issue'), ('SSH banner text', 'ssh-banner')])
+                opaque = True; config = preset_config()
+                config['target'] = ui.select('Output type', [('Executable shell output', 'shell'),
+                    ('agetty issue text', 'issue'), ('SSH banner text', 'ssh-banner'), ('Generic text', 'text')])
+                if config['target'] == 'shell': config['shell'] = ui.select('Output interpreter', [(x, x) for x in SHELLS])
                 config['name'] = _ask('Installation name', 'imported')
             print('File SHA256:', hashlib.sha256(artifact.encode()).hexdigest())
             if config['target'] == 'shell':
                 trusted = confirm('I have inspected this executable file and want to install its exact bytes')
                 if not trusted: print('Cancelled.'); return 0
     else:
-        name = _select('Start with a preset', [(x, x) for x in PRESET_NAMES])
-        config = _configure(preset_config(name))
+        name = ui.select('Start with a preset', [(x, x) for x in PRESET_NAMES], preview_factory=preset_config)
+        config = _configure(preset_config(name), ui)
     config = validate_config(config)
     artifact = artifact if artifact is not None else generate_artifact(config)
-    if config['target'] != 'shell' and scope == 'user':
-        install_options['destination'] = absolute(_ask('Destination file (parent must exist)', str(Path.home() / (config['name'] + '.txt'))))
     while True:
-        choice = _select('Review and finish', [('Preview (synthetic; no configured calls)', 'preview'),
+        choice = ui.select('Review and finish', [('Preview (synthetic; no configured calls)', 'preview'),
             ('Show install plan / dry run', 'plan'), ('Save TOML recipe', 'save'),
-            ('Build portable output', 'build'), ('Install', 'install'), ('Cancel', 'cancel')])
+            ('Build portable output', 'build'), ('Install', 'install'),
+            ('Change draft settings', 'settings'), ('Cancel', 'cancel')],
+            config=None if opaque else config)
         if choice == 'cancel': print('Cancelled. Previously requested exports remain.'); return 0
-        if choice == 'preview':
-            if opaque and config['target'] == 'shell':
-                print('Opaque scripts have no synthetic preview. Inspect the source; explicit live execution is available through the CLI.')
-            else: preview(config, artifact, imported=imported, trust=trusted)
-        elif choice == 'save':
-            if opaque:
-                print('This output has no reconstructable recipe. Build/copy the exact output instead.'); continue
-            path = absolute(_ask('Recipe path', config['name'] + '.toml'))
-            save_recipe(config, path, state_dir)
-        elif choice == 'build':
-            path = absolute(_ask('Output path', config['name'] + ('.bash' if config['target'] == 'shell' else '.txt')))
-            export_files(config, artifact, path, state_dir=state_dir, opaque_artifact=opaque)
-        else:
-            plan = installation_plan(config, artifact, scope=scope, state_dir=state_dir, opaque_artifact=opaque, **install_options)
-            if choice == 'plan': describe_plan(plan)
-            elif apply_reviewed(plan): return 0
+        try:
+            if choice == 'preview':
+                if opaque and config['target'] == 'shell':
+                    print('Opaque scripts have no synthetic preview. Inspect the source; trusted live execution is a separate CLI action.')
+                    ui.pause()
+                elif opaque:
+                    print(artifact, end=''); ui.pause()
+                else: ui.full_preview(config)
+                continue
+            if choice == 'settings':
+                if opaque: raise MotdError('Opaque outputs have no reconstructable settings; keep or replace their exact bytes.')
+                config = _configure(config, ui)
+                artifact = generate_artifact(config); imported = False
+                continue
+            if choice == 'save':
+                if opaque: raise MotdError('This output has no reconstructable recipe. Build/copy the exact output instead.')
+                path = absolute(_ask('Recipe path', config['name'] + '.toml'))
+                save_recipe(config, path, state_dir)
+            elif choice == 'build':
+                path = absolute(_ask('Output path', config['name'] + artifact_suffix(config)))
+                export_files(config, artifact, path, state_dir=state_dir, opaque_artifact=opaque)
+            else:
+                if config['target'] != 'shell' and (scope == 'user' or config['target'] == 'text') and 'destination' not in install_options:
+                    install_options['destination'] = absolute(_ask('Destination file (parent must exist)', str(Path.home() / (config['name'] + '.txt'))))
+                explicit_startup = config['target'] == 'shell' and (
+                    (scope == 'system' and config['shell'] == 'zsh') or
+                    (config['frequency'] == 'interactive' and (scope == 'system' or config['shell'] == 'sh')))
+                if explicit_startup and 'shell_file' not in install_options:
+                    selected = input('Startup file path for this shell (existing parent required): ').strip()
+                    if not selected: raise MotdError('Choose an explicit startup file; its location is not guessed')
+                    install_options['shell_file'] = absolute(selected)
+                plan = installation_plan(config, artifact, scope=scope, state_dir=state_dir,
+                                         opaque_artifact=opaque, **install_options)
+                if choice == 'plan': describe_plan(plan)
+                elif apply_reviewed(plan): return 0
+        except (MotdError, ValueError) as exc:
+            print('Draft retained:', exc)
+        ui.pause()
 
 
 def parser():
@@ -1859,13 +2253,15 @@ def parser():
         p.add_argument('--json', action='store_true')
         p.add_argument('--yes', action='store_true')
         p.add_argument('--name')
+        if name in ('wizard', 'reconfigure'): p.add_argument('--ui', choices=('auto', 'screen', 'line'), default='auto')
         if name in ('repair', 'rollback', 'recover'): p.add_argument('--transaction', required=name != 'repair')
         if name in ('build', 'preview', 'plan', 'install', 'upgrade', 'reconfigure', 'inspect', 'config'):
             source = p.add_mutually_exclusive_group()
             source.add_argument('--preset', choices=PRESET_NAMES)
             source.add_argument('--config')
             source.add_argument('--artifact')
-            p.add_argument('--target', choices=('shell', 'issue', 'ssh-banner'))
+            p.add_argument('--target', choices=TARGETS)
+            p.add_argument('--shell', choices=SHELLS)
             p.add_argument('--audience', choices=('all', 'ssh', 'local'))
             p.add_argument('--trust-artifact', action='store_true')
             p.add_argument('--replace', action='store_true')
@@ -1920,9 +2316,11 @@ def main(argv=None):
         if prior['metadata'].get('artifact_origin') == 'opaque-import':
             raise MotdError('Opaque imports need an explicit replacement --artifact or new --config; settings cannot be inferred')
         c = validate_config(tomllib.loads(prior['metadata']['config_toml']))
-        if args.command == 'reconfigure' and not args.yes: c = _configure(c)
-        for key in ('target', 'audience'):
-            if getattr(args, key, None) is not None: c[key] = getattr(args, key)
+        if args.command == 'reconfigure' and not args.yes: c = _configure(c, WizardUI(args.ui))
+        for key in ('target', 'shell', 'audience'):
+            if getattr(args, key, None) is not None:
+                if key == 'shell': select_shell(c, args.shell)
+                else: c[key] = getattr(args, key)
         c = validate_config(c)
         artifact = generate_artifact(c)
         if args.destination and absolute(args.destination) != prior['metadata']['artifact_path']:
@@ -1952,6 +2350,9 @@ def entrypoint():
         if isinstance(exc, TxError) and exc.record:
             print('Transaction:', exc.record.get('id'), exc.record.get('status'), file=sys.stderr)
         return 2
+    except WizardCancelled:
+        print("Cancelled. Draft discarded; previously requested exports remain.")
+        return 0
     except (EOFError, KeyboardInterrupt):
         print('\nCancelled. Inspect history before retrying an interrupted apply.', file=sys.stderr)
         return 130
@@ -1961,7 +2362,7 @@ def entrypoint():
 
 # BEGIN EMBEDDED BASH — regenerated by tools/embed_runtime.py
 BASH_TEMPLATE = r'''#!/bin/bash
-# MOTD Bash runtime 0.1.0 | derived from Workshop MOTD 1.2.0, 2026-11-16.
+# MOTD Bash runtime 0.2.0 | derived from Workshop MOTD 1.2.0, 2026-11-16.
 # Bash 4.3+ and GNU timeout; optional GNU df, procps ps, iproute2, systemd.
 # Standalone output: generate settings with motd.py, then use --demo or --help.
 # No daemon, installation side effects, network requests, recursive disk scans,
@@ -1972,6 +2373,10 @@ if ((BASH_VERSINFO[0]<4 || (BASH_VERSINFO[0]==4 && BASH_VERSINFO[1]<3))); then
     printf '%s\n' 'MOTD status needs Bash 4.3 or newer.' >&2
     exit 0
 fi
+
+# Generated explicit hooks belong after the version guard: unsupported Bash
+# must return to the login shell before any configured command can execute.
+# @MOTD_HOOKS@
 
 # =========================== 1. SETTINGS =====================================
 # Legacy internal value retained for tested collectors/components. Public output
@@ -2221,7 +2626,7 @@ DISK_IDS=() ATTENTION=() HEALTH_NOTES=() HOST_IPS=()
 FASTFETCH_TEXT='' OUTPUT='' REPLY=''
 DEMO=0 PLAIN=0 ASCII=0 WIDTH_OVERRIDE='' FETCH_OVERRIDE='' THEME_OVERRIDE=''
 PROC_ROOT=/proc SYS_ROOT=/sys ETC_ROOT=/etc RUN_ROOT=/run
-VERSION=0.1.0
+VERSION=0.2.0
 
 usage() {
     printf '%s\n' \
@@ -2559,7 +2964,7 @@ prepare_attention() {
         ATTENTION+=('INFO|Collection budget reached; omitted measurements remain unknown.')
     fi
     if ((${MODEL[deadline_fallback]:-0})); then
-        ATTENTION+=('WARN|Display deadline reached; showing fresh local counters only. Retry for details.')
+        ATTENTION+=('WARN|Full display unavailable (deadline or helper failure); fresh local counters only.')
     fi
     if ((SHOW_JOURNAL)); then
         if [[ ${MODEL[journal_state]} == ok ]]; then
@@ -4762,6 +5167,493 @@ clip_sgr_cell() {
 if [[ ${BASH_SOURCE[0]} == "$0" ]]; then main "$@"; fi
 '''
 # END EMBEDDED BASH
+
+# BEGIN EMBEDDED SH — regenerated by tools/embed_runtime.py
+SH_TEMPLATE = r'''#!/bin/sh
+# Portable MOTD baseline. POSIX shell syntax; no Bash, Python or service manager.
+# This deliberately small renderer does not reproduce the Linux Bash collectors.
+# Linux /proc files provide cheap local observations when available. Missing
+# counters stay unavailable; no external command or network lookup fills them in.
+# GNU-compatible timeout is required only for explicitly configured hooks.
+
+TITLE='SYSTEM STATUS'
+SITE_LABEL=''
+THEME=mono
+MAX_WIDTH=80
+ROWS=25
+SECTIONS='system resources attention hints'
+motd_messages() { :; }
+motd_hints() { :; }
+motd_before_hooks() { :; }
+motd_after_hooks() { :; }
+
+# @MOTD_CONFIG@
+
+MOTD_DEMO=0
+MOTD_DEMO_ALERTS=0
+MOTD_HOOKS_ENABLED=1
+MOTD_PLAIN=0
+MOTD_FORCE_COLOR=0
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --demo) MOTD_DEMO=1; MOTD_HOOKS_ENABLED=0 ;;
+        --demo-alerts) MOTD_DEMO=1; MOTD_DEMO_ALERTS=1; MOTD_HOOKS_ENABLED=0 ;;
+        --no-hooks) MOTD_HOOKS_ENABLED=0 ;;
+        --plain) MOTD_PLAIN=1 ;;
+        --color) MOTD_FORCE_COLOR=1 ;;
+        --ascii) : ;; # The baseline already uses ASCII framing.
+        --width|--rows)
+            motd_option=$1
+            shift
+            case "${1-}" in
+                ''|*[!0-9]*) printf '%s\n' 'Width/rows require an integer.' >&2; exit 2 ;;
+            esac
+            # Check length first: never feed an unbounded integer into old shells.
+            if [ "${#1}" -gt 3 ]; then
+                printf '%s\n' 'Width/rows are outside the supported range.' >&2
+                exit 2
+            fi
+            motd_number=$1
+            # Old shells may read leading-zero arithmetic as octal.
+            while [ "${motd_number#0}" != "$motd_number" ] && [ "${#motd_number}" -gt 1 ]; do
+                motd_number=${motd_number#0}
+            done
+            if [ "$motd_option" = --width ]; then
+                if [ "$motd_number" -lt 40 ] || [ "$motd_number" -gt 240 ]; then exit 2; fi
+                MAX_WIDTH=$motd_number
+            else
+                if [ "$motd_number" -lt 20 ] || [ "$motd_number" -gt 60 ]; then exit 2; fi
+                ROWS=$motd_number
+            fi ;;
+        --version) printf '%s\n' 'MOTD portable sh baseline'; exit 0 ;;
+        --list-sections) printf '%s\n' 'system resources services processes sessions connections attention hints io'; exit 0 ;;
+        --help|-h)
+            printf '%s\n' 'Portable MOTD: --demo --demo-alerts --plain --color --ascii --no-hooks --width N --rows N' \
+                'Basic identity, Linux memory/load/uptime where available, messages and hints.' \
+                'Advanced service, process, session, connection and I/O collectors are unavailable.'
+            exit 0 ;;
+        *) printf '%s\n' "Unknown portable MOTD option: $1" >&2; exit 2 ;;
+    esac
+    shift
+done
+
+# No arbitrary helper programs run during data collection. Configuration text is
+# quoted by the generator; the display helper also replaces terminal controls.
+# Width clipping is by shell characters, not a Unicode grapheme-width engine.
+motd_remaining=$((ROWS - 1))
+motd_line() {
+    if [ "$motd_remaining" -le 0 ]; then return; fi
+    if [ "$motd_remaining" -eq 1 ]; then
+        printf '%s\n' '[More content omitted]'
+        motd_remaining=0
+        return
+    fi
+    motd_rest=$1
+    motd_clean=''
+    motd_count=0
+    while [ -n "$motd_rest" ] && [ "$motd_count" -lt "$MAX_WIDTH" ]; do
+        motd_character=${motd_rest%"${motd_rest#?}"}
+        motd_rest=${motd_rest#?}
+        case "$motd_character" in [[:cntrl:]]) motd_character='?' ;; esac
+        motd_clean=$motd_clean$motd_character
+        motd_count=$((motd_count + 1))
+    done
+    printf '%s\n' "$motd_clean"
+    motd_remaining=$((motd_remaining - 1))
+}
+
+motd_heading() {
+    # Colour is an optional enhancement. NO_COLOR and dumb/redirected terminals
+    # remain plain; no terminal escape sequence is sourced from configuration.
+    if [ "$MOTD_PLAIN" -eq 0 ] && [ "$THEME" != mono ] && { [ -t 1 ] || [ "$MOTD_FORCE_COLOR" -eq 1 ]; } && [ -z "${NO_COLOR+x}" ] && [ "${TERM-dumb}" != dumb ]; then
+        case "$THEME" in
+            cyan) printf '\033[1;36m' ;;
+            green) printf '\033[1;32m' ;;
+            amber) printf '\033[1;33m' ;;
+        esac
+        motd_line "$1"
+        printf '\033[0m'
+    else
+        motd_line "$1"
+    fi
+}
+
+motd_host=unavailable
+motd_os=unavailable
+motd_release=unavailable
+motd_uptime=unavailable
+motd_load=unavailable
+motd_total=unavailable
+motd_available=unavailable
+motd_free=unavailable
+if [ "$MOTD_DEMO" -eq 1 ]; then
+    motd_host=demo-host
+    motd_os=Linux
+    motd_release=demo-kernel
+    motd_uptime=86400
+    motd_load='0.25 0.18 0.12'
+    motd_total=16777216
+    motd_available=12582912
+    motd_free=8388608
+else
+    # All reads are of fixed local procfs files. The scan has a hard line-count
+    # bound; kernel/filesystem stalls are still outside a shell's timing control.
+    if [ -r /proc/sys/kernel/hostname ]; then IFS= read -r motd_host < /proc/sys/kernel/hostname || :; fi
+    if [ -r /proc/sys/kernel/ostype ]; then IFS= read -r motd_os < /proc/sys/kernel/ostype || :; fi
+    if [ -r /proc/sys/kernel/osrelease ]; then IFS= read -r motd_release < /proc/sys/kernel/osrelease || :; fi
+    if [ -r /proc/uptime ]; then
+        read -r motd_uptime motd_unused < /proc/uptime || :
+        motd_uptime=${motd_uptime%%.*}
+        case "$motd_uptime" in ''|*[!0-9]*) motd_uptime=unavailable ;; esac
+    fi
+    if [ -r /proc/loadavg ]; then
+        read -r motd_load1 motd_load5 motd_load15 motd_unused < /proc/loadavg || :
+        if [ -n "$motd_load1" ] && [ -n "$motd_load5" ] && [ -n "$motd_load15" ]; then
+            motd_load="$motd_load1 $motd_load5 $motd_load15"
+        fi
+    fi
+    if [ -r /proc/meminfo ]; then
+        motd_mem_lines=0
+        while read -r motd_key motd_value motd_unit; do
+            motd_mem_lines=$((motd_mem_lines + 1))
+            if [ "$motd_mem_lines" -gt 128 ]; then break; fi
+            case "$motd_value" in ''|*[!0-9]*) continue ;; esac
+            case "$motd_key" in
+                MemTotal:) motd_total=$motd_value ;;
+                MemAvailable:) motd_available=$motd_value ;;
+                MemFree:) motd_free=$motd_value ;;
+            esac
+        done < /proc/meminfo
+    fi
+fi
+motd_host=${motd_host:-unavailable}
+motd_os=${motd_os:-unavailable}
+motd_release=${motd_release:-unavailable}
+
+motd_before_hooks || exit "$?"
+motd_heading "$TITLE"
+if [ -n "$SITE_LABEL" ]; then motd_line "$SITE_LABEL"; fi
+motd_line 'Portable sh baseline'
+for motd_section in $SECTIONS; do
+    case "$motd_section" in
+        system)
+            motd_heading 'SYSTEM'
+            motd_line "Host: $motd_host | OS: $motd_os $motd_release"
+            motd_line "Uptime: $motd_uptime s | Load (1/5/15 min): $motd_load" ;;
+        resources)
+            motd_heading 'RESOURCES'
+            if [ "$motd_available" != unavailable ]; then
+                motd_line "Memory available: $motd_available KiB / $motd_total KiB total"
+            elif [ "$motd_free" != unavailable ]; then
+                motd_line "Memory free: $motd_free KiB / $motd_total KiB total (available: unavailable)"
+            else
+                motd_line 'Memory: unavailable'
+            fi
+            motd_line 'Storage, swap detail and pressure: unavailable in portable baseline' ;;
+        attention)
+            motd_heading 'NOTICES'
+            if [ "$MOTD_DEMO_ALERTS" -eq 1 ]; then motd_line 'DEMO: Example warning; no live fault is implied.'; fi
+            motd_messages ;;
+        hints)
+            motd_heading 'HINTS'
+            motd_hints ;;
+        services|processes|sessions|connections|io)
+            motd_line "$motd_section: not collected by the portable sh backend" ;;
+    esac
+done
+motd_after_hooks || exit "$?"
+'''
+# END EMBEDDED SH
+
+# BEGIN EMBEDDED PS — regenerated by tools/embed_runtime.py
+PS_TEMPLATE = r'''# Native PowerShell baseline: Windows PowerShell 5.1 and PowerShell 7 syntax.
+# This backend has its own local capability checks. It does not run Bash or
+# pretend that unavailable Windows/Linux observations are healthy or zero.
+# Use the call operator (& ./message.ps1), not dot-sourcing, to keep its scope local.
+#Requires -Version 5.1
+[CmdletBinding()]
+param(
+    [switch] $Demo,
+    [switch] $Plain,
+    [switch] $Color,
+    [switch] $Ascii,
+    [Alias('no-hooks')] [switch] $NoHooks,
+    [ValidateRange(0, 240)] [int] $Width = 0,
+    [ValidateRange(0, 60)] [int] $Rows = 0,
+    [switch] $Version,
+    [switch] $Help
+)
+
+# @MOTD_CONFIG@
+
+if ($Version) { Write-Output ('MOTD ' + $MotdVersion + ' (native PowerShell)'); return }
+if ($Help) {
+    Write-Output 'MOTD native PowerShell: -Demo -Plain -Color -Ascii -NoHooks -Width 40..240 -Rows 20..60'
+    Write-Output 'Demo uses synthetic data and never runs configured before/after calls.'
+    return
+}
+if ($Width -ne 0 -and $Width -lt 40) { throw 'Width must be 40..240, or 0 for the recipe.' }
+if ($Rows -ne 0 -and $Rows -lt 20) { throw 'Rows must be 20..60, or 0 for the recipe.' }
+$MotdWindows = [Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT
+$MotdWidth = if ($Width) { $Width } else { [int]$MotdConfig.display.width }
+$MotdHeight = if ($Rows) { $Rows } else { [int]$MotdConfig.display.rows }
+$MotdLines = New-Object 'System.Collections.Generic.List[object]'
+$MotdNotices = New-Object 'System.Collections.Generic.List[string]'
+$MotdColor = -not $Plain -and -not $env:NO_COLOR -and $MotdConfig.display.theme -ne 'mono'
+if (-not $Color) {
+    try { $MotdColor = $MotdColor -and $Host.UI.SupportsVirtualTerminal -and -not [Console]::IsOutputRedirected }
+    catch { $MotdColor = $false }
+}
+$MotdEscape = [char]27
+$MotdAccent = switch ($MotdConfig.display.theme) { 'green' { '32' } 'amber' { '33' } default { '36' } }
+
+function ConvertTo-MotdText([object] $Value) {
+    # Runtime observations are also untrusted display text. Drop terminal control
+    # characters rather than allowing a process/service name to move the cursor.
+    $safe = [regex]::Replace([string]$Value, '[\x00-\x1f\x7f-\x9f]', '?')
+    if ($Ascii) { $safe = [regex]::Replace($safe, '[^\x20-\x7e]', '?') }
+    return $safe
+}
+
+function Add-MotdLine([string] $Text, [string] $Tone = 'normal') {
+    [void]$MotdLines.Add(@{ Text = (ConvertTo-MotdText $Text); Tone = $Tone })
+}
+
+function Format-MotdBytes([double] $Bytes) {
+    if ($Bytes -lt 0) { return 'unavailable' }
+    if ($Bytes -ge 1GB) { return ('{0:N1} GiB' -f ($Bytes / 1GB)) }
+    return ('{0:N0} MiB' -f ($Bytes / 1MB))
+}
+
+function Format-MotdBar([double] $Used, [double] $Total) {
+    if ($Total -le 0 -or $Used -lt 0) { return '[unavailable]' }
+    $filled = [int][Math]::Round(12 * [Math]::Max(0.0, [Math]::Min(1.0, $Used / $Total)))
+    return '[' + ('#' * $filled) + ('-' * (12 - $filled)) + ']'
+}
+
+function ConvertTo-MotdWindowsArgument([string] $Argument) {
+    # Windows PowerShell's .NET Framework lacks ProcessStartInfo.ArgumentList.
+    # Quote one argv element using the standard Windows C-runtime rules. No
+    # shell, Invoke-Expression, string interpolation or implicit cmd.exe is used.
+    $quoted = [regex]::Replace($Argument, '(\\*)"', '${1}${1}\"')
+    $quoted = [regex]::Replace($quoted, '(\\+)$', '${1}${1}')
+    return '"' + $quoted + '"'
+}
+
+function Invoke-MotdHooks([string] $Phase) {
+    if ($Demo -or $NoHooks) { return }
+    $number = 0
+    foreach ($hook in @($MotdConfig.hooks.$Phase)) {
+        $number++
+        $process = New-Object Diagnostics.Process
+        $status = 127
+        try {
+            $info = New-Object Diagnostics.ProcessStartInfo
+            $info.FileName = [string]$hook.argv[0]
+            $info.UseShellExecute = $false
+            # Inherit output; redirected pipe buffers cannot deadlock this wait.
+            # A hook must name an executable, or explicitly name an interpreter
+            # for a script/cmdlet. Existing execution policy remains in force.
+            $arguments = @($hook.argv | Select-Object -Skip 1)
+            if ($null -ne $info.PSObject.Properties['ArgumentList']) {
+                foreach ($argument in $arguments) { [void]$info.ArgumentList.Add([string]$argument) }
+            } else {
+                $info.Arguments = (@($arguments | ForEach-Object { ConvertTo-MotdWindowsArgument $_ }) -join ' ')
+            }
+            $process.StartInfo = $info
+            [void]$process.Start()
+            $milliseconds = [int][Math]::Ceiling(1000 * [double]$hook.timeout_seconds)
+            if ($process.WaitForExit($milliseconds)) { $status = $process.ExitCode }
+            else {
+                $status = 124
+                # Process-tree termination is available in PowerShell 7's .NET.
+                # Windows PowerShell 5.1 can terminate only the direct child;
+                # descendants are not claimed to be contained by this timeout.
+                if ($PSVersionTable.PSVersion.Major -ge 7) { $process.Kill($true) }
+                else { $process.Kill() }
+                [void]$process.WaitForExit(250)
+            }
+        } catch { [Console]::Error.WriteLine('MOTD hook could not complete: ' + $_.Exception.Message) }
+        finally { $process.Dispose() }
+        if ($status -ne 0) {
+            $message = 'MOTD ' + $Phase + ' hook ' + $number + ' failed (' + $status + ').'
+            [Console]::Error.WriteLine($message)
+            if ($hook.on_failure -eq 'stop') { throw $message }
+        }
+    }
+}
+
+function Add-MotdSystem {
+    if ($Demo) {
+        Add-MotdLine 'SYSTEM     demo-host | Windows / Linux | PowerShell 7 (synthetic)' 'accent'
+        Add-MotdLine '           8 logical CPUs | User operator | Local or SSH session'
+    } else {
+        Add-MotdLine ('SYSTEM     ' + [Environment]::MachineName + ' | ' + [Environment]::OSVersion.VersionString) 'accent'
+        $session = if ($env:SSH_CONNECTION -or $env:SSH_TTY) { 'SSH' } else { 'Local/other transport' }
+        Add-MotdLine ('           ' + [Environment]::ProcessorCount + ' logical CPUs | User ' + [Environment]::UserName + ' | ' + $session)
+    }
+}
+
+function Add-MotdResources {
+    if ($Demo) {
+        Add-MotdLine ('MEMORY     6.0 GiB / 16.0 GiB ' + (Format-MotdBar 6 16)) 'accent'
+        Add-MotdLine ('STORAGE    System volume 120.0 GiB / 512.0 GiB ' + (Format-MotdBar 120 512))
+        Add-MotdLine '           Swap/compression/pressure detail unavailable in this backend'
+        return
+    }
+    $total = -1.0; $used = -1.0
+    try {
+        if ($MotdWindows) {
+            # A local CIM query supplies actual physical memory, not this
+            # PowerShell process's managed heap. Its one-second operation timeout
+            # is not a hard whole-render deadline (module startup is additional).
+            $osInfo = Get-CimInstance -ClassName Win32_OperatingSystem -OperationTimeoutSec 1 -ErrorAction Stop
+            $total = 1024.0 * $osInfo.TotalVisibleMemorySize
+            $used = $total - 1024.0 * $osInfo.FreePhysicalMemory
+        } elseif ([IO.File]::Exists('/proc/meminfo')) {
+            $memory = @{}
+            foreach ($line in [IO.File]::ReadAllLines('/proc/meminfo')) {
+                if ($line -match '^(MemTotal|MemAvailable):\s+(\d+)\s+kB') { $memory[$matches[1]] = 1024.0 * [double]$matches[2] }
+            }
+            if ($memory.ContainsKey('MemTotal') -and $memory.ContainsKey('MemAvailable')) {
+                $total = $memory.MemTotal; $used = $total - $memory.MemAvailable
+            }
+        }
+    } catch { [void]$MotdNotices.Add('Physical memory observation unavailable.') }
+    if ($total -gt 0) {
+        Add-MotdLine ('MEMORY     ' + (Format-MotdBytes $used) + ' / ' + (Format-MotdBytes $total) + ' ' + (Format-MotdBar $used $total)) 'accent'
+    } else { Add-MotdLine 'MEMORY     unavailable (no supported physical-memory source)' 'warning' }
+    try {
+        # Inspect only the system volume. Do not probe network or removable drives.
+        $rootPath = if ($MotdWindows) { $env:SystemDrive + '\' } else { '/' }
+        $drive = New-Object IO.DriveInfo($rootPath)
+        $diskUsed = [double]$drive.TotalSize - [double]$drive.TotalFreeSpace
+        Add-MotdLine ('STORAGE    ' + $rootPath + ' ' + (Format-MotdBytes $diskUsed) + ' / ' + (Format-MotdBytes $drive.TotalSize) + ' ' + (Format-MotdBar $diskUsed $drive.TotalSize))
+    } catch { Add-MotdLine 'STORAGE    unavailable (system volume could not be read)' 'warning' }
+    if ($MotdConfig.display.show_swap -or $MotdConfig.display.show_compression -or $MotdConfig.display.show_pressure) {
+        Add-MotdLine '           Swap/compression/pressure detail unavailable in this backend'
+    }
+}
+
+function Add-MotdServices {
+    if ($Demo) { Add-MotdLine 'SERVICES   [RUN] sshd   [RUN] example-worker   [STOP] optional-service' 'accent'; return }
+    if (-not $MotdWindows) { Add-MotdLine 'SERVICES   unavailable (native service collector currently Windows only)' 'warning'; return }
+    try {
+        $services = @(Get-Service -ErrorAction Stop | Sort-Object Name)
+        $shown = New-Object 'System.Collections.Generic.List[string]'
+        foreach ($service in $services) {
+            $excluded = $false
+            foreach ($pattern in @($MotdConfig.services.exclude)) { if ($service.Name -like $pattern) { $excluded = $true; break } }
+            if ($excluded) { continue }
+            $required = @($MotdConfig.services.required)
+            if ($required.Count -gt 0 -and $service.Name -notin $required) { continue }
+            [void]$shown.Add(('[' + $service.Status + '] ' + $service.Name))
+        }
+        if ($shown.Count) {
+            Add-MotdLine ('SERVICES   ' + ((@($shown | Select-Object -First 6)) -join '   ')) 'accent'
+            if ($shown.Count -gt 6) { Add-MotdLine ('           Showing 6 of ' + $shown.Count + ' matched services; stopped is not necessarily failed.') }
+        } else { Add-MotdLine 'SERVICES   No services matched the configured selection.' }
+        foreach ($name in @($MotdConfig.services.required)) {
+            if ($name -notin @($services | ForEach-Object { $_.Name })) { [void]$MotdNotices.Add('Required service not found: ' + $name) }
+        }
+    } catch { Add-MotdLine 'SERVICES   unavailable (service query failed or access denied)' 'warning' }
+}
+
+function Add-MotdProcesses {
+    Add-MotdLine 'PROCESSES  PID    CPU total (s)    Working set    Name' 'accent'
+    if ($Demo) {
+        Add-MotdLine '           812           152.4      768.0 MiB    example-worker'
+        Add-MotdLine '           946            18.7      128.0 MiB    disk-check'
+        return
+    }
+    $records = New-Object 'System.Collections.Generic.List[object]'
+    $processes = @()
+    $sampled = 0
+    try {
+        $processes = @([Diagnostics.Process]::GetProcesses())
+        foreach ($process in $processes) {
+            if ($sampled -ge [int]$MotdConfig.collection.process_limit) { break }
+            $sampled++
+            try {
+                $cpu = -1.0
+                try { $cpu = $process.TotalProcessorTime.TotalSeconds } catch { }
+                [void]$records.Add(@{ Pid = $process.Id; Name = $process.ProcessName; Cpu = $cpu; Memory = $process.WorkingSet64 })
+            } catch { }
+        }
+        foreach ($record in @($records | Sort-Object { $_.Cpu } -Descending | Select-Object -First ([int]$MotdConfig.display.top_entries))) {
+            $cpuText = if ($record.Cpu -lt 0) { 'unavailable' } else { '{0:N1}' -f $record.Cpu }
+            Add-MotdLine ('           {0,-6} {1,12}  {2,13}    {3}' -f $record.Pid, $cpuText, (Format-MotdBytes $record.Memory), $record.Name)
+        }
+        if (-not $records.Count) { Add-MotdLine '           unavailable (no readable process observations)' 'warning' }
+        if ($sampled -lt $processes.Count) { Add-MotdLine ('           Partial sample: ' + $sampled + ' of ' + $processes.Count + ' processes.') 'warning' }
+    } catch { Add-MotdLine '           unavailable (process enumeration failed)' 'warning' }
+    finally { foreach ($process in $processes) { $process.Dispose() } }
+}
+
+function Write-MotdFrame {
+    $inner = $MotdWidth - 4
+    $border = '+' + ('-' * ($MotdWidth - 2)) + '+'
+    Write-Output $border
+    $title = [string]$MotdConfig.display.title
+    if ($Demo) { $title += ' | DEMO - synthetic observations' }
+    $visible = New-Object 'System.Collections.Generic.List[object]'
+    [void]$visible.Add(@{ Text = $title; Tone = 'accent' })
+    # Reserve the last terminal row for the next prompt, as the Bash renderer does.
+    $capacity = $MotdHeight - 4
+    $limited = $MotdLines.Count -gt $capacity
+    $take = if ($limited) { $capacity - 1 } else { $capacity }
+    foreach ($line in @($MotdLines | Select-Object -First $take)) { [void]$visible.Add($line) }
+    if ($limited) { [void]$visible.Add(@{ Text = '... more rows omitted; increase -Rows or select fewer sections.'; Tone = 'warning' }) }
+    foreach ($line in $visible) {
+        $text = ConvertTo-MotdText $line.Text
+        if ($text.Length -gt $inner) {
+            $end = $inner - 3
+            if ([char]::IsHighSurrogate($text[$end - 1])) { $end-- }
+            $text = $text.Substring(0, $end) + '...'
+        }
+        $text = '| ' + $text.PadRight($inner) + ' |'
+        if ($MotdColor -and $line.Tone -ne 'normal') {
+            $color = if ($line.Tone -eq 'warning') { '33' } else { $MotdAccent }
+            $text = [string]$MotdEscape + '[' + $color + 'm' + $text + [string]$MotdEscape + '[0m'
+        }
+        Write-Output $text
+    }
+    Write-Output $border
+}
+
+# A live baseline has fewer collectors than Bash. Unsupported sections remain
+# visible as unavailable; it never invents zero values or claims full parity.
+# Collection timings are local-call timings, not a hard renderer wall-clock cap.
+Invoke-MotdHooks 'before'
+foreach ($section in @($MotdConfig.display.sections)) {
+    switch ($section) {
+        'system' { Add-MotdSystem }
+        'resources' { Add-MotdResources }
+        'services' { Add-MotdServices }
+        'processes' { Add-MotdProcesses }
+        'sessions' {
+            if ($Demo) { Add-MotdLine 'SESSIONS   operator (current); full session inventory unavailable' 'accent' }
+            else { Add-MotdLine ('SESSIONS   ' + [Environment]::UserName + ' (current); other sessions unavailable') 'accent' }
+        }
+        'connections' { Add-MotdLine 'CONNECTIONS  unavailable (connection inventory not implemented)' 'warning' }
+        'io' { Add-MotdLine 'I/O        unavailable (per-process rates not implemented)' 'warning' }
+        'attention' {
+            Add-MotdLine 'ATTENTION  Native PowerShell baseline; unsupported observations are unavailable.' 'accent'
+            foreach ($message in @($MotdConfig.messages)) { Add-MotdLine ('           ' + $message) }
+            foreach ($notice in $MotdNotices) { Add-MotdLine ('           ' + $notice) 'warning' }
+            if ($MotdConfig.collection.journal) { Add-MotdLine '           Event log/journal collection unavailable in this backend.' 'warning' }
+        }
+        'hints' {
+            foreach ($hint in @($MotdConfig.hints | Select-Object -First ([int]$MotdConfig.display.top_entries))) {
+                Add-MotdLine ('HINT       ' + $hint.label + ': ' + $hint.command + ' - ' + $hint.note)
+            }
+        }
+    }
+}
+Write-MotdFrame
+Invoke-MotdHooks 'after'
+'''
+# END EMBEDDED PS
 
 if __name__ == "__main__":
     raise SystemExit(entrypoint())
