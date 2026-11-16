@@ -53,7 +53,7 @@ not make measurements from different APIs interchangeable.
 | Memory and storage | Linux MemAvailable; Darwin/BSD free/total memory where queryable, labelled distinctly; `df -Pk` | Linux procfs, Windows CIM/WMI, system-volume drive data; BSD/macOS total memory can be available while used memory is unavailable |
 | Services | systemd, OpenRC and selected BSD rc queries when present; enabled scripts are not described as running | Windows services, guarded systemd queries and basic launchd inventory |
 | Processes | Visible `ps` sample for CPU percentage and RSS; capped Linux procfs I/O reads | Lifetime CPU seconds and working-set bytes; Windows/Linux I/O counters where accessible |
-| I/O | Cumulative device/process bytes where available, not a sampled rate | Cumulative process bytes, not a sampled rate; Windows transfer counts have different scope from Linux storage-accounted bytes |
+| I/O | Cumulative process bytes where available; no portable live device-rate collector | Cumulative process bytes, not a sampled rate; Windows transfer counts have different scope from Linux storage-accounted bytes |
 | Sessions/connections | Local `who`, procfs/socket utilities where supported | `who`/`quser` or explicitly limited current-user view; local .NET TCP/UDP APIs |
 | Pressure/compression/journal | Linux pressure where available; unsupported facilities state unavailable | Linux memory pressure where available; live compression and event/journal detail unavailable |
 | Hooks | Literal argv, timeout and failure policy; missing compatible hook timeout means skip/failure before executing it | Literal argv through process APIs; legacy engines can terminate the direct child, newer .NET can attempt a process-tree kill |

@@ -61,7 +61,10 @@ if (-not $Width -or -not $Rows) {
         if (-not $Rows -and $geometry.Value[0].Height -ge 20) { $MotdHeight = [Math]::Min($MotdHeight, [int]$geometry.Value[0].Height) }
     }
 }
-$MotdNoColor = $null -ne [Environment]::GetEnvironmentVariable('NO_COLOR')
+# Old .NET returns null for an existing empty value. Enumerating the legacy
+# IDictionary tests key presence correctly without depending on its value.
+$MotdEnvironment = [Environment]::GetEnvironmentVariables()
+$MotdNoColor = $MotdEnvironment.Contains('NO_COLOR')
 $MotdColor = -not $Plain -and -not $MotdNoColor -and $MotdConfig['display']['theme'] -ne 'mono'
 if (-not $Color) {
     $terminal = Read-MotdObservation { $Host.UI.SupportsVirtualTerminal -and -not [Console]::IsOutputRedirected }

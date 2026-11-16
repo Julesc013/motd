@@ -233,12 +233,13 @@ class ShellCompatibilityTests(unittest.TestCase):
 
         def invoke(interpreter, kind, startup, interactive, login, first_family):
             master, slave = pty.openpty()
-            arguments = [('~' if False else '-') + kind if login and first_family else kind]
+            arguments = ['-' + kind if login and first_family else kind]
             if kind == 'zsh': arguments.append('-f')
             if interactive: arguments.append('-i')
             if login and not first_family: arguments.append('-l')
             command = '. ' + shlex.quote(str(startup)) + '; . ' + shlex.quote(str(startup))
-            arguments += ['-c', command]
+            if not interactive:
+                arguments += ['-c', command]
             environment = os.environ.copy()
             environment.update(HOME=str(self.root), TERM='xterm')
 
@@ -247,9 +248,19 @@ class ShellCompatibilityTests(unittest.TestCase):
                 fcntl.ioctl(0, termios.TIOCSCTTY, 0)
 
             try:
-                result = subprocess.run(arguments, executable=interpreter, stdin=slave,
-                                        stdout=slave, stderr=slave, env=environment,
-                                        preexec_fn=controlling_terminal, timeout=8)
+                process = subprocess.Popen(arguments, executable=interpreter, stdin=slave,
+                                           stdout=slave, stderr=slave, env=environment,
+                                           preexec_fn=controlling_terminal)
+                try:
+                    if interactive:
+                        # Zsh 2's -c explicitly clears its interactive flag even
+                        # with -i, so feed a genuine interactive terminal.
+                        os.write(master, (command + '; exit\n').encode())
+                    status = process.wait(timeout=8)
+                finally:
+                    if process.poll() is None:
+                        process.kill()
+                        process.wait(timeout=3)
                 os.close(slave); slave = None
                 chunks = []
                 while True:
@@ -259,7 +270,7 @@ class ShellCompatibilityTests(unittest.TestCase):
                         raise
                     if not chunk: break
                     chunks.append(chunk)
-                return result.returncode, b''.join(chunks).decode(errors='replace')
+                return status, b''.join(chunks).decode(errors='replace')
             finally:
                 if slave is not None: os.close(slave)
                 os.close(master)

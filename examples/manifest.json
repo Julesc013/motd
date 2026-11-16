@@ -32,7 +32,7 @@
       "preset": "workshop",
       "shell": "powershell",
       "path": "examples/workshop.ps1",
-      "sha256": "6cd1976e4df5eb17427e74b84d77c65acea2026b4713a3d23834167a05635ffc"
+      "sha256": "94eb18424d13c6b42606678e6f373fb95c36b8abdacf2e222487891742900a07"
     },
     {
       "preset": "home-lab",
@@ -50,7 +50,7 @@
       "preset": "home-lab",
       "shell": "powershell",
       "path": "examples/home-lab.ps1",
-      "sha256": "01a6f0be6f37c38694ee2294e66f2c2543a15cae4d3a4dcac5598088dd7b18e1"
+      "sha256": "4dc74590c86c542b109e7b21160d7caba390cf5ed0aad632e58e109cda20043c"
     }
   ]
 }

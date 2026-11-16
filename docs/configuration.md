@@ -81,7 +81,8 @@ machine. See [coverage and dependencies](compatibility.md).
 
 `frequency = "login"` selects login-shell attachment; `"interactive"` also permits
 eligible non-login shells that read the chosen startup file. Bash and Zsh use their
-native login-state tests. Portable sh relies on its selected login profile and
+native login-state tests where available; Bash1 uses its leading-`-` login
+invocation convention. Portable sh relies on its selected login profile and
 does not claim a universal non-login rc-file route. Hooks check interactive state,
 terminal output, `~/.hushlogin` and duplicate invocation. `audience = "local"`
 means no SSH environment marker was found, not proven physical-console access.
@@ -121,7 +122,9 @@ these hook limits as a sandbox or a hard deadline for arbitrary descendant trees
 ## Runtime display switches
 
 Unix outputs accept `--width 40 --rows 25`, `--ascii` / `--unicode`,
-`--color` / `--plain`, and `--demo` / `--demo-alerts`. Native PowerShell uses
+`--plain`, and `--demo` / `--demo-alerts`. The enhanced Bash renderer selects
+colour from its terminal/theme settings; portable Unix also accepts `--color`
+for an explicit capture. Native PowerShell uses
 `-Width 40 -Rows 25`, `-Ascii` / `-Unicode`, `-Color` / `-Plain`, and
 `-Demo` / `-DemoAlerts`. The terminal can supply dimensions automatically;
 explicit switches make examples and tests reproducible. `NO_COLOR`, including
