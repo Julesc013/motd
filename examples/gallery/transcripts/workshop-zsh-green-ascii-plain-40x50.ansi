@@ -1,0 +1,42 @@
++= ws-bench-07 | ... === DEMO 13:30:00 +
++= SYSTEM ============== up 4d 06h 12m +
+| Domain workshop.example              |
+| IP eno1 192.0.2.17/24                |
+| Debian GNU/Linux 13 (trixie) | 6.... |
+| Stall: CPU 1.20% RAM 0.00% I/O 0.15% |
++= RESOURCES ============== Max FS 38% +
+| RAM  8.0Gi/32.0Gi    OOCC....        |
+| DISK 220Gi/600Gi     222.....        |
+| Cache 8.3Gi  Z 640Mi  S 2.0Gi/8.0Gi  |
+| Fullest /srv/images 38% | inodes 7%  |
++= SERVICES = 16 run / 21 load / 0 ... +
+| SSH          RUN | RDP           RUN |
+| SMB          RUN | FTP          STOP |
+| TFTP         RUN | GUI          STOP |
+| OOM          RUN | WEB           RUN |
+| DB           RUN | NET           RUN |
++= TOP PROCESSES = 184 tasks D0 Z0 ... +
+| CPU avg 2418 badblocks         82.4% |
+| RAM RSS 1632 postgres          1.3Gi |
+| I/O /s 2418 badblocks        181Mi/s |
+| I/O ~42ms | 184/184 readable PIDs    |
+| Devices 2 | in flight 4 | I/O sta... |
+| sdb  R181Mi/s  W0B/s  q1             |
+| sdc  R4.0Mi/s  W118Mi/s  q3          |
++= SESSIONS == 4 sessions / 1 users +1 +
+| SSH #c11 pts/0 workshop              |
+| 192.0.2.24 [online]                  |
+| SSH #c12 pts/1 workshop              |
+| 192.0.2.41 [online]                  |
+| RDP #c13 :10 workshop ...            |
++= CONNECTIONS ======= 8 TCP / 3 admin +
+| SSH  192.0.2.17:22  <->              |
+| 192.0.2.24:51422                     |
+| SSH  192.0.2.17:22  <->              |
++= ATTENTION ================ E0 W0 I0 +
+| No configured alerts in collected... |
++= HINTS ============== top | iotop -o +
+| Tasks                            top |
+| I/O                         iotop -o |
+| Services          systemctl --failed |
++======================================+

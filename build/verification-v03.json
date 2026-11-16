@@ -1,0 +1,225 @@
+{
+  "schema_version": 1,
+  "project_version": "0.3.0",
+  "started_at_utc": "2026-11-16T12:22:53.610748+00:00",
+  "completed_at_utc": "2026-11-16T12:23:35.795893+00:00",
+  "scope": "Integrated generated scripts, configuration, wizard, collector fixtures, gallery decoder and journalled installation in temporary directories. No real startup files modified.",
+  "python": "3.12.14 (main, Aug 25 2026, 14:00:49) [Clang 22.1.3 ]",
+  "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "os_release": {
+    "NAME": "Debian GNU/Linux",
+    "ID": "debian",
+    "PRETTY_NAME": "Debian GNU/Linux 13 (trixie)",
+    "VERSION_ID": "13",
+    "VERSION": "13 (trixie)",
+    "VERSION_CODENAME": "trixie",
+    "DEBIAN_VERSION_FULL": "13.6",
+    "HOME_URL": "https://www.debian.org/",
+    "SUPPORT_URL": "https://www.debian.org/support",
+    "BUG_REPORT_URL": "https://bugs.debian.org/"
+  },
+  "test_command": "python3 -m unittest discover -s tests -v",
+  "test_environment": {
+    "MOTD_TEST_WRITE_RECORD": "0",
+    "MOTD_TEST_BASH1": "/workspace/scratch/fa0f8e340988/work/legacy-unix-builds/bash-1.14.7/bash",
+    "MOTD_TEST_BASH2": "/workspace/scratch/fa0f8e340988/work/legacy-unix-builds/bash-2.05b/bash",
+    "MOTD_TEST_BASH32": "/workspace/scratch/fa0f8e340988/work/compat-bash32/bash-3.2/bash",
+    "MOTD_TEST_BASH43": "/workspace/scratch/fa0f8e340988/work/compat-bash43/bash-4.3/bash",
+    "MOTD_TEST_ZSH2": "/workspace/scratch/fa0f8e340988/work/legacy-unix-builds/zsh2.3.1/src/zsh",
+    "MOTD_TEST_ZSH3": "/workspace/scratch/fa0f8e340988/work/legacy-unix-builds/zsh-3.0.8/Src/zsh",
+    "MOTD_TEST_ZSH4": "/workspace/scratch/fa0f8e340988/work/legacy-unix-builds/zsh-4.2.7/Src/zsh",
+    "MOTD_TEST_POWERSHELL": "/workspace/scratch/fa0f8e340988/work/powershell-7.6.10/pwsh"
+  },
+  "interpreter_evidence": {
+    "MOTD_TEST_BASH1": {
+      "path": "/workspace/scratch/fa0f8e340988/work/legacy-unix-builds/bash-1.14.7/bash",
+      "version": "1.14.7(6)",
+      "version_query": [
+        "/workspace/scratch/fa0f8e340988/work/legacy-unix-builds/bash-1.14.7/bash",
+        "-c",
+        "echo \"$BASH_VERSION\""
+      ],
+      "version_query_returncode": 0,
+      "binary_sha256": "e19032e3b9d1b4f6bf7601e12954be9106e450ee090671e28846041bd7aaf532"
+    },
+    "MOTD_TEST_BASH2": {
+      "path": "/workspace/scratch/fa0f8e340988/work/legacy-unix-builds/bash-2.05b/bash",
+      "version": "2.05b.0(1)-release",
+      "version_query": [
+        "/workspace/scratch/fa0f8e340988/work/legacy-unix-builds/bash-2.05b/bash",
+        "-c",
+        "echo \"$BASH_VERSION\""
+      ],
+      "version_query_returncode": 0,
+      "binary_sha256": "4958fd549634f1f32ab43a96a1c845e000c98522ac0756b78d6533404a4f0eff"
+    },
+    "MOTD_TEST_BASH32": {
+      "path": "/workspace/scratch/fa0f8e340988/work/compat-bash32/bash-3.2/bash",
+      "version": "3.2.0(2)-release",
+      "version_query": [
+        "/workspace/scratch/fa0f8e340988/work/compat-bash32/bash-3.2/bash",
+        "-c",
+        "echo \"$BASH_VERSION\""
+      ],
+      "version_query_returncode": 0,
+      "binary_sha256": "551db68f59daed86b0e7785bec902255a850ee49f5e13db897ad82c9eb7d3faf"
+    },
+    "MOTD_TEST_BASH43": {
+      "path": "/workspace/scratch/fa0f8e340988/work/compat-bash43/bash-4.3/bash",
+      "version": "4.3.0(1)-release",
+      "version_query": [
+        "/workspace/scratch/fa0f8e340988/work/compat-bash43/bash-4.3/bash",
+        "-c",
+        "echo \"$BASH_VERSION\""
+      ],
+      "version_query_returncode": 0,
+      "binary_sha256": "62033d0d94602f79c5b5913d9c59b37039e44f4777bcc036738d12d9d4ae78fd"
+    },
+    "MOTD_TEST_ZSH2": {
+      "path": "/workspace/scratch/fa0f8e340988/work/legacy-unix-builds/zsh2.3.1/src/zsh",
+      "version": "zsh v2.3.1",
+      "version_query": [
+        "/workspace/scratch/fa0f8e340988/work/legacy-unix-builds/zsh2.3.1/src/zsh",
+        "-c",
+        "echo \"${ZSH_VERSION:-$VERSION}\""
+      ],
+      "version_query_returncode": 0,
+      "binary_sha256": "9913ff2f369743d8cb7a75c73645d92eaa13405847180c52d3be456d90a84c1a"
+    },
+    "MOTD_TEST_ZSH3": {
+      "path": "/workspace/scratch/fa0f8e340988/work/legacy-unix-builds/zsh-3.0.8/Src/zsh",
+      "version": "3.0.8",
+      "version_query": [
+        "/workspace/scratch/fa0f8e340988/work/legacy-unix-builds/zsh-3.0.8/Src/zsh",
+        "-c",
+        "echo \"${ZSH_VERSION:-$VERSION}\""
+      ],
+      "version_query_returncode": 0,
+      "binary_sha256": "de650fb4127a0977a69a4761f8746ba5c50af27569c4ae12e886b32735599796"
+    },
+    "MOTD_TEST_ZSH4": {
+      "path": "/workspace/scratch/fa0f8e340988/work/legacy-unix-builds/zsh-4.2.7/Src/zsh",
+      "version": "4.2.7",
+      "version_query": [
+        "/workspace/scratch/fa0f8e340988/work/legacy-unix-builds/zsh-4.2.7/Src/zsh",
+        "-c",
+        "echo \"${ZSH_VERSION:-$VERSION}\""
+      ],
+      "version_query_returncode": 0,
+      "binary_sha256": "0e39e5c264e1ad56fe4243d8617f68e6471384a48c6506cc08c2abdfd8eea4cc"
+    },
+    "MOTD_TEST_POWERSHELL": {
+      "path": "/workspace/scratch/fa0f8e340988/work/powershell-7.6.10/pwsh",
+      "version": "7.6.10",
+      "version_query": [
+        "/workspace/scratch/fa0f8e340988/work/powershell-7.6.10/pwsh",
+        "-NoProfile",
+        "-Command",
+        "$PSVersionTable.PSVersion.ToString()"
+      ],
+      "version_query_returncode": 0,
+      "binary_sha256": "292d0d8573eaeaf44685c1b454a2d14d68f6c91d1eff42e484c73c72ba235695"
+    }
+  },
+  "tests_run": 156,
+  "passed": 155,
+  "failed": 0,
+  "errors": 0,
+  "skipped": [
+    {
+      "test": "test_existing_numeric_ownership_is_preserved_and_restored (test_transactions.TransactionTests.test_existing_numeric_ownership_is_preserved_and_restored)",
+      "reason": "numeric ownership restoration requires root"
+    }
+  ],
+  "elapsed_seconds": 41.735,
+  "successful": true,
+  "source_sha256": {
+    "motd.py": "fcbee41f4d51dc49ebd33ee29c5f1498831b0abd633fc7f460fd0523aa474541",
+    ".github/workflows/ci.yml": "4bbcdd257a66d0fcd1e043839ff41fd64d23339b2c44b3a43a8672a6577d9992",
+    "runtime/motd.bash": "4fdc2e48aca90047afe2879388c85686fa360f6902a8db1da15ebcd9cf9b82ea",
+    "runtime/motd.ps1": "6c20e8e3942b15b41201240c053faf5f8580b5bf927e1ad3a7b55026fb76da61",
+    "runtime/motd.sh": "6cd7e7aa3c2c6a29b0605a04d832d71222c93ce6ff5db4d7a65345ef0acac6bc",
+    "tests/test_cli.py": "4f06251027c93eb1b2c85f6364d3dad2ce9d47d6361161c1a431f69afba6af09",
+    "tests/test_gallery.py": "df6f59b5ba3838129e02be69cf4c0502cdbcf9f5adebb95ec35b0795827aca38",
+    "tests/test_generation.py": "cb7e5bd3191bd1c51824a7b0bc0915aa98560b57518865c7303b30b4409da16b",
+    "tests/test_installation.py": "0c207ca08c72d4d52b67a5e7924151fac58af6f366af97fb8762ac504a98b482",
+    "tests/test_native_platforms.py": "1050855c1433289fecad96848066a1062ff33ea56faa5baaac77d2d1ef5a4431",
+    "tests/test_powershell.py": "b10449da9e220e74fc57d46c026ebd4983361fe73b13c5e39e2a9f137ae7f445",
+    "tests/test_runtime.py": "7208f2af79659adac1f97df65b3d37be9b84d2ecdd516f270fe6a505b07423e3",
+    "tests/test_shell_compatibility.py": "85d0a29dd7de50db40df89458fc651ccb6b5e242e765dd0bff53bd450422d196",
+    "tests/test_transactions.py": "f260a911d50972c3de1d59d85e4c2d15c6a27d3b3af86e082c3b149716ef6871",
+    "tests/test_unix_collectors.py": "fae5d8725404054fa00d3330345cf725da0eaa3d7d2a6329345f6c0f86010e75",
+    "tests/test_wizard.py": "74730435da7b594535c0bbdae423c659ad319fdad3a870a2c31d4dd91d1a37e6",
+    "tools/build_examples.py": "1441d9b541ce61a1bb9d1b6ecfbc3bf38490c8207756b37acf33551517d95410",
+    "tools/build_gallery.py": "4a284d11152813d3bbd83b9b0ebb47cb54ffa5ab32ff51a5f8c8b6c4b13270d8",
+    "tools/embed_runtime.py": "7dec476428af4b8b1188e05d40009c7e3b176a2e6b0a2372d50e6ec3ab0c5925"
+  },
+  "sources_changed_during_run": [],
+  "test_log_sha256": "6d5d1e5f1046e20b4a4c4b70851bff44cc88aac3c906da7ffc8e7e1b736201b4",
+  "limitations": [
+    "Historical Bash/Zsh were built on modern Linux; consult the Unix record for build patches.",
+    "This record does not test historical Windows PowerShell 1\u20134 or historical OS images.",
+    "Native Windows5.1/7 and macOS are separate CI environments.",
+    "Timing under concurrent gallery work is not a login performance benchmark."
+  ],
+  "native_platform_ci": {
+    "commit": "ef065753737c8df9cd968b30c37fda5b4820d0a5",
+    "run_url": "https://github.com/Julesc013/motd/actions/runs/43865806375",
+    "configurator_sha256": "fcbee41f4d51dc49ebd33ee29c5f1498831b0abd633fc7f460fd0523aa474541",
+    "scope": "Native platform jobs pass; this intermediate commit intentionally lacks the not-yet-finalized PNG gallery, so its separate Linux gallery gate fails. Final commit CI verifies the complete gallery.",
+    "jobs": [
+      {
+        "name": "Windows PowerShell",
+        "job_id": 133293923155,
+        "engine": "5.1.26100.33648",
+        "os": "Windows Server 2025 Datacenter 10.0.26100",
+        "tests": 21,
+        "passed": 21,
+        "skipped": 0,
+        "outcome": "success"
+      },
+      {
+        "name": "PowerShell on Windows",
+        "job_id": 133293923434,
+        "engine": "7.6.9",
+        "os": "Windows Server 2025 Datacenter 10.0.26100",
+        "tests": 21,
+        "passed": 21,
+        "skipped": 0,
+        "outcome": "success"
+      },
+      {
+        "name": "macOS native outputs",
+        "job_id": 133293922548,
+        "os": "macOS 26.7.2 arm64, build 25G332",
+        "engines": [
+          "Bash 3.2.57(1)-release",
+          "Zsh 5.9"
+        ],
+        "tests": 4,
+        "passed": 4,
+        "skipped": 0,
+        "outcome": "success"
+      },
+      {
+        "name": "Linux unit/integration suite",
+        "job_id": 133293923043,
+        "os": "Ubuntu 26.04.1 LTS",
+        "tests": 156,
+        "skipped": 5,
+        "outcome": "test suite and example regeneration pass; gallery not yet in this commit"
+      }
+    ]
+  },
+  "gallery_verification": {
+    "command": "python3 tools/build_gallery.py --verify --require-full",
+    "verified_logical_cases": 524,
+    "verified_unique_pngs": 196,
+    "verified_comparisons": 8,
+    "all_decoded_pixels_verified": true,
+    "manifest_sha256": "fae7eca91973f86b550cd72f2bfe44d4837510d5860288e72760835c3691d67f",
+    "capture_engine": "PowerShell 7.6.10 and Unix interpreters recorded in gallery manifest",
+    "gallery_zip_sha256": "2a995d82004d77426732fda15d8c874eefbc387507bad8e7d0e4231a20dd2452",
+    "note": "Complete retained-evidence verification and ZIP CRC verification passed after PNG optimization. Final commit CI repeats the retained-evidence verification."
+  }
+}

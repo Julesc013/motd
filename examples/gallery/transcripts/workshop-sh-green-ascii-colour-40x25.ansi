@@ -1,0 +1,24 @@
+[1;32m+ WORKSHOP STATUS ---------------------+[0m
+[1;32m|[0m Workshop | Portable Unix             [1;32m|[0m
+[1;32m+ SYSTEM ------------------------------+[0m
+[1;32m|[0m Host: demo-host | Linux demo-kernel  [1;32m|[0m
+[1;32m|[0m Up: 86400 s | Load: 0.25 0.18 0.12   [1;32m|[0m
+[1;32m+ RESOURCES ---------------------------+[0m
+[1;32m|[0m Memory available: 12582912 KiB       [1;32m|[0m
+[1;32m|[0m Root: 42% used; 286 GiB available    [1;32m|[0m
+[1;32m|[0m Total RAM: 16777216 KiB              [1;32m|[0m
+[1;32m+ SERVICES ----------------------------+[0m
+[1;32m|[0m Services: 8 running; 0 failed        [1;32m|[0m
+[1;32m+ PROCESSES (visible sample) ----------+[0m
+[1;32m|[0m CPU: compiler 32.4% (pid 2184)       [1;32m|[0m
+[1;32m|[0m RSS: database 842112 KiB (pid 1401)  [1;32m|[0m
+[1;32m|[0m I/O bytes: database 1090519040 B (p~ [1;32m|[0m
+[1;32m+ SESSIONS ----------------------------+[0m
+[1;32m|[0m Sessions: 3 logged-in terminals      [1;32m|[0m
+[1;32m+ CONNECTIONS -------------------------+[0m
+[1;32m|[0m TCP: 12 established; 5 listening     [1;32m|[0m
+[1;32m+ ATTENTION ---------------------------+[0m
+[1;32m|[0m DEMO fixture; no live machine data.  [1;32m|[0m
+[1;32m+ HINTS -------------------------------+[0m
+[1;32m|[0m Tasks: top - CPU and memory          [1;32m|[0m
+[1;32m+--------------------------------------+[0m

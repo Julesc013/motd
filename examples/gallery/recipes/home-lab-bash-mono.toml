@@ -1,0 +1,64 @@
+# MOTD recipe. Edit by hand or pass back to motd.py.
+# Hooks are explicit executable calls; hints are display-only text.
+schema_version = 1
+preset = "home-lab"
+name = "home-lab"
+target = "shell"
+shell = "bash"
+audience = "all"
+frequency = "login"
+public_text = "Authorised access only. Contact the system administrator."
+messages = []
+
+[display]
+title = "HOME LAB"
+site = "Home lab"
+theme = "mono"
+charset = "auto"
+color = "auto"
+width = 100
+rows = 25
+top_entries = 3
+sections = ["system", "resources", "services", "attention", "hints"]
+show_swap = true
+show_compression = true
+show_pressure = true
+
+[services]
+required = []
+exclude = []
+
+[collection]
+budget_ms = 140
+worker_ms = 220
+process_limit = 512
+io_scan_ms = 35
+journal = false
+
+[hooks]
+before = []
+after = []
+
+[[hints]]
+id = "tasks"
+label = "Tasks"
+command = "top"
+note = "CPU and memory"
+
+[[hints]]
+id = "io"
+label = "I/O"
+command = "iotop -o"
+note = "If installed and permitted"
+
+[[hints]]
+id = "services"
+label = "Services"
+command = "systemctl --failed"
+note = "Failed units"
+
+[[hints]]
+id = "sessions"
+label = "Sessions"
+command = "loginctl list-sessions"
+note = "Registered logins"

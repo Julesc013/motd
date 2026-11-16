@@ -4,8 +4,12 @@ Build commands write standalone artifacts to an existing output directory.
 Generated working files here are ignored by Git. Curated portable outputs live
 in `examples/`; reusable human-readable recipes live in `presets/`.
 
-`verification-v03.json` is the current integration test record. The Unix and
-PowerShell legacy records retain exact engine versions, source provenance,
+`verification-v03-final.json` is the current complete local-suite record, with
+its retained log in `verification-v03-final.log`. The corresponding
+`verification-unix-current.json` and `verification-powershell-current.json`
+record actual historical Unix and native PowerShell executions for the current
+templates. `verification-v03.json` and the Unix/PowerShell legacy records retain
+the preceding development checks, exact engine versions, source provenance,
 build qualifications and remaining unverified targets. Revision-specific CI
 adds native Windows and macOS evidence; a local Linux test cannot establish that.
 

@@ -24,6 +24,8 @@ messages = ["Maintenance: check the backup report."]
 title = "HOME LAB"
 site = "Home"
 theme = "green"
+charset = "auto"
+color = "auto"
 width = 100
 rows = 25
 top_entries = 3
@@ -61,6 +63,8 @@ Installation scope, destination paths, shell startup file, and state directory a
 | `public_text` | Public static notice, including newlines; up to 16,000 characters. |
 | `display.title`, `display.site` | Text, up to 100 characters each. |
 | `display.theme` | `cyan`, `green`, `amber`, `mono`. |
+| `display.charset` | `auto` (default), `ascii`, `unicode`; a saved default that runtime switches may override. |
+| `display.color` | `auto` (default), `always`, `never`; `NO_COLOR` and the mono theme still disable colour. |
 | `display.width`, `display.rows` | Integers: width 40–240; row budget 20–60, with enough rows for the selected sections. |
 | `display.top_entries` | Integer, 1–10. |
 | `display.sections` | A nonempty list of distinct supported section IDs, in display order. |
@@ -119,16 +123,57 @@ Windows PowerShell 1–5 can terminate the direct hook process but do not provid
 the same descendant-tree kill operation as current PowerShell/.NET. Avoid treating
 these hook limits as a sandbox or a hard deadline for arbitrary descendant trees.
 
+### Previewing before/after output
+
+Wizard previews hide configured calls by default. Type `H` and Enter on a page
+to include their **samples**, in before → MOTD → after order. This does not change
+the recipe or run the commands. `J`/`K` scroll sample output that is longer than
+the viewport. A representative Fastfetch sample and simple literal echo/printf
+samples are built in; their output is illustrative, not a host observation.
+
+For any program, save explicit sample text alongside its call:
+
+```toml
+[[hooks.before]]
+argv = ["fastfetch"]
+timeout_seconds = 2
+on_failure = "continue"
+
+[[hooks.after]]
+argv = ["/usr/local/bin/workshop-notice"]
+timeout_seconds = 1
+on_failure = "continue"
+preview_text = "Bench 3: drive testing in progress.\nSession ready."
+```
+
+`preview_text` accepts up to 4,000 characters including newlines, with no terminal
+control sequences. It is display-only metadata; the installed runtime does not
+print it instead of calling the configured command. An unknown call without a
+sample is labelled explicitly. The add-call wizard asks for this optional text;
+use `\\n` between lines in its answer. Shell expressions such as `bash -c ...`
+are not interpreted to guess their output.
+
+The wizard always reserves ten control rows and gives the remaining rows to
+the renderer. Its temporary preview overrides do not modify `display.width` or
+`display.rows`. The terminal is measured again while an answer is pending,
+including when inherited `COLUMNS`/`LINES` values are stale. A 25-row terminal
+has a 15-row preview; a 50-row terminal has a 40-row preview.
+
 ## Runtime display switches
 
 Unix outputs accept `--width 40 --rows 25`, `--ascii` / `--unicode`,
-`--plain`, and `--demo` / `--demo-alerts`. The enhanced Bash renderer selects
-colour from its terminal/theme settings; portable Unix also accepts `--color`
-for an explicit capture. Native PowerShell uses
+`--plain` / `--color`, and `--demo` / `--demo-alerts`. All Unix routes accept the
+same explicit colour switches. Native PowerShell uses
 `-Width 40 -Rows 25`, `-Ascii` / `-Unicode`, `-Color` / `-Plain`, and
 `-Demo` / `-DemoAlerts`. The terminal can supply dimensions automatically;
 explicit switches make examples and tests reproducible. `NO_COLOR`, including
 an empty value, suppresses colours. Demo modes suppress hooks.
+
+Runtime row overrides accept **8–200** rows. Recipe row budgets remain **20–60**
+with sufficient space for the selected sections; the smaller override supports
+previews and short terminals without destroying the saved configuration.
+Saved character-set/colour choices are defaults, explicit switches can override
+them, and plain mode, `NO_COLOR` and a mono theme retain colour-suppression precedence.
 
 The layout reserves a row for the next shell prompt. Narrow displays shorten
 values; taller displays can allocate more rows to enabled sections. ASCII mode

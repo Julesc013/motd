@@ -1,6 +1,18 @@
 # Changelog
 
-## 0.3.0 - 2026-11-16
+## 0.3.0 - 2026-11-17
+
+- Keep wizard questions in ten fixed control rows and re-render the remaining
+  viewport while the terminal resizes, preserving a partially typed answer.
+  Paginate long menus and support compact 8–200-row runtime overrides without
+  cropping complete dashboard sections or borders.
+- Optional before/after sample previews include Fastfetch and per-call literal
+  preview_text, remain hidden by default, and never execute configured commands.
+  Five wizard PNG views demonstrate the four requested sizes and call samples.
+- Save character-set and colour defaults in TOML and expose them in the wizard.
+  Runtime flags remain explicit overrides; NO_COLOR and mono suppress colour.
+- Fix malformed Darwin memory-query results being treated as zero, and apply
+  shared required/excluded service rules to native PowerShell service providers.
 
 - Generated Bash files now dispatch to enhanced Linux collection or an embedded
   portable Unix renderer before historical engines parse modern Bash syntax.

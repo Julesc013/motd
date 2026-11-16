@@ -11,3 +11,9 @@ build/*
 !build/verification-unix-legacy.json
 !build/verification-powershell-legacy.json
 !build/verification-v03.json
+!build/verification-v03.log
+!build/verification-unix-current.json
+!build/verification-powershell-current.json
+!build/verification-v03-final.json
+!build/verification-v03-final.log
+!build/verification-gallery.json

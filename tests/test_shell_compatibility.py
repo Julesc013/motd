@@ -79,6 +79,59 @@ class ShellCompatibilityTests(unittest.TestCase):
             if slave is not None: os.close(slave)
             os.close(master)
 
+    def test_short_row_budgets_replan_without_cropping_and_keep_attention(self):
+        # The wizard reserves ten rows: a 25-row terminal leaves fifteen for
+        # the actual renderer. Smaller viewports omit whole sections visibly.
+        for shell in ('bash', 'sh', 'zsh'):
+            config = motd.preset_config('workshop', shell=shell)
+            path = self.artifact(config)
+            for width, rows in ((40, 8), (40, 15), (80, 12), (80, 15), (80, 200)):
+                with self.subTest(shell=shell, width=width, rows=rows):
+                    result = self.run_shell(shell, path, '--demo-alerts', '--plain', '--ascii',
+                                            '--width', str(width), '--rows', str(rows))
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertEqual(result.stderr, '')
+                    lines = result.stdout.splitlines()
+                    self.assertLessEqual(len(lines), rows - 1)
+                    self.assertTrue(lines[-1].startswith('+') and lines[-1].endswith('+'))
+                    self.assertLessEqual(max(map(len, lines)), width)
+                    self.assertIn('ATTENTION', result.stdout)
+                    if rows < 20:
+                        self.assertIn('sections; resize for more.', result.stdout)
+                        self.assertTrue('DEMO WARNING:' in result.stdout or 'ERROR:' in result.stdout)
+                    else:
+                        self.assertNotIn('sections; resize for more.', result.stdout)
+
+    def test_saved_charset_and_color_preferences_and_cli_overrides(self):
+        for shell in ('bash', 'sh', 'zsh'):
+            config = motd.preset_config('workshop', shell=shell)
+            config['display'].update(charset='ascii', color='never')
+            path = self.artifact(config)
+            environment = dict(os.environ, TERM='xterm-256color', LC_ALL='C.UTF-8')
+            environment.pop('NO_COLOR', None)
+            for flags, color, unicode in (([], False, False),
+                                         (['--color', '--unicode'], True, True),
+                                         (['--plain', '--color', '--unicode'], False, True)):
+                with self.subTest(shell=shell, flags=flags):
+                    result = subprocess.run([shell, str(path), '--demo', *flags],
+                                            env=environment, capture_output=True, text=True, timeout=8)
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertEqual('\x1b[' in result.stdout, color)
+                    self.assertEqual(not result.stdout.isascii(), unicode)
+            config['display'].update(charset='unicode', color='always')
+            path = self.artifact(config)
+            result = subprocess.run([shell, str(path), '--demo'], env=environment,
+                                    capture_output=True, text=True, timeout=8)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn('\x1b[', result.stdout)
+            self.assertFalse(result.stdout.isascii())
+            result = subprocess.run([shell, str(path), '--demo', '--ascii'],
+                                    env=dict(environment, NO_COLOR=''), capture_output=True,
+                                    text=True, timeout=8)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertNotIn('\x1b[', result.stdout)
+            self.assertTrue(result.stdout.isascii())
+
     def test_old_recipe_still_defaults_to_bash(self):
         config = motd.preset_config('home-lab')
         config.pop('shell', None)

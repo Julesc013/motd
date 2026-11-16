@@ -1,6 +1,6 @@
 # Shell outputs, login surfaces and visual configuration
 
-Status: **implementation contract and bounded extension plan**, 2026-11-16.
+Status: **implementation contract and bounded extension plan**, 2026-11-17.
 This extends the original v0.1 scope. Requirements describe acceptance behaviour;
 they do not constitute a claim that every listed host has passed testing.
 The [compatibility guide](../docs/compatibility.md) records primary-source reasons
@@ -67,8 +67,19 @@ it does not introduce a graphical desktop toolkit.
 - Begin with the action. Show only choices relevant to that branch.
 - Group target, interpreter, preset, appearance, sections and commands into
   readable stages. Permit changing an earlier choice before applying.
-- Show a clearly labelled synthetic preview beside or above the relevant
-  appearance choices. Theme and section changes update the displayed result.
+- Reserve exactly ten control rows: title, five questions, status, navigation,
+  answer and preview label. Paginate additional choices. Place a clearly labelled
+  synthetic preview in the remaining rows below the controls.
+- Detect window resizing while awaiting input; preserve unfinished text and
+  restore terminal flags after every answer, EOF, cancellation or error. Prefer
+  actual terminal geometry over stale inherited COLUMNS/LINES values.
+- Re-render for the available width and height rather than clipping a larger
+  dashboard. Compact displays omit whole sections, retain borders and report
+  omissions. The 40×25/50 and 80×25/50 windows have 15/40 preview rows.
+- Hide configured before/after calls by default. An optional sample view shows
+  before → MOTD → after with explicit synthetic labels; it must never execute
+  those calls. Accept literal per-call preview_text for arbitrary programs and
+  make unknown/omitted samples visible. Permit scrolling long sample sequences.
 - Render previews from the selected output backend when it is available.
   If that interpreter is missing, explain the limit; a schematic must not be
   labelled as an executed native preview.

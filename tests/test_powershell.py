@@ -200,6 +200,31 @@ class PowerShellExecutionTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertNotIn("\x1b[", result.stdout)
 
+    def test_saved_charset_and_color_are_defaults_overridden_by_runtime_switches(self):
+        env = os.environ.copy()
+        env.pop("NO_COLOR", None)
+        # Current PowerShell itself strips ANSI for TERM=dumb, independently of
+        # the script's switches. Test colour precedence on a capable terminal.
+        env["TERM"] = "xterm-256color"
+        self.config["display"].update(charset="unicode", color="never")
+        result = self.render("-Demo", env=env)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("\u250c", result.stdout)
+        self.assertNotIn("\x1b[", result.stdout)
+        override = self.render("-Demo", "-Color", "-Ascii", env=env)
+        self.assertEqual(override.returncode, 0, override.stderr)
+        self.assertIn("\x1b[", override.stdout)
+        self.assertNotIn("\u250c", override.stdout)
+        self.config["display"].update(charset="ascii", color="always")
+        forced = self.render("-Demo", env=env)
+        self.assertEqual(forced.returncode, 0, forced.stderr)
+        self.assertIn("\x1b[", forced.stdout)
+        self.assertNotIn("\u250c", forced.stdout)
+        plain = self.render("-Demo", "-Plain", "-Unicode", env=env)
+        self.assertEqual(plain.returncode, 0, plain.stderr)
+        self.assertNotIn("\x1b[", plain.stdout)
+        self.assertIn("\u250c", plain.stdout)
+
     def test_all_requested_sizes_and_charsets_expand_actual_content(self):
         self.config["display"]["sections"] = list(motd.SECTION_IDS)
         self.config["display"]["rows"] = 50
@@ -275,6 +300,66 @@ class PowerShellExecutionTests(unittest.TestCase):
         result = self.render("-Demo", "-Width", "10")
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("Width must be 40..240", result.stderr)
+
+    def test_small_preview_budgets_fit_without_overdrawing_controls(self):
+        self.config["display"]["sections"] = list(motd.SECTION_IDS)
+        for rows in (8, 10, 15, 19, 200):
+            with self.subTest(rows=rows):
+                result = self.render("-Demo", "-Plain", "-Ascii", "-Width", "40", "-Rows", str(rows))
+                self.assertEqual(result.returncode, 0, result.stderr)
+                lines = result.stdout.splitlines()
+                self.assertLessEqual(len(lines), rows - 1, result.stdout)
+                self.assertTrue(all(len(line) == 40 for line in lines), result.stdout)
+                self.assertTrue(lines[0].startswith("+"))
+                self.assertTrue(lines[-1].startswith("+"))
+                self.assertIn("ATTENTION", result.stdout)
+                self.assertIn("MEM ", result.stdout)
+                self.assertIn("DISK ", result.stdout)
+                if rows < 19:
+                    self.assertIn("more sections", result.stdout)
+                else:
+                    for title in ("SYSTEM", "SERVICES", "PROCESSES", "SESSIONS", "CONNECTIONS", "ATTENTION", "HINTS", "I/O"):
+                        self.assertIn(title, result.stdout)
+
+    def test_unix_service_providers_share_required_and_excluded_filters(self):
+        fixtures = {
+            "systemctl": "keep.service loaded active running Keep`nexclude.service loaded active running Exclude`nstopped.service loaded inactive dead Stopped`nother.service loaded active running Other",
+            "launchctl": "PID`tStatus`tLabel`n812`t0`tkeep.service`n900`t0`texclude.service`n-`t0`tstopped.service`n940`t0`tother.service",
+        }
+        for provider, fixture in fixtures.items():
+            with self.subTest(provider=provider):
+                result = self.probe(
+                    "$MotdWindows=$false; $Demo=$false; "
+                    "$MotdConfig['services']['required']=@('keep.service','exclude.service','stopped.service','missing.service'); "
+                    "$MotdConfig['services']['exclude']=@('exclude*'); "
+                    "function Test-MotdCommand([string] $Name) { return $Name -eq '" + provider + "' }; "
+                    "function Read-MotdExternal { return @{ Ok=$true; Text=\"" + fixture + "\" } }; "
+                    "$MotdCurrentSection='services'; $MotdSections['services']=@{ Lines=(New-MotdList) }; "
+                    "$MotdNotices=New-MotdList; Add-MotdServices; "
+                    "$MotdSections['services'].Lines | ForEach-Object { $_.Text }; $MotdNotices"
+                )
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIn("SERVICES  2 matched", result.stdout)
+                self.assertIn("keep.service", result.stdout)
+                self.assertIn("stopped.service", result.stdout)
+                self.assertNotIn("exclude.service", result.stdout)
+                self.assertNotIn("other.service", result.stdout)
+                self.assertIn("Required service not listed: missing.service", result.stdout)
+                self.assertIn("Required service not running: stopped.service", result.stdout)
+                self.assertNotIn("Required service not running: keep.service", result.stdout)
+
+    def test_unavailable_service_provider_does_not_report_required_services_missing(self):
+        result = self.probe(
+            "$MotdWindows=$false; $Demo=$false; $MotdConfig['services']['required']=@('required.service'); "
+            "function Test-MotdCommand([string] $Name) { return $Name -eq 'systemctl' }; "
+            "function Read-MotdExternal { return @{ Ok=$false; Text=''; Error='unavailable fixture' } }; "
+            "$MotdCurrentSection='services'; $MotdSections['services']=@{ Lines=(New-MotdList) }; "
+            "$MotdNotices=New-MotdList; Add-MotdServices; "
+            "$MotdSections['services'].Lines | ForEach-Object { $_.Text }; $MotdNotices"
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("SERVICES unavailable", result.stdout)
+        self.assertNotIn("Required service not", result.stdout)
 
     def test_observed_control_characters_are_sanitized(self):
         self.script.write_text(motd.generate_artifact(self.config), encoding="utf-8")

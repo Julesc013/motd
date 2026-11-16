@@ -1,0 +1,36 @@
+[?1h=┌──────────────────────────────────────────────────────────────────────────────┐
+[32m│ WORKSHOP STATUS | DEMO - synthetic observations                              │[0m
+[32m│ SYSTEM  demo-host | 8 logical CPUs                                           │[0m
+│ Windows / Unix | User operator                                               │
+│ Up 4d 06h | PowerShell capability demo                                       │
+[32m│ MEMORY 6.0 GiB / 16.0 GiB [████░░░░░░░░]                                     │[0m
+│ STORAGE / 120.0 GiB / 512.0 GiB [███░░░░░░░░░]                               │
+│ Swap/pagefile 512M/8.0G                                                      │
+[90m│ Compressed memory: 256 MiB (demo)                                            │[0m
+[90m│ Pressure: memory some avg10 0.00%                                            │[0m
+[32m│ SERVICES  16 run / 21 loaded                                                 │[0m
+[32m│ [RUN] sshd  [RUN] storage-worker                                             │[0m
+│ [RUN] backup  [STOP] optional-web                                            │
+[32m│ PROCESSES  CPU total (s) / memory                                            │[0m
+│ CPU   152.4s   812 storage-worker                                            │
+│ MEM     2.0G  1120 database                                                  │
+│ CPU    38.6s  1120 database                                                  │
+│ MEM     768M   812 storage-worker                                            │
+│ CPU    18.7s   946 disk-check                                                │
+│ MEM     256M  1304 backup                                                    │
+[90m│ Working sets / cumulative CPU; 4 sampled                                     │[0m
+[32m│ SESSIONS  4 registered logins                                                │[0m
+│ operator  tty1   console                                                     │
+│ operator  pts/1  192.0.2.24 (SSH)                                            │
+│ operator  pts/2  192.0.2.31 (SSH)                                            │
+[32m│ CONNECTIONS  8 TCP / 3 listeners                                             │[0m
+│ :22 -> 192.0.2.24:51042 Established                                          │
+│ :22 -> 192.0.2.31:49720 Established                                          │
+│ :443 -> 198.51.100.8:54016 Established                                       │
+[32m│ ATTENTION                                                                    │[0m
+[90m│ Scope: selected local observations.                                          │[0m
+[32m│ HINTS                                                                        │[0m
+│ Tasks: Get-Process - Local processes                                         │
+│ Services: Get-Service - Windows services                                     │
+│ Storage: Get-PSDrive -PSProvider FileSystem - Filesystem drives              │
+└──────────────────────────────────────────────────────────────────────────────┘

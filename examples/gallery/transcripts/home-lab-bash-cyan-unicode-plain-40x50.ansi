@@ -1,0 +1,29 @@
+╔═ ws-bench-07 | ... ═══ DEMO 13:30:00 ╗
+╠═ SYSTEM ══════════════ up 4d 06h 12m ╣
+║ Domain workshop.example              ║
+║ IP eno1 192.0.2.17/24                ║
+║ Debian GNU/Linux 13 (trixie) | 6.... ║
+║ Stall: CPU 1.20% RAM 0.00% I/O 0.15% ║
+╠═ RESOURCES ══════════════ Max FS 38% ╣
+║ RAM  8.0Gi/32.0Gi    OOCC....        ║
+║ DISK 220Gi/600Gi     222.....        ║
+║ Cache 8.3Gi  Z 640Mi  S 2.0Gi/8.0Gi  ║
+║ Fullest /srv/images 38% | inodes 7%  ║
+╠═ SERVICES ═ 16 run / 21 load / 0 ... ╣
+║ SSH          RUN │ RDP           RUN ║
+║ SMB          RUN │ FTP          STOP ║
+║ TFTP         RUN │ GUI          STOP ║
+║ OOM          RUN │ WEB           RUN ║
+║ DB           RUN │ NET           RUN ║
+║ DNS          RUN │ AUTH          RUN ║
+║ CTR          RUN │ CRON          RUN ║
+║ TIME         RUN │ PRINT      LISTEN ║
+║ LOG          RUN │                   ║
+╠═ ATTENTION ════════════════ E0 W0 I0 ╣
+║ No configured alerts in collected... ║
+╠═ HINTS ══════════════ top | iotop -o ╣
+║ Tasks                            top ║
+║ I/O                         iotop -o ║
+║ Services          systemctl --failed ║
+║ Sessions      loginctl list-sessions ║
+╚══════════════════════════════════════╝

@@ -1,0 +1,36 @@
+[?1h=+------------------------------------------------------------------------------+
+| WORKSHOP STATUS | DEMO - synthetic observations                              |
+| SYSTEM  demo-host | 8 logical CPUs                                           |
+| Windows / Unix | User operator                                               |
+| Up 4d 06h | PowerShell capability demo                                       |
+| MEMORY 6.0 GiB / 16.0 GiB [####--------]                                     |
+| STORAGE / 120.0 GiB / 512.0 GiB [###---------]                               |
+| Swap/pagefile 512M/8.0G                                                      |
+| Compressed memory: 256 MiB (demo)                                            |
+| Pressure: memory some avg10 0.00%                                            |
+| SERVICES  16 run / 21 loaded                                                 |
+| [RUN] sshd  [RUN] storage-worker                                             |
+| [RUN] backup  [STOP] optional-web                                            |
+| PROCESSES  CPU total (s) / memory                                            |
+| CPU   152.4s   812 storage-worker                                            |
+| MEM     2.0G  1120 database                                                  |
+| CPU    38.6s  1120 database                                                  |
+| MEM     768M   812 storage-worker                                            |
+| CPU    18.7s   946 disk-check                                                |
+| MEM     256M  1304 backup                                                    |
+| Working sets / cumulative CPU; 4 sampled                                     |
+| SESSIONS  4 registered logins                                                |
+| operator  tty1   console                                                     |
+| operator  pts/1  192.0.2.24 (SSH)                                            |
+| operator  pts/2  192.0.2.31 (SSH)                                            |
+| CONNECTIONS  8 TCP / 3 listeners                                             |
+| :22 -> 192.0.2.24:51042 Established                                          |
+| :22 -> 192.0.2.31:49720 Established                                          |
+| :443 -> 198.51.100.8:54016 Established                                       |
+| ATTENTION                                                                    |
+| Scope: selected local observations.                                          |
+| HINTS                                                                        |
+| Tasks: Get-Process - Local processes                                         |
+| Services: Get-Service - Windows services                                     |
+| Storage: Get-PSDrive -PSProvider FileSystem - Filesystem drives              |
++------------------------------------------------------------------------------+

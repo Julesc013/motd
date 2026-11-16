@@ -1,0 +1,15 @@
++= HOME LAB | ws-bench-07 | Home lab =========================== DEMO 13:30:00 +
++= SYSTEM ====================================================== up 4d 06h 12m +
+| Domain workshop.example              | IP eno1 192.0.2.17/24                 |
+| Debian GNU/Linux 13 (trixie)         | Kernel 6.12.57-amd64                  |
++= RESOURCES ====================================================== Max FS 38% +
+| RAM  8.0Gi/32.0Gi    OOOOCCCCZ.........  avail 24.0Gi  25.0%                 |
+| DISK 220Gi/600Gi     1222222...........  free 375Gi                          |
+| Cache 8.3Gi  Comp 640Mi  Swap 2.0Gi/8.0Gi                                    |
++= SERVICES =============================== 16 run / 21 load / 0 fail +7 roles +
+| SSH      RUN | RDP      RUN | SMB      RUN | FTP     STOP | TFTP         RUN |
+| GUI     STOP | OOM      RUN | WEB      RUN | DB       RUN | NET          RUN |
++= ATTENTION ======================================================== E0 W0 I0 +
+| No configured alerts in collected scope.                                     |
++= HINTS ======== top | iotop -o | systemctl --failed | loginctl list-sessions +
++==============================================================================+

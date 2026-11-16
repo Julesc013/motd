@@ -1,12 +1,14 @@
 #!/bin/sh
 # Portable Unix renderer, embedded before the modern Bash renderer.
-# Old Bourne/POSIX syntax: no arrays, [[ ]], local, namerefs, process
+# Portable POSIX syntax: no arrays, [[ ]], local, namerefs, process
 # substitution, printf -v or Bash-only slicing. Bash 1 needs external printf.
 # Collectors only read local data. No network, installation or privileged work.
 
 TITLE='SYSTEM STATUS'
 SITE_LABEL=''
 THEME=mono
+CHARSET=auto
+COLOR_MODE=auto
 MAX_WIDTH=80
 ROWS=25
 TOP_N=3
@@ -30,6 +32,7 @@ MOTD_HOOKS_ENABLED=1
 MOTD_PLAIN=0
 MOTD_FORCE_COLOR=0
 MOTD_ASCII=1
+case "$CHARSET" in unicode) MOTD_ASCII=0 ;; esac
 motd_explicit_width=0
 motd_explicit_rows=0
 while [ "$#" -gt 0 ]; do
@@ -52,7 +55,7 @@ while [ "$#" -gt 0 ]; do
                 MAX_WIDTH=$motd_number
                 motd_explicit_width=1
             else
-                if [ "$motd_number" -lt 20 ] || [ "$motd_number" -gt 60 ]; then exit 2; fi
+                if [ "$motd_number" -lt 8 ] || [ "$motd_number" -gt 200 ]; then exit 2; fi
                 ROWS=$motd_number
                 motd_explicit_rows=1
             fi ;;
@@ -67,6 +70,12 @@ while [ "$#" -gt 0 ]; do
     esac
     shift
 done
+# Explicit CLI --color overrides a saved never choice; --plain and NO_COLOR
+# continue to suppress color even when both display switches were supplied.
+case "$COLOR_MODE" in
+    always) MOTD_FORCE_COLOR=1 ;;
+    never) if [ "$MOTD_FORCE_COLOR" -eq 0 ]; then MOTD_PLAIN=1; fi ;;
+esac
 motd_before_hooks || exit "$?"
 # Old Bash releases predate current multibyte libraries. C locale gives exact
 # byte semantics for printable-ASCII content, decimal parsers and shell ranges.
@@ -130,7 +139,7 @@ MOTD_GEOMETRY_END
         if [ "$motd_terminal_columns" -ge 40 ] && [ "$motd_terminal_columns" -lt "$MAX_WIDTH" ]; then MAX_WIDTH=$motd_terminal_columns; fi
     fi
     if [ "$motd_explicit_rows" -eq 0 ] && [ -n "$motd_terminal_rows" ]; then
-        if [ "$motd_terminal_rows" -ge 20 ] && [ "$motd_terminal_rows" -lt "$ROWS" ]; then ROWS=$motd_terminal_rows; fi
+        if [ "$motd_terminal_rows" -ge 8 ] && [ "$motd_terminal_rows" -lt "$ROWS" ]; then ROWS=$motd_terminal_rows; fi
     fi
 fi
 
@@ -228,7 +237,7 @@ else
                 fi
                 if motd_run vm_stat; then
                     # Free is not equivalent to Linux MemAvailable.
-                    motd_free=$(printf '%s\n' "$MOTD_CAPTURE" | awk '/page size of/ {for(i=1;i<=NF;i++)if($i=="of")p=$(i+1)} /^Pages free:/ {gsub(/\./,"",$3);f=$3} END {if(p>0&&f!="")printf "%.0f",p*f/1024}')
+                    motd_free=$(printf '%s\n' "$MOTD_CAPTURE" | awk '/page size of/ {for(i=1;i<=NF;i++)if($i=="of")p=$(i+1)} /^Pages free:/ {sub(/\.$/,"",$3);f=$3} END {if(p~/^[0-9]+$/&&p>0&&f~/^[0-9]+$/)printf "%.0f",p*f/1024}')
                     motd_free=${motd_free:-unavailable}
                 fi ;;
             FreeBSD|OpenBSD|NetBSD|DragonFly)
@@ -380,12 +389,29 @@ motd_service_rows="$motd_required_rows$motd_service_rows"
 # process metrics and storage, then expand the lists. One row stays for a prompt.
 motd_inner=$((MAX_WIDTH - 4)); motd_sections=0
 for motd_section in $SECTIONS; do motd_sections=$((motd_sections + 1)); done
-motd_extra=$((ROWS - 4 - 2 * motd_sections)); if [ "$motd_extra" -lt 0 ]; then motd_extra=0; fi
+motd_visible_sections=$SECTIONS; motd_omitted_sections=0; motd_available_rows=$((ROWS - 4))
+# Keep the same complete framed sections at short terminal heights. A named
+# omission row replaces hidden sections; the preview is never a cropped larger
+# render. Attention remains visible after lower-priority detail is omitted.
+if [ "$((2 * motd_sections))" -gt "$motd_available_rows" ]; then
+    motd_available_rows=$((motd_available_rows - 1))
+    for motd_remove in hints connections io sessions services processes resources system attention; do
+        if [ "$((2 * motd_sections))" -le "$motd_available_rows" ]; then break; fi
+        motd_remaining=''
+        for motd_section in $motd_visible_sections; do
+            if [ "$motd_section" = "$motd_remove" ]; then
+                motd_sections=$((motd_sections - 1)); motd_omitted_sections=$((motd_omitted_sections + 1))
+            else motd_remaining="$motd_remaining $motd_section"; fi
+        done
+        motd_visible_sections=$motd_remaining
+    done
+fi
+motd_extra=$((motd_available_rows - 2 * motd_sections)); if [ "$motd_extra" -lt 0 ]; then motd_extra=0; fi
 motd_process_extra=0; motd_resource_extra=0
-case " $SECTIONS " in *' processes '*)
+case " $motd_visible_sections " in *' processes '*)
     if [ "$motd_extra" -gt 1 ]; then motd_process_extra=2; motd_extra=$((motd_extra - 2))
     elif [ "$motd_extra" -gt 0 ]; then motd_process_extra=1; motd_extra=$((motd_extra - 1)); fi ;; esac
-case " $SECTIONS " in *' resources '*) if [ "$motd_extra" -gt 0 ]; then motd_resource_extra=1; motd_extra=$((motd_extra - 1)); fi ;; esac
+case " $motd_visible_sections " in *' resources '*) if [ "$motd_extra" -gt 0 ]; then motd_resource_extra=1; motd_extra=$((motd_extra - 1)); fi ;; esac
 motd_share=0
 if [ "$motd_sections" -gt 0 ]; then motd_share=$((motd_extra / motd_sections)); motd_extra=$((motd_extra % motd_sections)); fi
 motd_budget=$((ROWS - 1)); motd_section_budget=0; motd_color=''; motd_reset=''
@@ -441,7 +467,7 @@ motd_border "$motd_tl" "$motd_tr" "$TITLE"
 motd_section_budget=1
 if [ -n "$SITE_LABEL" ]; then motd_line "$SITE_LABEL | Portable Unix"
 else motd_line 'Portable Unix | local observations'; fi
-for motd_section in $SECTIONS; do
+for motd_section in $motd_visible_sections; do
     motd_section_budget=$((1 + motd_share))
     if [ "$motd_extra" -gt 0 ]; then motd_section_budget=$((motd_section_budget + 1)); motd_extra=$((motd_extra - 1)); fi
     case "$motd_section" in
@@ -493,5 +519,9 @@ MOTD_SERVICES_END
             motd_border "$motd_ml" "$motd_mr" 'I/O (cumulative; visible sample)'; motd_line "$motd_disk_io"; motd_rows "$motd_io_rows" ;;
     esac
 done
+if [ "$motd_omitted_sections" -gt 0 ]; then
+    motd_section_budget=1
+    motd_line "+$motd_omitted_sections sections; resize for more."
+fi
 motd_border "$motd_bl" "$motd_br" ''
 motd_after_hooks || exit "$?"

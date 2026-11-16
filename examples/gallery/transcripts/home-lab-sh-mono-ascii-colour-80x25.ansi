@@ -1,0 +1,21 @@
++ HOME LAB --------------------------------------------------------------------+
+| Home lab | Portable Unix                                                     |
++ SYSTEM ----------------------------------------------------------------------+
+| Host: demo-host | Linux demo-kernel                                          |
+| Up: 86400 s | Load: 0.25 0.18 0.12                                           |
++ RESOURCES -------------------------------------------------------------------+
+| Memory available: 12582912 KiB                                               |
+| Root: 42% used; 286 GiB available                                            |
+| Total RAM: 16777216 KiB                                                      |
+| Swap free: 4194304 / 4194304 KiB                                             |
++ SERVICES --------------------------------------------------------------------+
+| Services: 8 running; 0 failed                                                |
+| sshd: running                                                                |
+| cron: running                                                                |
++ ATTENTION -------------------------------------------------------------------+
+| DEMO fixture; no live machine data.                                          |
++ HINTS -----------------------------------------------------------------------+
+| Tasks: top - CPU and memory                                                  |
+| I/O: iotop -o - If installed and permitted                                   |
+| Services: systemctl --failed - Failed units                                  |
++------------------------------------------------------------------------------+

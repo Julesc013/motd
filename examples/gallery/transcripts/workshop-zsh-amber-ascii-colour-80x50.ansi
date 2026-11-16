@@ -1,0 +1,40 @@
+[33m+=[0m [1;33mWORKSHOP STATUS | ws-bench-07[0m [33m===============================[0m [90mDEMO 13:30:00[0m [33m+[0m
+[33m+=[0m [1;33mSYSTEM[0m [33m======================================================[0m [90mup 4d 06h 12m[0m [33m+[0m
+[33m|[0m [1;33mDomain workshop.example             [0m[90m | [0m[37mIP eno1 192.0.2.17/24                [0m [33m|[0m
+[33m|[0m Debian GNU/Linux 13 (trixie)        [0m[90m | [0mKernel 6.12.57-amd64                 [0m [33m|[0m
+[33m|[0m [37mCPU 8 | load 1.42/1.18/0.97                                                 [0m [33m|[0m
+[33m|[0m [37mStall: CPU 1.20% RAM 0.00% I/O 0.15%                                        [0m [33m|[0m
+[33m+=[0m [1;33mRESOURCES[0m [33m======================================================[0m [90mMax FS 38%[0m [33m+[0m
+[33m|[0m [1;33mRAM  [0m[37m8.0Gi/32.0Gi   [0m [1;34m####[0m[36m####[0m[35m#[0m[90m.........[0m  avail 24.0Gi  25.0%                 [33m|[0m
+[33m|[0m [1;33mDISK [0m[37m220Gi/600Gi    [0m [1;34m#[0m[36m######[0m[33m[0m[90m...........[0m  free 375Gi                          [33m|[0m
+[33m|[0m [36mCache 8.3Gi[0m  [35mComp 640Mi[0m  Swap 2.0Gi/8.0Gi                                    [33m|[0m
+[33m|[0m [90mFullest /srv/images 38% | inodes 7%                                         [0m [33m|[0m
+[33m+=[0m [1;33mSERVICES[0m [33m========================================[0m [90m16 run / 21 load / 0 fail[0m [33m+[0m
+[33m|[0m [1;33mSSH     [0m [32mRUN[0m[90m | [0m[1;33mRDP     [0m [32mRUN[0m[90m | [0m[1;33mSMB     [0m [32mRUN[0m[90m | [0m[1;33mFTP    [0m [90mSTOP[0m[90m | [0m[1;33mTFTP        [0m [32mRUN[0m [33m|[0m
+[33m|[0m [1;33mGUI    [0m [90mSTOP[0m[90m | [0m[1;33mOOM     [0m [32mRUN[0m[90m | [0m[1;33mWEB     [0m [32mRUN[0m[90m | [0m[1;33mDB      [0m [32mRUN[0m[90m | [0m[1;33mNET         [0m [32mRUN[0m [33m|[0m
+[33m|[0m [1;33mDNS     [0m [32mRUN[0m[90m | [0m[1;33mAUTH    [0m [32mRUN[0m[90m | [0m[1;33mCTR     [0m [32mRUN[0m[90m | [0m[1;33mCRON    [0m [32mRUN[0m[90m | [0m[1;33mTIME        [0m [32mRUN[0m [33m|[0m
+[33m|[0m [1;33mPRINT[0m [32mLISTEN[0m[90m | [0m[1;33mLOG     [0m [32mRUN[0m[90m | [0m            [0m[90m | [0m            [0m[90m | [0m                [0m [33m|[0m
+[33m+=[0m [1;33mTOP PROCESSES[0m [33m=======================[0m [90m184 tasks D0 Z0 | 8C L1.42 | I/O 42ms[0m [33m+[0m
+[33m|[0m [1;33mCPU avg / PID name     [0m[90m | [0m[1;35mRAM RSS / PID name     [0m[90m | [0m[1;36mI/O R+W/s [184/184]     [0m [33m|[0m
+[33m|[0m [1;33m2418 badblocks   [0m [1;33m82.4%[0m[90m | [0m[1;33m1632 postgres    [0m [1;35m1.3Gi[0m[90m | [0m[1;33m2418 badblocks  [0m [1;36m181Mi/s[0m [33m|[0m
+[33m|[0m [1;33m1632 postgres    [0m [1;33m12.8%[0m[90m | [0m[1;33m2418 badblocks   [0m [1;35m822Mi[0m[90m | [0m[1;33m4301 fio        [0m [1;36m122Mi/s[0m [33m|[0m
+[33m|[0m [1;33m2109 nginx        [0m [1;33m3.1%[0m[90m | [0m[1;33m3920 firefox     [0m [1;35m608Mi[0m[90m | [0m[1;33m1632 postgres   [0m [1;36m640Ki/s[0m [33m|[0m
+[33m|[0m [90mI/O ~42ms | 184/184 readable PIDs                                           [0m [33m|[0m
+[33m|[0m [90mDevices 2 | in flight 4 | I/O stall 0.15%                                   [0m [33m|[0m
+[33m|[0m [37msdb  R181Mi/s  W0B/s  q1                                                    [0m [33m|[0m
+[33m+=[0m [1;33mSESSIONS[0m [33m=============================================[0m [90m4 sessions / 1 users[0m [33m+[0m
+[33m|[0m [1;33mSSH   [0m[90m | [0m#c11    [0m[90m | [0mpts/0   [0m[90m | [0mworkshop     [0m[90m | [0m192.0.2.24 [online]          [0m [33m|[0m
+[33m|[0m [1;33mSSH   [0m[90m | [0m#c12    [0m[90m | [0mpts/1   [0m[90m | [0mworkshop     [0m[90m | [0m192.0.2.41 [online]          [0m [33m|[0m
+[33m|[0m [1;33mRDP   [0m[90m | [0m#c13    [0m[90m | [0m:10     [0m[90m | [0mworkshop     [0m[90m | [0m192.0.2.58 [online]          [0m [33m|[0m
+[33m|[0m [1;33mTTY   [0m[90m | [0m#c14    [0m[90m | [0mtty2    [0m[90m | [0mworkshop     [0m[90m | [0m(local/unknown) [online]     [0m [33m|[0m
+[33m+=[0m [1;33mCONNECTIONS[0m [33m===============================================[0m [90m8 TCP / 3 admin[0m [33m+[0m
+[33m|[0m [37mSSH  192.0.2.17:22  <->  192.0.2.24:51422                                   [0m [33m|[0m
+[33m|[0m [37mSSH  192.0.2.17:22  <->  192.0.2.41:60108                                   [0m [33m|[0m
+[33m|[0m [37mRDP  192.0.2.17:3389  <->  192.0.2.58:55001                                 [0m [33m|[0m
+[33m+=[0m [1;33mATTENTION[0m [33m========================================================[0m [32mE0 W0 I0[0m [33m+[0m
+[33m|[0m [32mNo configured alerts in collected scope.                                    [0m [33m|[0m
+[33m+=[0m [1;33mHINTS[0m [33m========[0m [90mtop | iotop -o | systemctl --failed | loginctl list-sessions[0m [33m+[0m
+[33m|[0m [1;33mTasks                                                                   [0m [37mtop[0m [33m|[0m
+[33m|[0m [1;33mI/O                                                                [0m [37miotop -o[0m [33m|[0m
+[33m|[0m [1;33mServices                                                 [0m [37msystemctl --failed[0m [33m|[0m
+[33m+==============================================================================+[0m

@@ -89,8 +89,9 @@ class TerminalGrid:
     understood. Unknown sequences and any automatic wrap/scroll are errors. A
     preview must demonstrate a fitting layout, not silently crop an overflow.
     """
-    def __init__(self, columns, rows):
+    def __init__(self, columns, rows, *, reserve_prompt=True):
         self.columns, self.rows = columns, rows
+        self.reserve_prompt = reserve_prompt
         self.cells = [[Cell() for _ in range(columns)] for _ in range(rows)]
         self.x = self.y = 0
         self.highest_row = -1
@@ -152,8 +153,9 @@ class TerminalGrid:
             old = asdict(self.cells[self.y][column]); old['text'] += character
             self.cells[self.y][column] = Cell(**old)
             return
-        if self.y >= self.rows - 1:
-            raise GalleryError(f'Output reaches row {self.y + 1}; row {self.rows} is reserved for the prompt')
+        if self.y >= self.rows - int(self.reserve_prompt):
+            reason = f'row {self.rows} is reserved for the prompt' if self.reserve_prompt else 'outside the terminal'
+            raise GalleryError(f'Output reaches row {self.y + 1}; {reason}')
         if self.x + width > self.columns:
             raise GalleryError(f'Output would wrap at row {self.y + 1}, column {self.x + width} (limit {self.columns})')
         self.cells[self.y][self.x] = Cell(character, **self.style)
@@ -274,11 +276,12 @@ class Renderer:
         self.ascent = ascent
         self.pad = 24; self.header = 68; self.footer = 44
 
-    def image(self, grid):
+    def image(self, grid, *, title='MOTD | actual terminal output',
+              footer='2x raster | lossless PNG | hooks skipped'):
         width = self.pad * 2 + grid.columns * self.cell_width
         height = self.header + self.pad + grid.rows * self.cell_height + self.footer
         image = Image.new('RGB', (width, height), BACKGROUND); draw = ImageDraw.Draw(image)
-        draw.text((self.pad, 15), 'MOTD | actual terminal output', font=self.small, fill=PALETTE[6])
+        draw.text((self.pad, 15), title, font=self.small, fill=PALETTE[6])
         draw.text((self.pad, 38), f'{grid.columns} columns x {grid.rows} rows | synthetic fixture', font=self.small, fill=PALETTE[8])
         for row, cells in enumerate(grid.cells):
             for column, cell in enumerate(cells):
@@ -292,7 +295,7 @@ class Renderer:
                 if cell.text and cell.text != ' ':
                     draw.text((x, y + self.ascent), cell.text, anchor='ls', font=self.fonts[(cell.bold, cell.italic)], fill=fg)
                 if cell.underline: draw.line((x, y + self.ascent + 2, x + span * self.cell_width - 1, y + self.ascent + 2), fill=fg, width=1)
-        draw.text((self.pad, height - 30), '2x raster | lossless PNG | hooks skipped', font=self.small, fill=PALETTE[8])
+        draw.text((self.pad, height - 30), footer, font=self.small, fill=PALETTE[8])
         return image
 
 
@@ -620,6 +623,8 @@ def build(args):
                            'colour_palette': PALETTE, 'font_license': 'https://dejavu-fonts.github.io/License.html'},
                 'compression': {'pillow': {'compress_level': 9, 'optimize': True}, 'optimizer': optimizer_version,
                                 'optimizer_level': args.opt_level if optimizer else None, 'zopfli': bool(optimizer and args.zopfli),
+                                'fast_filter_evaluation': bool(optimizer),
+                                'optimizer_budget_seconds': 30 if optimizer else None,
                                 'parallel_files': args.jobs if optimizer else 0, 'threads_per_optimizer': 2 if optimizer else 0,
                                 'lossy_operations': [], 'decoded_rgba_verified': True},
                 'summary': {'logical_cases': len(cases), 'shell_cases': len(matrix), 'unique_pngs': len(unique),

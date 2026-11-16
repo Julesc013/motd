@@ -1,0 +1,20 @@
+[?1h=+------------------------------------------------------------------------------+
+[33m| HOME LAB | DEMO - synthetic observations                                     |[0m
+[33m| SYSTEM  demo-host | 8 logical CPUs                                           |[0m
+| Windows / Unix | User operator                                               |
+| Up 4d 06h | PowerShell capability demo                                       |
+[33m| MEMORY 6.0 GiB / 16.0 GiB [####--------]                                     |[0m
+| STORAGE / 120.0 GiB / 512.0 GiB [###---------]                               |
+| Swap/pagefile 512M/8.0G                                                      |
+[90m| Compressed memory: 256 MiB (demo)                                            |[0m
+[90m| Pressure: memory some avg10 0.00%                                            |[0m
+[33m| SERVICES  16 run / 21 loaded                                                 |[0m
+[32m| [RUN] sshd  [RUN] storage-worker                                             |[0m
+| [RUN] backup  [STOP] optional-web                                            |
+[33m| ATTENTION                                                                    |[0m
+[90m| Scope: selected local observations.                                          |[0m
+[33m| HINTS                                                                        |[0m
+| Tasks: Get-Process - Local processes                                         |
+| Services: Get-Service - Windows services                                     |
+| Storage: Get-PSDrive -PSProvider FileSystem - Filesystem drives              |
++------------------------------------------------------------------------------+

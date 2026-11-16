@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import codecs
 import copy
 import difflib
 import hashlib
@@ -24,6 +25,7 @@ import subprocess
 import sys
 import tempfile
 import textwrap
+import time
 import unicodedata
 
 if sys.version_info < (3, 11):
@@ -55,6 +57,7 @@ def preset_config(name='workshop', shell='bash'):
         'public_text': 'Authorised access only. Contact the system administrator.',
         'messages': [],
         'display': {'title': 'WORKSHOP STATUS', 'site': 'Workshop', 'theme': 'cyan',
+                    'charset': 'auto', 'color': 'auto',
                     'width': 132, 'rows': 25, 'top_entries': 3,
                     'sections': list(SECTION_IDS[:-1]), 'show_swap': True,
                     'show_compression': True, 'show_pressure': True},
@@ -155,6 +158,10 @@ def validate_config(data):
         _text(d[key], f'display.{key}', 100)
     if d['theme'] not in ('cyan', 'green', 'amber', 'mono'):
         raise MotdError('Theme must be cyan, green, amber or mono')
+    if d['charset'] not in ('auto', 'ascii', 'unicode'):
+        raise MotdError('Character set must be auto, ascii or unicode')
+    if d['color'] not in ('auto', 'always', 'never'):
+        raise MotdError('Colour mode must be auto, always or never')
     for key, lo, hi in [('width', 40, 240), ('rows', 20, 60), ('top_entries', 1, 10)]:
         _number(d[key], lo, hi, f'display.{key}')
     _strings(d['sections'], 'display.sections', 9)
@@ -199,7 +206,9 @@ def validate_config(data):
         if not isinstance(hooks, list) or len(hooks) > 12:
             raise MotdError(f'hooks.{phase} must contain at most 12 calls')
         for hook in hooks:
-            _keys(hook, ('argv', 'timeout_seconds', 'on_failure'), f'hooks.{phase}')
+            _keys(hook, ('argv', 'timeout_seconds', 'on_failure', 'preview_text'), f'hooks.{phase}')
+            if 'preview_text' in hook:
+                _text(hook['preview_text'], 'hook.preview_text', 4000, multiline=True)
             hook.setdefault('timeout_seconds', 1)
             hook.setdefault('on_failure', 'continue')
             _strings(hook.get('argv'), 'hook.argv', 64)
@@ -259,6 +268,7 @@ def _assignment(key, value):
 def runtime_assignments(config):
     c = validate_config(config); d = c['display']; p = c['collection']
     values = {'TITLE': d['title'], 'SITE_LABEL': d['site'], 'THEME': d['theme'],
+              'CHARSET': d['charset'], 'COLOR_MODE': d['color'],
               'MAX_WIDTH': d['width'], 'COMPACT_ROWS': d['rows'],
               'TOP_N': d['top_entries'], 'IO_TOP_N': d['top_entries'],
               'SECTIONS': d['sections'], 'SHOW_SWAP': d['show_swap'],
@@ -329,6 +339,7 @@ def portable_runtime_assignments(config):
     d = c['display']
     settings = {
         'TITLE': d['title'], 'SITE_LABEL': d['site'], 'THEME': d['theme'],
+        'CHARSET': d['charset'], 'COLOR_MODE': d['color'],
         'MAX_WIDTH': d['width'], 'ROWS': d['rows'],
         'TOP_N': d['top_entries'],
         # A hard portable-shell cap avoids tens of thousands of shell reads.
@@ -1898,7 +1909,7 @@ class WizardCancelled(Exception):
     """Leave the draft without changing installed files."""
 
 
-def preview_command(config, path, *, live=False, no_hooks=True, width=None, color=None):
+def preview_command(config, path, *, live=False, no_hooks=True, width=None, rows=None, color=None):
     """One interpreter decision shared by CLI previews and wizard previews."""
     kind = config['shell']
     executable = (shutil.which('pwsh') or shutil.which('powershell')) if kind == 'powershell' else shutil.which(kind)
@@ -1909,6 +1920,7 @@ def preview_command(config, path, *, live=False, no_hooks=True, width=None, colo
         if not live: command.append('-Demo')
         if no_hooks: command.append('-NoHooks')
         if width: command += ['-Width', str(width)]
+        if rows is not None: command += ['-Rows', str(rows)]
         if color and not live and 'NO_COLOR' not in os.environ: command.append('-Color')
         if color is False or 'NO_COLOR' in os.environ: command.append('-Plain')
     else:
@@ -1916,12 +1928,13 @@ def preview_command(config, path, *, live=False, no_hooks=True, width=None, colo
         if not live: command.append('--demo')
         if no_hooks and (kind == 'sh' or any(config['hooks'].values())): command.append('--no-hooks')
         if width: command += ['--width', str(width)]
+        if rows is not None: command += ['--rows', str(rows)]
         if color is False: command.append('--plain')
-        elif color and kind == 'sh': command.append('--color')
+        elif color: command.append('--color')
     return command
 
 
-def demo_text(config, width=None, *, color=False):
+def demo_text(config, width=None, *, rows=None, color=False):
     """Render our checked template with fixture data; never execute imported code.
 
     This uses a temporary output only, not the transaction state directory. No
@@ -1936,7 +1949,7 @@ def demo_text(config, width=None, *, color=False):
     with tempfile.TemporaryDirectory(prefix='motd-demo-') as folder:
         path = Path(folder) / ('preview' + artifact_suffix(c))
         path.write_text(artifact, encoding='utf-8')
-        command = preview_command(c, path, width=width, color=color)
+        command = preview_command(c, path, width=width, rows=rows, color=color)
         result = subprocess.run(command, capture_output=True, text=True, timeout=8,
                                 encoding='utf-8', errors='replace')
     if result.returncode:
@@ -1964,94 +1977,321 @@ def terminal_line(text, columns, *, color=True):
     return ''.join(output)
 
 
-class WizardUI:
-    """Small page renderer; normal line input keeps the terminal recoverable.
+def terminal_size():
+    """Prefer the current terminal, not inherited COLUMNS/LINES after a resize."""
+    try:
+        size = os.get_terminal_size(sys.stdout.fileno())
+        if size.columns > 0 and size.lines > 0: return size
+    except (AttributeError, OSError, ValueError):
+        pass
+    return shutil.get_terminal_size((80, 24))
 
-    No raw keyboard mode, curses dependency, hidden cursor or alternate screen.
-    The same choices and draft work in screen and transcript-friendly line mode.
-    Terminal size is re-read for every page, including after resize.
+
+def hook_preview_lines(config, phase):
+    """Display-only samples. This function never launches or interprets a call.
+
+    Users can supply literal preview_text for any command. A few familiar
+    commands have conservative built-in samples; unknown calls remain explicit
+    placeholders. Shell command strings are never parsed as executable syntax.
     """
+    lines = []
+    for index, hook in enumerate(config['hooks'][phase], 1):
+        argv = hook['argv']
+        name = argv[0].replace('\\', '/').rsplit('/', 1)[-1].lower()
+        if name.endswith('.exe'): name = name[:-4]
+        lines.append(f'{phase.upper()} {index} | {argv[0]} [sample]')
+        if 'preview_text' in hook:
+            lines.extend(hook['preview_text'].splitlines() or ['(empty sample)'])
+        elif name == 'fastfetch':
+            lines.extend(['     /\\     demo@workshop', '    /  \\    OS: Example Linux x86_64',
+                          '   /____\\   Host: Workshop PC', '            CPU: Example 8-core CPU',
+                          '            Memory: 6 / 16 GiB'])
+        elif name in ('echo', 'write-output', 'write-host') and not any(a.startswith('-') for a in argv[1:]):
+            lines.append(' '.join(argv[1:]))
+        elif name == 'printf' and len(argv) >= 2 and argv[1] in ('%s\\n', '%s\n'):
+            lines.extend(argv[2:] or [''])
+        else:
+            lines.append('(Add preview_text for this call.)')
+    return lines
+
+
+class WizardUI:
+    """Ten fixed control rows and an actual renderer in the remaining rows.
+
+    The screen input loop checks geometry while waiting, so resizing needs no
+    Enter key and retains an unfinished answer. POSIX terminal flags are changed
+    only while reading a screen answer and always restored in finally. Line mode
+    continues to use ordinary input(), with no curses or third-party dependency.
+    """
+    CONTROL_ROWS = 10
+    QUESTION_ROWS = 5
+    PROMPT_ROW = 9
+
     def __init__(self, mode='auto'):
         self.mode = mode
         self.cache = {}
+        self.show_calls = False
+        self.preview_offset = 0
+        self._page = None
+        self._preview_key = None
+        self._preview_length = 0
+        self._answer = ''
+        self._cursor = 0
+        self._prompt = ''
+        self._input_scrolled = False
+        self._used_screen = False
 
     @property
     def screen(self):
         if self.mode == 'line': return False
         if not (sys.stdin.isatty() and sys.stdout.isatty()): return False
-        size = shutil.get_terminal_size((80, 24))
-        if size.columns < 60 or size.lines < 20: return False
+        size = terminal_size()
+        if size.columns < 40 or size.lines < self.CONTROL_ROWS + 8: return False
         term = os.environ.get('TERM', '')
         supported = term.startswith(('xterm', 'screen', 'tmux', 'linux', 'vt', 'ansi', 'rxvt', 'alacritty', 'foot', 'wezterm', 'kitty'))
         return self.mode == 'screen' or supported
 
-    def sample(self, config, width):
-        color = self.screen and 'NO_COLOR' not in os.environ
-        key = (dump_config(config), width, color)
+    def sample(self, config, width, rows=None):
+        color = self.screen and 'NO_COLOR' not in os.environ and config['display'].get('color') != 'never'
+        key = (dump_config(config), width, rows, color)
         if key not in self.cache:
-            try: self.cache[key] = demo_text(config, width, color=color).splitlines()
+            try: self.cache[key] = demo_text(config, width, rows=rows, color=color).splitlines()
             except (MotdError, OSError, subprocess.TimeoutExpired) as exc:
                 self.cache[key] = ['Preview unavailable: ' + str(exc)]
             if len(self.cache) > 24: self.cache.pop(next(iter(self.cache)))
         return self.cache[key]
 
+    def frame(self, title, lines=(), *, config=None, notice='', footer='', prompt='', answer=''):
+        """Return a complete terminal grid; shared by the live UI and PNG build.
+
+        Ordinary MOTD previews are replanned for their viewport, never cropped
+        from a larger dashboard. Optional call samples can exceed that viewport;
+        their visible range is labelled and can be scrolled with J/K.
+        """
+        size = terminal_size()
+        width = max(1, size.columns); height = max(1, size.lines)
+        color = self.screen and 'NO_COLOR' not in os.environ
+        accent = '\x1b[1;36m' if color else ''; reset = '\x1b[0m' if color else ''
+        if len(lines) > self.QUESTION_ROWS:
+            raise MotdError('A wizard page has more than five question rows; paginate its choices')
+        questions = list(lines) + [''] * (self.QUESTION_ROWS - len(lines))
+        # Keep typing visible on narrow terminals without changing the draft.
+        entry = prompt + answer
+        entry = terminal_line(entry, width, color=False)
+        body = [accent + f'MOTD {VERSION} | {title}' + reset, *questions, notice, footer, entry]
+        available = max(0, height - self.CONTROL_ROWS)
+        label = 'PREVIEW | choose a recipe'; shown = []
+        if config is not None and available >= 8 and width >= 40:
+            render_width = min(240, width)
+            before = hook_preview_lines(config, 'before') if self.show_calls else []
+            after = hook_preview_lines(config, 'after') if self.show_calls else []
+            render_rows = min(200, max(8, available - len(before) - len(after)))
+            sample = self.sample(config, render_width, render_rows)
+            content = before + sample + after
+            key = (dump_config(config), render_width, available, self.show_calls)
+            if key != self._preview_key:
+                self.preview_offset = 0; self._preview_key = key
+            self._preview_length = len(content)
+            self.preview_offset = min(self.preview_offset, max(0, len(content) - available))
+            shown = content[self.preview_offset:self.preview_offset + available]
+            label = f'PREVIEW {render_width}x{render_rows} | demo | calls ' + ('sample' if self.show_calls else 'off')
+            if len(content) > available:
+                label = f'PREVIEW {self.preview_offset + 1}-{self.preview_offset + len(shown)}/{len(content)} | J/K scroll'
+            elif width > 240 or available > 200:
+                label = f'PREVIEW {render_width}x{render_rows} | renderer limit'
+        elif config is not None:
+            label = 'PREVIEW | needs 40 columns, 8 rows'
+        body.append(accent + label + reset)
+        body.extend(shown)
+        body.extend([''] * max(0, height - len(body)))
+        return [terminal_line(line, width, color=color) for line in body[:height]]
+
     def page(self, title, lines=(), *, config=None, notice='', footer=''):
-        size = shutil.get_terminal_size((80, 24))
-        width = max(20, size.columns - 1)
-        screen = self.screen
-        color = screen and 'NO_COLOR' not in os.environ
-        if screen: print('\x1b[2J\x1b[H', end='')
-        accent = '\x1b[1;36m' if color else ''
-        reset = '\x1b[0m' if color else ''
-        body = [accent + f'MOTD {VERSION} | {title}' + reset, '-' * min(width, 78)]
-        body.extend(lines)
-        if notice: body.extend(textwrap.wrap(notice, width)[:2])
-        if config is not None and screen:
-            sample = self.sample(config, max(40, min(width, config['display']['width'])))
-            available = max(0, size.lines - len(body) - 6)
-            if available:
-                body += ['', accent + 'PREVIEW | synthetic data; configured calls skipped' + reset]
-                body += sample[:available]
-                if len(sample) > available:
-                    body.append(f'... showing {available}/{len(sample)} lines; P opens the full preview.')
-        if footer: body += ['', footer]
-        for line in body:
-            print(terminal_line(line, width, color=color) if screen else _SGR.sub('', line))
+        self._page = (title, tuple(lines), config, notice, footer)
+        self._prompt = ''; self._answer = ''; self._cursor = 0
+        if self.screen:
+            self._redraw()
+        else:
+            print('\n' + title)
+            for line in lines: print(_SGR.sub('', line))
+            if notice: print(notice)
+            if footer: print(footer)
+
+    def _redraw(self):
+        if self._page is None: return
+        title, lines, config, notice, footer = self._page
+        size = terminal_size()
+        if not self.screen:
+            # A window can shrink while an answer is pending. Keep that answer,
+            # restore the normal frame when enlarged, and never discard input.
+            output = terminal_line('Resize to at least 40x18; Enter keeps working.', max(1, size.columns), color=False)
+            sys.stdout.write('\x1b[2J\x1b[H' + output)
+            sys.stdout.flush(); return
+        self._used_screen = True
+        before_cursor = self._prompt + self._answer[:self._cursor]
+        cells = sum(0 if unicodedata.combining(c) else (2 if unicodedata.east_asian_width(c) in ('W', 'F') else 1) for c in before_cursor)
+        self._input_scrolled = cells >= size.columns
+        # The answer field scrolls horizontally; it never wraps into the preview.
+        visible_answer = self._answer
+        prompt = self._prompt
+        while cells >= size.columns and (prompt or visible_answer):
+            if prompt:
+                removed = prompt[0]; prompt = prompt[1:]
+            else:
+                removed = visible_answer[0]; visible_answer = visible_answer[1:]
+            cells -= 0 if unicodedata.combining(removed) else (2 if unicodedata.east_asian_width(removed) in ('W', 'F') else 1)
+        frame = self.frame(title, lines, config=config, notice=notice, footer=footer,
+                           prompt=prompt, answer=visible_answer)
+        # No newline after the final row: even a full-height preview cannot scroll
+        # the control panel offscreen. Cursor positioning ends pending autowrap.
+        sys.stdout.write('\x1b[2J\x1b[H' + '\r\n'.join(frame))
+        sys.stdout.write(f'\x1b[{self.PROMPT_ROW};{min(size.columns, max(1, cells + 1))}H')
+        sys.stdout.flush()
+
+    def read(self, prompt, *, navigation=False):
+        """Read a line, preserving edits through resize and restoring tty state."""
+        while True:
+            self._prompt = prompt; self._answer = ''; self._cursor = 0
+            if not self.screen:
+                raw = input(prompt)
+            else:
+                self._redraw()
+                try:
+                    fd = sys.stdin.fileno()
+                    native = os.isatty(fd)
+                except (AttributeError, OSError, ValueError): native = False
+                raw = self._read_terminal(fd) if native and os.name == 'posix' else input(prompt)
+            command = raw.strip().lower()
+            if navigation and command == 'h' and self._page and self._page[2] is not None:
+                self.show_calls = not self.show_calls; self.preview_offset = 0
+            elif navigation and command in ('j', 'k') and self._page and self._page[2] is not None:
+                step = max(1, terminal_size().lines - self.CONTROL_ROWS)
+                self.preview_offset = max(0, min(self._preview_length - 1, self.preview_offset + (step if command == 'j' else -step)))
+            else:
+                return raw
+
+    def _read_terminal(self, fd):
+        import select
+        import termios
+        saved = termios.tcgetattr(fd)
+        mode = saved.copy(); mode[6] = saved[6].copy()
+        mode[3] &= ~(termios.ICANON | termios.ECHO)
+        mode[6][termios.VMIN] = 1; mode[6][termios.VTIME] = 0
+        decoder = codecs.getincrementaldecoder('utf-8')('replace')
+        escape = ''; escape_started = 0; geometry = terminal_size()
+        termios.tcsetattr(fd, termios.TCSANOW, mode)
+        try:
+            while True:
+                current = terminal_size()
+                if current != geometry:
+                    geometry = current; self._redraw()
+                if escape and time.monotonic() - escape_started > 0.25:
+                    escape = ''
+                ready, _, _ = select.select([fd], [], [], 0.1)
+                if not ready: continue
+                data = os.read(fd, 1)
+                if not data: raise EOFError()
+                char = decoder.decode(data)
+                if not char: continue
+                if escape == '\x1b' and char not in ('[', 'O'):
+                    # A lone Escape is ignored, not a prefix that eats the next
+                    # answer key indefinitely.
+                    escape = ''
+                if escape:
+                    escape += char
+                    if escape in ('\x1b[', '\x1bO'): continue
+                    if escape.startswith('\x1b[') and not ('@' <= char <= '~'):
+                        if len(escape) < 32: continue
+                        escape = ''; continue
+                    if escape in ('\x1b[D', '\x1bOD'): self._cursor = max(0, self._cursor - 1)
+                    elif escape in ('\x1b[C', '\x1bOC'): self._cursor = min(len(self._answer), self._cursor + 1)
+                    elif escape in ('\x1b[H', '\x1bOH', '\x1b[1~'): self._cursor = 0
+                    elif escape in ('\x1b[F', '\x1bOF', '\x1b[4~'): self._cursor = len(self._answer)
+                    elif escape == '\x1b[3~': self._answer = self._answer[:self._cursor] + self._answer[self._cursor + 1:]
+                    escape = ''
+                elif char == '\x1b':
+                    escape = char; escape_started = time.monotonic(); continue
+                elif char in ('\r', '\n'):
+                    return self._answer
+                elif char == '\x03': raise KeyboardInterrupt()
+                elif char == '\x04' and not self._answer: raise EOFError()
+                elif char in ('\x7f', '\b'):
+                    if self._cursor:
+                        self._answer = self._answer[:self._cursor - 1] + self._answer[self._cursor:]; self._cursor -= 1
+                elif char == '\x15': self._answer = ''; self._cursor = 0
+                elif char == '\x01': self._cursor = 0
+                elif char == '\x05': self._cursor = len(self._answer)
+                elif char.isprintable() and len(self._answer) < 16384:
+                    self._answer = self._answer[:self._cursor] + char + self._answer[self._cursor:]; self._cursor += 1
+                self._draw_answer()
+        finally:
+            termios.tcsetattr(fd, termios.TCSANOW, saved)
+
+    def _draw_answer(self):
+        """Update just the input row while typing; resize alone redraws the grid."""
+        size = terminal_size()
+        prefix = len(self._prompt)
+        before = self._answer[:self._cursor]
+        cells = sum(0 if unicodedata.combining(c) else (2 if unicodedata.east_asian_width(c) in ('W', 'F') else 1) for c in before)
+        if not self.screen or self._input_scrolled or prefix + cells >= size.columns:
+            self._redraw(); return
+        visible = terminal_line(self._answer, size.columns - prefix, color=False)
+        sys.stdout.write(f'\x1b[{self.PROMPT_ROW};{prefix + 1}H' + visible + '\x1b[K' +
+                         f'\x1b[{self.PROMPT_ROW};{prefix + cells + 1}H')
+        sys.stdout.flush()
+
+    def ask(self, label, default='', *, config=None, help_text='Blank keeps the value; - clears text.'):
+        if not self.screen: return _ask(label, default)
+        self.page(label, [str(default).replace('\n', ' / ')], config=config,
+                  notice=help_text, footer='Enter accepts | Ctrl-U clears the answer')
+        answer = self.read(f'{label}: ').strip()
+        return answer if answer else default
 
     def select(self, title, choices, default=0, *, preview_factory=None, config=None):
-        selected = default
+        selected = default; offset = (default // self.QUESTION_ROWS) * self.QUESTION_ROWS
         while True:
             current = preview_factory(choices[selected][1]) if preview_factory else config
-            self.page(title, [f' {i}. {label}' + (' [selected]' if i - 1 == selected and preview_factory else '')
-                              for i, (label, _) in enumerate(choices, 1)], config=current,
-                      footer='Number changes the preview; Enter accepts. P preview | Q cancel' if preview_factory and self.screen else '')
-            raw = input(f'Choice [{selected + 1}]: ').strip().lower()
+            paginate = self.mode != 'line'
+            end = min(len(choices), offset + self.QUESTION_ROWS) if paginate else len(choices)
+            first = offset if paginate else 0
+            notice = f'Choices {first + 1}-{end}/{len(choices)} | [ / ] more' if end - first < len(choices) else ''
+            self.page(title, [f' {i + 1}. {label}' + (' [selected]' if i == selected and preview_factory else '')
+                              for i, (label, _) in enumerate(choices) if first <= i < end], config=current,
+                      notice=notice, footer='Number chooses | Enter accepts | P H Q')
+            raw = self.read(f'Choice [{selected + 1}]: ', navigation=True).strip().lower()
             if raw == 'q': raise WizardCancelled()
             if raw == 'p' and current is not None: self.full_preview(current); continue
+            if raw in ('[', ']'):
+                offset = max(0, min(((len(choices) - 1) // self.QUESTION_ROWS) * self.QUESTION_ROWS,
+                                    offset + (self.QUESTION_ROWS if raw == ']' else -self.QUESTION_ROWS)))
+                continue
             if not raw: return choices[selected][1]
             if raw.isdigit() and 1 <= int(raw) <= len(choices):
-                selected = int(raw) - 1
+                selected = int(raw) - 1; offset = (selected // self.QUESTION_ROWS) * self.QUESTION_ROWS
                 if not (preview_factory and self.screen): return choices[selected][1]
 
     def full_preview(self, config):
-        size = shutil.get_terminal_size((80, 24))
-        lines = self.sample(config, max(40, min(size.columns - 1, config['display']['width'])))
         if not self.screen:
             print('Synthetic demonstration; before/after hooks are skipped.')
-            print('\n'.join(lines)); return
-        start = 0
+            print('\n'.join(self.sample(config, min(240, max(40, terminal_size().columns)))))
+            return
+        self.page('Preview at this terminal size', ['Resize this window to reflow the MOTD.',
+                  'The 10 control rows stay fixed.', 'H toggles sample before/after output.',
+                  'J/K scroll long call samples.', 'All values are synthetic; calls never run.'],
+                  config=config, footer='Enter returns | H calls | J/K scroll | Q')
         while True:
-            size = shutil.get_terminal_size((80, 24)); count = max(5, size.lines - 6)
-            self.page('Full preview', lines[start:start + count],
-                      footer=f'Lines {start + 1}-{min(start + count, len(lines))}/{len(lines)} | N next | B previous | Enter return')
-            raw = input('Preview: ').strip().lower()
+            raw = self.read('Preview: ', navigation=True).strip().lower()
             if not raw: return
             if raw == 'q': raise WizardCancelled()
-            if raw == 'n': start = min(max(0, len(lines) - count), start + count)
-            elif raw == 'b': start = max(0, start - count)
 
     def pause(self):
         if self.screen: input('Press Enter to return to the wizard: ')
+
+    def finish(self):
+        """Leave the next shell prompt below the last grid, with normal colour."""
+        if self._used_screen and sys.stdout.isatty():
+            sys.stdout.write(f'\x1b[0m\x1b[{max(1, terminal_size().lines)};1H\n')
+            sys.stdout.flush()
 
 
 def _get_setting(config, path):
@@ -2078,6 +2318,8 @@ def _configuration_pages(config):
     if config['target'] == 'shell':
         appearance += [('Site label', 'display.site', 'text'), ('Theme', 'display.theme', 'choice'),
                        ('Maximum columns', 'display.width', 'int'), ('Row budget', 'display.rows', 'int')]
+        pages.append(('Characters and colour', [('Character set', 'display.charset', 'choice'),
+                                                ('Colour mode', 'display.color', 'choice')]))
         pages.append(('Sections', [(name, name, 'section') for name in SECTION_IDS]))
         pages.append(('Content', [('Required services', 'services.required', 'list'),
                                   ('Excluded service patterns', 'services.exclude', 'list'),
@@ -2086,7 +2328,14 @@ def _configuration_pages(config):
                                                 ('Clear before calls', 'before', 'clear'), ('Clear after calls', 'after', 'clear')]))
     else:
         pages.append(('Public notice', [('Public text', 'public_text', 'multiline')]))
-    return pages
+    # Five questions fit in the fixed ten-row control area. Extra fields become
+    # real pages; they never steal rows from the preview or disappear offscreen.
+    result = []
+    for title, fields in pages:
+        for offset in range(0, len(fields), WizardUI.QUESTION_ROWS):
+            suffix = f' ({offset // WizardUI.QUESTION_ROWS + 1}/{(len(fields) + WizardUI.QUESTION_ROWS - 1) // WizardUI.QUESTION_ROWS})' if len(fields) > WizardUI.QUESTION_ROWS else ''
+            result.append((title + suffix, fields[offset:offset + WizardUI.QUESTION_ROWS]))
+    return result
 
 
 def _configure(config, ui=None):
@@ -2096,12 +2345,14 @@ def _configure(config, ui=None):
     choices = {
         'target': [('Authenticated shell greeting', 'shell'), ('agetty pre-login issue text', 'issue'),
                    ('SSH pre-authentication banner file', 'ssh-banner'), ('Generic static text', 'text')],
-        'shell': [('Bash: full Linux dashboard', 'bash'), ('Zsh: shared Bash dashboard', 'zsh'),
+        'shell': [('Bash: adaptive Unix dashboard', 'bash'), ('Zsh: shared Unix dashboard', 'zsh'),
                   ('POSIX sh: portable Unix display', 'sh'), ('PowerShell: native, legacy-aware', 'powershell')],
         'audience': [('All eligible sessions', 'all'), ('SSH environment markers present', 'ssh'),
                      ('Non-SSH sessions (not proof of a physical console)', 'local')],
         'frequency': [('Login startup', 'login'), ('Every interactive shell', 'interactive')],
         'display.theme': [(x.title(), x) for x in ('cyan', 'green', 'amber', 'mono')],
+        'display.charset': [('Automatic', 'auto'), ('ASCII', 'ascii'), ('Unicode borders', 'unicode')],
+        'display.color': [('Automatic', 'auto'), ('Always (unless NO_COLOR)', 'always'), ('Never', 'never')],
     }
     while True:
         pages = _configuration_pages(c); page_index = min(page_index, len(pages) - 1)
@@ -2116,8 +2367,8 @@ def _configure(config, ui=None):
                 value = str(value).replace('\n', ' / ')
             lines.append(f' {number}. {label}: {value}')
         ui.page(f'{title} | page {page_index + 1}/{len(pages)}', lines, config=c, notice=notice,
-                footer='Number edits | Enter/N next | B back | P full preview | Q cancel')
-        notice = ''; raw = input('Page choice: ').strip().lower()
+                footer='Num edit | N next B back P view H calls Q')
+        notice = ''; raw = ui.read('Page choice: ', navigation=True).strip().lower()
         if raw == 'q': raise WizardCancelled()
         if raw == 'p': ui.full_preview(c); continue
         if raw == 'b': page_index = max(0, page_index - 1); continue
@@ -2142,20 +2393,25 @@ def _configure(config, ui=None):
                 _set_setting(candidate, path, value)
                 if path == 'target' and value != 'shell': candidate['hooks'] = {'before': [], 'after': []}
             elif kind == 'hook':
-                print('Explicit argv as JSON, e.g. ["fastfetch"] or ["bash", "-c", "command | other"].')
-                argv = json.loads(input('Arguments: '))
-                seconds = float(_ask('Timeout seconds', '1'))
-                policy = ui.select('On call failure', [('Continue the display', 'continue'), ('Stop this display', 'stop')])
-                candidate['hooks'][path].append({'argv': argv, 'timeout_seconds': seconds, 'on_failure': policy})
+                argv = json.loads(ui.ask('Arguments', '["fastfetch"]', config=c,
+                                        help_text='Explicit argv JSON; e.g. ["echo","Ready"]'))
+                seconds = float(ui.ask('Timeout seconds', '1', config=c))
+                policy = ui.select('On call failure', [('Continue the display', 'continue'), ('Stop this display', 'stop')], config=c)
+                sample = ui.ask('Sample output', '', config=c,
+                                help_text='Optional literal sample; use \\n for lines.')
+                hook = {'argv': argv, 'timeout_seconds': seconds, 'on_failure': policy}
+                if sample: hook['preview_text'] = sample.replace('\\n', '\n')
+                candidate['hooks'][path].append(hook)
             elif kind == 'clear':
-                if confirm(f'Clear {path} calls in this draft?'): candidate['hooks'][path] = []
+                if ui.select(f'Clear {path} calls?', [('Keep calls', False), ('Clear draft calls', True)], config=c):
+                    candidate['hooks'][path] = []
             else:
                 current = _get_setting(c, path)
                 if kind == 'list': default = ','.join(current)
                 elif kind == 'messages': default = '\\n'.join(current)
                 else: default = str(current).replace('\n', '\\n')
-                print('Blank keeps the value; - clears text/lists. Use \\n between notice lines.' if kind != 'int' else 'Enter a whole number; blank keeps the value.')
-                value = _ask(label, default)
+                value = ui.ask(label, default, config=c,
+                    help_text='Blank keeps; - clears; \\n separates lines.' if kind != 'int' else 'Whole number; blank keeps the value.')
                 if kind != 'int' and value == '-': value = ''
                 if kind == 'int': value = int(value)
                 elif kind == 'list': value = [v.strip() for v in value.split(',') if v.strip()]
@@ -2220,6 +2476,13 @@ def wizard(args):
     if not sys.stdin.isatty():
         raise MotdError('The wizard needs a terminal. Use --help for noninteractive commands.')
     ui = WizardUI(getattr(args, 'ui', 'auto'))
+    try:
+        return _wizard_session(args, ui)
+    finally:
+        ui.finish()
+
+
+def _wizard_session(args, ui):
     action = ui.select('What do you want to do?', [
         ('Create/customise a message', 'create'), ('Install existing recipe or output', 'existing'),
         ('Reconfigure/upgrade an installed message', 'reconfigure'), ('Inspect/audit', 'audit'),
@@ -2251,7 +2514,7 @@ def wizard(args):
         config = _configure(config, ui)
     elif action == 'existing':
         kind = ui.select('What do you have?', [('A TOML recipe', 'config'), ('An existing generated/other output file', 'artifact')])
-        path = absolute(input('Path: ').strip())
+        path = absolute(ui.ask('Path', help_text='Path to an existing recipe or output.').strip())
         if kind == 'config': config = load_config(path)
         else:
             imported = True; artifact = _source_text(path)
@@ -2261,7 +2524,7 @@ def wizard(args):
                 config['target'] = ui.select('Output type', [('Executable shell output', 'shell'),
                     ('agetty issue text', 'issue'), ('SSH banner text', 'ssh-banner'), ('Generic text', 'text')])
                 if config['target'] == 'shell': config['shell'] = ui.select('Output interpreter', [(x, x) for x in SHELLS])
-                config['name'] = _ask('Installation name', 'imported')
+                config['name'] = ui.ask('Installation name', 'imported')
             print('File SHA256:', hashlib.sha256(artifact.encode()).hexdigest())
             if config['target'] == 'shell':
                 trusted = confirm('I have inspected this executable file and want to install its exact bytes')
@@ -2294,19 +2557,19 @@ def wizard(args):
                 continue
             if choice == 'save':
                 if opaque: raise MotdError('This output has no reconstructable recipe. Build/copy the exact output instead.')
-                path = absolute(_ask('Recipe path', config['name'] + '.toml'))
+                path = absolute(ui.ask('Recipe path', config['name'] + '.toml', config=config))
                 save_recipe(config, path, state_dir)
             elif choice == 'build':
-                path = absolute(_ask('Output path', config['name'] + artifact_suffix(config)))
+                path = absolute(ui.ask('Output path', config['name'] + artifact_suffix(config), config=config))
                 export_files(config, artifact, path, state_dir=state_dir, opaque_artifact=opaque)
             else:
                 if config['target'] != 'shell' and (scope == 'user' or config['target'] == 'text') and 'destination' not in install_options:
-                    install_options['destination'] = absolute(_ask('Destination file (parent must exist)', str(Path.home() / (config['name'] + '.txt'))))
+                    install_options['destination'] = absolute(ui.ask('Destination file', str(Path.home() / (config['name'] + '.txt')), config=config, help_text='The parent directory must already exist.'))
                 explicit_startup = config['target'] == 'shell' and (
                     (scope == 'system' and config['shell'] == 'zsh') or
                     (config['frequency'] == 'interactive' and (scope == 'system' or config['shell'] == 'sh')))
                 if explicit_startup and 'shell_file' not in install_options:
-                    selected = input('Startup file path for this shell (existing parent required): ').strip()
+                    selected = ui.ask('Startup file path', config=config, help_text='Explicit startup file; parent must exist.').strip()
                     if not selected: raise MotdError('Choose an explicit startup file; its location is not guessed')
                     install_options['shell_file'] = absolute(selected)
                 plan = installation_plan(config, artifact, scope=scope, state_dir=state_dir,
@@ -2479,6 +2742,8 @@ IO_VERBOSE_SCAN_BUDGET_MS=200
 TITLE='SYSTEM STATUS'
 MAX_WIDTH=132                   # Use available width up to this cap.
 THEME=cyan                     # cyan | amber | mono
+CHARSET=auto                    # auto | ascii | unicode; CLI flags override.
+COLOR_MODE=auto                 # auto | always | never; NO_COLOR still wins.
 MOTD_FASTFETCH=0                # External before/after hooks are owned by motd.py.
 FASTFETCH_TIMEOUT=1s
 STORAGE_TIMEOUT=0.4s
@@ -2701,15 +2966,16 @@ initialize_optional_model() {
 declare -A MODEL=() DISK=() COLOR=() VIEW=()
 DISK_IDS=() ATTENTION=() HEALTH_NOTES=() HOST_IPS=()
 FASTFETCH_TEXT='' OUTPUT='' REPLY=''
-DEMO=0 PLAIN=0 ASCII=0 WIDTH_OVERRIDE='' FETCH_OVERRIDE='' THEME_OVERRIDE=''
+DEMO=0 PLAIN=0 ASCII=0 FORCE_COLOR=0 WIDTH_OVERRIDE='' FETCH_OVERRIDE='' THEME_OVERRIDE=''
+[[ $CHARSET != ascii ]] || ASCII=1
 PROC_ROOT=/proc SYS_ROOT=/sys ETC_ROOT=/etc RUN_ROOT=/run
 VERSION=0.3.0
 
 usage() {
     printf '%s\n' \
       'MOTD adaptive runtime 0.3.0 - standalone Linux status display.' \
-      'Usage: motd.bash [--rows 20..60]' \
-      '       [--width 24..240] [--theme cyan|amber|green|mono] [--plain] [--ascii|--unicode]' \
+      'Usage: motd.bash [--rows 8..200]' \
+      '       [--width 24..240] [--theme cyan|amber|green|mono] [--plain|--color] [--ascii|--unicode]' \
       '       [--sections system,resources,services,processes,sessions,connections,attention,hints]' \
       '       [--hide SECTION,...] [--show SECTION,...]' \
       '       [--hide-item SECTION.ITEM,...] [--show-item SECTION.ITEM,...]' \
@@ -2740,6 +3006,7 @@ parse_options() {
             --demo) DEMO=1; shift ;;
             --demo-alerts) DEMO=2; shift ;;
             --plain) PLAIN=1; shift ;;
+            --color) FORCE_COLOR=1; shift ;;
             --ascii) ASCII=1; shift ;;
             --unicode) ASCII=0; shift ;;
             --no-fastfetch) FETCH_OVERRIDE=0; shift ;;
@@ -2753,7 +3020,7 @@ parse_options() {
                 n=$((10#$2))
                 case $1 in
                     --width) ((n>=24 && n<=240)) || return 2; WIDTH_OVERRIDE=$n ;;
-                    --rows) ((n>=20 && n<=60)) || return 2; ROWS_OVERRIDE=$n ;;
+                    --rows) ((n>=8 && n<=200)) || return 2; ROWS_OVERRIDE=$n ;;
                     --top) ((n>=1 && n<=10)) || return 2; TOP_N=$n; IO_TOP_N=$n ;;
                     --sessions) ((n>=1 && n<=30)) || return 2; MAX_SESSIONS=$n ;;
                     --connections) ((n>=1 && n<=30)) || return 2; MAX_CONNECTIONS=$n ;;
@@ -2789,6 +3056,7 @@ safe_text() {
 collect_display_context() {
     local cols=$WIDTH_OVERRIDE rows='' size=$TTY_SIZE_OVERRIDE language=${LC_ALL:-${LC_CTYPE:-${LANG:-C.UTF-8}}}
     MODEL[color]=1; MODEL[unicode]=0
+    [[ $COLOR_MODE != never ]] || ((FORCE_COLOR)) || PLAIN=1
     ((PLAIN)) || [[ ! -v NO_COLOR ]] || PLAIN=1
     [[ ${TERM-} != dumb ]] || PLAIN=1
     [[ -z $THEME_OVERRIDE ]] || THEME=$THEME_OVERRIDE
@@ -2805,7 +3073,7 @@ collect_display_context() {
     fi
     [[ $cols =~ ^[0-9]{1,3}$ ]] || cols=80
     cols=$((10#$cols)); ((cols>=24)) || cols=24
-    if [[ -z $ROWS_OVERRIDE && $rows =~ ^[0-9]+$ ]] && ((rows>=20 && rows<COMPACT_ROWS)); then COMPACT_ROWS=$rows; fi
+    if [[ -z $ROWS_OVERRIDE && $rows =~ ^[0-9]+$ ]] && ((rows>=8 && rows<COMPACT_ROWS)); then COMPACT_ROWS=$rows; fi
     MODEL[terminal_rows]=${rows:-$COMPACT_ROWS}
     MODEL[terminal_columns]=$cols; MODEL[columns]=$((cols<MAX_WIDTH ? cols : MAX_WIDTH))
     MODEL[fastfetch_enabled]=${FETCH_OVERRIDE:-$MOTD_FASTFETCH}
@@ -5086,7 +5354,7 @@ ui_section_rows() {
 
 ui_plan_layout() {
     local id available total=0 changed=1 minimum rows reduction
-    UI_PLAN=()
+    UI_PLAN=(); UI_OMITTED_SECTIONS=0
     ((UI_REGISTRY_READY)) || ui_registry_init || return 2
     for id in "${SECTIONS[@]}"; do
         ui_section_enabled "$id" || continue
@@ -5105,10 +5373,18 @@ ui_plan_layout() {
         ((reduction<=total-available)) || reduction=$((total-available))
         ((UI_PLAN[$id]-=reduction,total-=reduction))
     done
-    # A deliberately overloaded custom layout needs a larger --rows value.
+    # A small terminal is a presentation constraint, not a configuration error.
+    # Keep complete sections and borders, reserve a visible omission notice,
+    # and prefer resources/identity/attention over secondary detail. Nothing is
+    # collected a second time, and no oversized screen is cropped after render.
     if ((total>available)); then
-        printf '%s\n' 'Configured section minimums exceed the row budget; use --rows 50 or hide a section.' >&2
-        return 2
+        ((available-=1))
+        for id in hints connections io sessions services processes resources system attention "${SECTIONS[@]}"; do
+            ((total>available)) || break
+            [[ ${UI_PLAN[$id]+set} ]] || continue
+            ((total-=UI_PLAN[$id],UI_OMITTED_SECTIONS+=1))
+            unset 'UI_PLAN[$id]'
+        done
     fi
     # Only an explicitly larger row budget expands the compact baseline.
     if ((COMPACT_ROWS>25)); then
@@ -5137,6 +5413,10 @@ ui_render_sections() {
         UI_SECTION_TITLE=${SECTION_TITLE[$id]}
         "${SECTION_RENDERER[$id]}" "${UI_PLAN[$id]}"
     done
+    if ((UI_OMITTED_SECTIONS)); then
+        UI_REMAIN=1
+        ui_row "+$UI_OMITTED_SECTIONS sections; resize for more." "${COLOR[muted]}"
+    fi
     ui_bottom
 }
 
@@ -5249,13 +5529,15 @@ if [[ ${BASH_SOURCE[0]} == "$0" ]]; then main "$@"; fi
 # BEGIN EMBEDDED SH — regenerated by tools/embed_runtime.py
 SH_TEMPLATE = r'''#!/bin/sh
 # Portable Unix renderer, embedded before the modern Bash renderer.
-# Old Bourne/POSIX syntax: no arrays, [[ ]], local, namerefs, process
+# Portable POSIX syntax: no arrays, [[ ]], local, namerefs, process
 # substitution, printf -v or Bash-only slicing. Bash 1 needs external printf.
 # Collectors only read local data. No network, installation or privileged work.
 
 TITLE='SYSTEM STATUS'
 SITE_LABEL=''
 THEME=mono
+CHARSET=auto
+COLOR_MODE=auto
 MAX_WIDTH=80
 ROWS=25
 TOP_N=3
@@ -5279,6 +5561,7 @@ MOTD_HOOKS_ENABLED=1
 MOTD_PLAIN=0
 MOTD_FORCE_COLOR=0
 MOTD_ASCII=1
+case "$CHARSET" in unicode) MOTD_ASCII=0 ;; esac
 motd_explicit_width=0
 motd_explicit_rows=0
 while [ "$#" -gt 0 ]; do
@@ -5301,7 +5584,7 @@ while [ "$#" -gt 0 ]; do
                 MAX_WIDTH=$motd_number
                 motd_explicit_width=1
             else
-                if [ "$motd_number" -lt 20 ] || [ "$motd_number" -gt 60 ]; then exit 2; fi
+                if [ "$motd_number" -lt 8 ] || [ "$motd_number" -gt 200 ]; then exit 2; fi
                 ROWS=$motd_number
                 motd_explicit_rows=1
             fi ;;
@@ -5316,6 +5599,12 @@ while [ "$#" -gt 0 ]; do
     esac
     shift
 done
+# Explicit CLI --color overrides a saved never choice; --plain and NO_COLOR
+# continue to suppress color even when both display switches were supplied.
+case "$COLOR_MODE" in
+    always) MOTD_FORCE_COLOR=1 ;;
+    never) if [ "$MOTD_FORCE_COLOR" -eq 0 ]; then MOTD_PLAIN=1; fi ;;
+esac
 motd_before_hooks || exit "$?"
 # Old Bash releases predate current multibyte libraries. C locale gives exact
 # byte semantics for printable-ASCII content, decimal parsers and shell ranges.
@@ -5379,7 +5668,7 @@ MOTD_GEOMETRY_END
         if [ "$motd_terminal_columns" -ge 40 ] && [ "$motd_terminal_columns" -lt "$MAX_WIDTH" ]; then MAX_WIDTH=$motd_terminal_columns; fi
     fi
     if [ "$motd_explicit_rows" -eq 0 ] && [ -n "$motd_terminal_rows" ]; then
-        if [ "$motd_terminal_rows" -ge 20 ] && [ "$motd_terminal_rows" -lt "$ROWS" ]; then ROWS=$motd_terminal_rows; fi
+        if [ "$motd_terminal_rows" -ge 8 ] && [ "$motd_terminal_rows" -lt "$ROWS" ]; then ROWS=$motd_terminal_rows; fi
     fi
 fi
 
@@ -5477,7 +5766,7 @@ else
                 fi
                 if motd_run vm_stat; then
                     # Free is not equivalent to Linux MemAvailable.
-                    motd_free=$(printf '%s\n' "$MOTD_CAPTURE" | awk '/page size of/ {for(i=1;i<=NF;i++)if($i=="of")p=$(i+1)} /^Pages free:/ {gsub(/\./,"",$3);f=$3} END {if(p>0&&f!="")printf "%.0f",p*f/1024}')
+                    motd_free=$(printf '%s\n' "$MOTD_CAPTURE" | awk '/page size of/ {for(i=1;i<=NF;i++)if($i=="of")p=$(i+1)} /^Pages free:/ {sub(/\.$/,"",$3);f=$3} END {if(p~/^[0-9]+$/&&p>0&&f~/^[0-9]+$/)printf "%.0f",p*f/1024}')
                     motd_free=${motd_free:-unavailable}
                 fi ;;
             FreeBSD|OpenBSD|NetBSD|DragonFly)
@@ -5629,12 +5918,29 @@ motd_service_rows="$motd_required_rows$motd_service_rows"
 # process metrics and storage, then expand the lists. One row stays for a prompt.
 motd_inner=$((MAX_WIDTH - 4)); motd_sections=0
 for motd_section in $SECTIONS; do motd_sections=$((motd_sections + 1)); done
-motd_extra=$((ROWS - 4 - 2 * motd_sections)); if [ "$motd_extra" -lt 0 ]; then motd_extra=0; fi
+motd_visible_sections=$SECTIONS; motd_omitted_sections=0; motd_available_rows=$((ROWS - 4))
+# Keep the same complete framed sections at short terminal heights. A named
+# omission row replaces hidden sections; the preview is never a cropped larger
+# render. Attention remains visible after lower-priority detail is omitted.
+if [ "$((2 * motd_sections))" -gt "$motd_available_rows" ]; then
+    motd_available_rows=$((motd_available_rows - 1))
+    for motd_remove in hints connections io sessions services processes resources system attention; do
+        if [ "$((2 * motd_sections))" -le "$motd_available_rows" ]; then break; fi
+        motd_remaining=''
+        for motd_section in $motd_visible_sections; do
+            if [ "$motd_section" = "$motd_remove" ]; then
+                motd_sections=$((motd_sections - 1)); motd_omitted_sections=$((motd_omitted_sections + 1))
+            else motd_remaining="$motd_remaining $motd_section"; fi
+        done
+        motd_visible_sections=$motd_remaining
+    done
+fi
+motd_extra=$((motd_available_rows - 2 * motd_sections)); if [ "$motd_extra" -lt 0 ]; then motd_extra=0; fi
 motd_process_extra=0; motd_resource_extra=0
-case " $SECTIONS " in *' processes '*)
+case " $motd_visible_sections " in *' processes '*)
     if [ "$motd_extra" -gt 1 ]; then motd_process_extra=2; motd_extra=$((motd_extra - 2))
     elif [ "$motd_extra" -gt 0 ]; then motd_process_extra=1; motd_extra=$((motd_extra - 1)); fi ;; esac
-case " $SECTIONS " in *' resources '*) if [ "$motd_extra" -gt 0 ]; then motd_resource_extra=1; motd_extra=$((motd_extra - 1)); fi ;; esac
+case " $motd_visible_sections " in *' resources '*) if [ "$motd_extra" -gt 0 ]; then motd_resource_extra=1; motd_extra=$((motd_extra - 1)); fi ;; esac
 motd_share=0
 if [ "$motd_sections" -gt 0 ]; then motd_share=$((motd_extra / motd_sections)); motd_extra=$((motd_extra % motd_sections)); fi
 motd_budget=$((ROWS - 1)); motd_section_budget=0; motd_color=''; motd_reset=''
@@ -5690,7 +5996,7 @@ motd_border "$motd_tl" "$motd_tr" "$TITLE"
 motd_section_budget=1
 if [ -n "$SITE_LABEL" ]; then motd_line "$SITE_LABEL | Portable Unix"
 else motd_line 'Portable Unix | local observations'; fi
-for motd_section in $SECTIONS; do
+for motd_section in $motd_visible_sections; do
     motd_section_budget=$((1 + motd_share))
     if [ "$motd_extra" -gt 0 ]; then motd_section_budget=$((motd_section_budget + 1)); motd_extra=$((motd_extra - 1)); fi
     case "$motd_section" in
@@ -5742,6 +6048,10 @@ MOTD_SERVICES_END
             motd_border "$motd_ml" "$motd_mr" 'I/O (cumulative; visible sample)'; motd_line "$motd_disk_io"; motd_rows "$motd_io_rows" ;;
     esac
 done
+if [ "$motd_omitted_sections" -gt 0 ]; then
+    motd_section_budget=1
+    motd_line "+$motd_omitted_sections sections; resize for more."
+fi
 motd_border "$motd_bl" "$motd_br" ''
 motd_after_hooks || exit "$?"
 '''
@@ -5772,13 +6082,13 @@ param(
 
 if ($Version) { Write-Output ('MOTD ' + $MotdVersion + ' (native PowerShell 1+ syntax)'); return }
 if ($Help) {
-    Write-Output 'MOTD PowerShell: -Demo -DemoAlerts -Plain -Color -Ascii -Unicode -NoHooks -Width 40..240 -Rows 20..60'
+    Write-Output 'MOTD PowerShell: -Demo -DemoAlerts -Plain -Color -Ascii -Unicode -NoHooks -Width 40..240 -Rows 8..200'
     Write-Output 'Demonstrations use synthetic data and never run before/after calls.'
     Write-Output 'Local capability checks select CIM, WMI, .NET or Unix sources. Unavailable is not zero.'
     return
 }
 if ($Width -ne 0 -and ($Width -lt 40 -or $Width -gt 240)) { throw 'Width must be 40..240, or 0 for the recipe.' }
-if ($Rows -ne 0 -and ($Rows -lt 20 -or $Rows -gt 60)) { throw 'Rows must be 20..60, or 0 for the recipe.' }
+if ($Rows -ne 0 -and ($Rows -lt 8 -or $Rows -gt 200)) { throw 'Rows must be 8..200, or 0 for the recipe.' }
 if ($DemoAlerts) { $Demo = $true }
 
 # The mutable result object is shared with trap's child scope. A failed read
@@ -5808,7 +6118,21 @@ if (-not $Width -or -not $Rows) {
     $geometry = Read-MotdObservation { $Host.UI.RawUI.WindowSize }
     if ($geometry.Ok -and $geometry.Value.Count -gt 0) {
         if (-not $Width -and $geometry.Value[0].Width -ge 40) { $MotdWidth = [Math]::Min($MotdWidth, [int]$geometry.Value[0].Width) }
-        if (-not $Rows -and $geometry.Value[0].Height -ge 20) { $MotdHeight = [Math]::Min($MotdHeight, [int]$geometry.Value[0].Height) }
+        if (-not $Rows -and $geometry.Value[0].Height -ge 8) { $MotdHeight = [Math]::Min($MotdHeight, [int]$geometry.Value[0].Height) }
+    }
+}
+# Saved appearance choices act as defaults. Explicit positive switches override
+# them without PS2's BoundParameters variable, preserving the PS1 grammar target.
+if (-not $Ascii -and -not $Unicode) {
+    switch ($MotdConfig['display']['charset']) {
+        'ascii' { $Ascii = $true }
+        'unicode' { $Unicode = $true }
+    }
+}
+if (-not $Plain -and -not $Color) {
+    switch ($MotdConfig['display']['color']) {
+        'never' { $Plain = $true }
+        'always' { $Color = $true }
     }
 }
 # Old .NET returns null for an existing empty value. Enumerating the legacy
@@ -6061,45 +6385,54 @@ function Add-MotdServices {
         if ($DemoAlerts) { Add-MotdLine '[FAIL] demo-required-service' 'warning' }
         return
     }
-    $items = New-MotdList
+    # Normalize local provider rows once, then apply the same recipe filters and
+    # required-service checks on Windows, systemd and launchd. Provider failure
+    # never turns an unknown service into a known missing/stopped service.
+    $records = New-MotdList
+    $observed = $false
     if ($MotdWindows -and (Test-MotdCommand 'Get-Service')) {
         $read = Read-MotdObservation { Get-Service -ErrorAction Stop | Sort-Object Name }
         if ($read.Ok) {
+            $observed = $true
             foreach ($service in $read.Value) {
-                $excluded = $false
-                foreach ($pattern in @($MotdConfig['services']['exclude'])) { if ($service.Name -like $pattern) { $excluded = $true; break } }
-                if ($excluded) { continue }
-                if ($MotdConfig['services']['required'].Count -gt 0 -and $MotdConfig['services']['required'] -notcontains $service.Name) { continue }
-                [void]$items.Add('[' + $service.Status + '] ' + $service.Name)
-            }
-            foreach ($required in @($MotdConfig['services']['required'])) {
-                $matched = @($read.Value | Where-Object { $_.Name -eq $required })
-                if ($matched.Count -eq 0) { [void]$MotdNotices.Add('Required service missing: ' + $required) }
-                elseif ($matched[0].Status -ne 'Running') { [void]$MotdNotices.Add('Required service not running: ' + $required) }
+                [void]$records.Add(@{ Name = [string]$service.Name; State = [string]$service.Status; Running = ($service.Status -eq 'Running') })
             }
         }
     } elseif (Test-MotdCommand 'systemctl') {
         $read = Read-MotdExternal 'systemctl' @('list-units', '--type=service', '--all', '--plain', '--no-legend', '--no-pager')
         if ($read.Ok) {
+            $observed = $true
             foreach ($line in [regex]::Split($read.Text, '\r?\n')) {
                 if ($line -match '^\s*(\S+)\s+\S+\s+(\S+)\s+(\S+)') {
-                    $name = $matches[1]; $status = $matches[2]; $excluded = $false
-                    foreach ($pattern in @($MotdConfig['services']['exclude'])) { if ($name -like $pattern) { $excluded = $true; break } }
-                    if (-not $excluded -and ($MotdConfig['services']['required'].Count -eq 0 -or $MotdConfig['services']['required'] -contains $name)) {
-                        [void]$items.Add('[' + $status + '] ' + $name)
-                    }
+                    [void]$records.Add(@{ Name = $matches[1]; State = $matches[2]; Running = ($matches[2] -eq 'active') })
                 }
             }
         }
     } elseif (Test-MotdCommand 'launchctl') {
         $read = Read-MotdExternal 'launchctl' @('list')
         if ($read.Ok) {
+            $observed = $true
             foreach ($line in [regex]::Split($read.Text, '\r?\n')) {
                 if ($line -match '^(\d+|-)\s+(-?\d+)\s+(\S+)') {
                     $state = 'loaded'; if ($matches[1] -ne '-') { $state = 'run' }
-                    [void]$items.Add('[' + $state + '] ' + $matches[3])
+                    [void]$records.Add(@{ Name = $matches[3]; State = $state; Running = ($matches[1] -ne '-') })
                 }
             }
+        }
+    }
+    $items = New-MotdList
+    foreach ($record in $records) {
+        $excluded = $false
+        foreach ($pattern in @($MotdConfig['services']['exclude'])) { if ($record.Name -like $pattern) { $excluded = $true; break } }
+        if ($excluded) { continue }
+        if ($MotdConfig['services']['required'].Count -gt 0 -and $MotdConfig['services']['required'] -notcontains $record.Name) { continue }
+        [void]$items.Add('[' + $record.State + '] ' + $record.Name)
+    }
+    if ($observed) {
+        foreach ($required in @($MotdConfig['services']['required'])) {
+            $matched = @($records | Where-Object { $_.Name -eq $required })
+            if ($matched.Count -eq 0) { [void]$MotdNotices.Add('Required service not listed: ' + $required) }
+            elseif (-not $matched[0].Running) { [void]$MotdNotices.Add('Required service not running: ' + $required) }
         }
     }
     if ($items.Count -gt 0) {
@@ -6309,12 +6642,25 @@ function Write-MotdFrame {
         if ($id -eq 'processes') { $minimum = 3 }
         $allocated[$id] = [Math]::Min($minimum, $MotdSections[$id].Lines.Count); $used += $allocated[$id]
     }
+    $omitted = 0
+    if ($used -gt $capacity) {
+        # A resized wizard may offer less than the usual 20-row dashboard. Keep
+        # useful whole sections, prioritize resources and attention, and count
+        # omitted sections. Do not cut a frame or scroll over the question area.
+        foreach ($id in @('hints', 'connections', 'sessions', 'io', 'processes', 'services', 'system', 'resources', 'attention')) {
+            if ($used + 1 -le $capacity) { break }
+            if ($allocated.ContainsKey($id) -and $allocated[$id] -gt 0) {
+                $used -= $allocated[$id]; $allocated[$id] = 0; $omitted++
+            }
+        }
+        if ($omitted -gt 0) { $used++ }
+    }
     $order = @('resources', 'processes', 'services', 'io', 'sessions', 'connections', 'attention', 'hints', 'system')
     $changed = $true
     while ($used -lt $capacity -and $changed) {
         $changed = $false
         foreach ($id in $order) {
-            if ($allocated.ContainsKey($id) -and $allocated[$id] -lt $MotdSections[$id].Lines.Count -and $used -lt $capacity) {
+            if ($allocated.ContainsKey($id) -and $allocated[$id] -gt 0 -and $allocated[$id] -lt $MotdSections[$id].Lines.Count -and $used -lt $capacity) {
                 $allocated[$id]++; $used++; $changed = $true
             }
         }
@@ -6323,11 +6669,12 @@ function Write-MotdFrame {
         $lines = $MotdSections[$id].Lines
         for ($i = 0; $i -lt $allocated[$id]; $i++) { Write-MotdRow $lines[$i].Text $lines[$i].Tone }
     }
+    if ($omitted -gt 0) { Write-MotdRow ('... ' + $omitted + ' more sections; enlarge terminal') 'muted' }
     Write-Output ($bottomLeft + ($horizontal * ($MotdWidth - 2)) + $bottomRight)
 }
 
-# Read only selected local observations. A section kept in a short layout is not
-# removed wholesale to make room for a longer table; extra rows expand detail.
+# Read only selected local observations. Ordinary layouts keep every selected
+# section; compact previews explicitly omit lower-priority sections if needed.
 Invoke-MotdHooks 'before'
 foreach ($section in $MotdSectionOrder) {
     $MotdSections[$section] = @{ Lines = (New-MotdList) }

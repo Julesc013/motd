@@ -39,6 +39,8 @@ IO_VERBOSE_SCAN_BUDGET_MS=200
 TITLE='SYSTEM STATUS'
 MAX_WIDTH=132                   # Use available width up to this cap.
 THEME=cyan                     # cyan | amber | mono
+CHARSET=auto                    # auto | ascii | unicode; CLI flags override.
+COLOR_MODE=auto                 # auto | always | never; NO_COLOR still wins.
 MOTD_FASTFETCH=0                # External before/after hooks are owned by motd.py.
 FASTFETCH_TIMEOUT=1s
 STORAGE_TIMEOUT=0.4s
@@ -261,15 +263,16 @@ initialize_optional_model() {
 declare -A MODEL=() DISK=() COLOR=() VIEW=()
 DISK_IDS=() ATTENTION=() HEALTH_NOTES=() HOST_IPS=()
 FASTFETCH_TEXT='' OUTPUT='' REPLY=''
-DEMO=0 PLAIN=0 ASCII=0 WIDTH_OVERRIDE='' FETCH_OVERRIDE='' THEME_OVERRIDE=''
+DEMO=0 PLAIN=0 ASCII=0 FORCE_COLOR=0 WIDTH_OVERRIDE='' FETCH_OVERRIDE='' THEME_OVERRIDE=''
+[[ $CHARSET != ascii ]] || ASCII=1
 PROC_ROOT=/proc SYS_ROOT=/sys ETC_ROOT=/etc RUN_ROOT=/run
 VERSION=0.3.0
 
 usage() {
     printf '%s\n' \
       'MOTD adaptive runtime 0.3.0 - standalone Linux status display.' \
-      'Usage: motd.bash [--rows 20..60]' \
-      '       [--width 24..240] [--theme cyan|amber|green|mono] [--plain] [--ascii|--unicode]' \
+      'Usage: motd.bash [--rows 8..200]' \
+      '       [--width 24..240] [--theme cyan|amber|green|mono] [--plain|--color] [--ascii|--unicode]' \
       '       [--sections system,resources,services,processes,sessions,connections,attention,hints]' \
       '       [--hide SECTION,...] [--show SECTION,...]' \
       '       [--hide-item SECTION.ITEM,...] [--show-item SECTION.ITEM,...]' \
@@ -300,6 +303,7 @@ parse_options() {
             --demo) DEMO=1; shift ;;
             --demo-alerts) DEMO=2; shift ;;
             --plain) PLAIN=1; shift ;;
+            --color) FORCE_COLOR=1; shift ;;
             --ascii) ASCII=1; shift ;;
             --unicode) ASCII=0; shift ;;
             --no-fastfetch) FETCH_OVERRIDE=0; shift ;;
@@ -313,7 +317,7 @@ parse_options() {
                 n=$((10#$2))
                 case $1 in
                     --width) ((n>=24 && n<=240)) || return 2; WIDTH_OVERRIDE=$n ;;
-                    --rows) ((n>=20 && n<=60)) || return 2; ROWS_OVERRIDE=$n ;;
+                    --rows) ((n>=8 && n<=200)) || return 2; ROWS_OVERRIDE=$n ;;
                     --top) ((n>=1 && n<=10)) || return 2; TOP_N=$n; IO_TOP_N=$n ;;
                     --sessions) ((n>=1 && n<=30)) || return 2; MAX_SESSIONS=$n ;;
                     --connections) ((n>=1 && n<=30)) || return 2; MAX_CONNECTIONS=$n ;;
@@ -349,6 +353,7 @@ safe_text() {
 collect_display_context() {
     local cols=$WIDTH_OVERRIDE rows='' size=$TTY_SIZE_OVERRIDE language=${LC_ALL:-${LC_CTYPE:-${LANG:-C.UTF-8}}}
     MODEL[color]=1; MODEL[unicode]=0
+    [[ $COLOR_MODE != never ]] || ((FORCE_COLOR)) || PLAIN=1
     ((PLAIN)) || [[ ! -v NO_COLOR ]] || PLAIN=1
     [[ ${TERM-} != dumb ]] || PLAIN=1
     [[ -z $THEME_OVERRIDE ]] || THEME=$THEME_OVERRIDE
@@ -365,7 +370,7 @@ collect_display_context() {
     fi
     [[ $cols =~ ^[0-9]{1,3}$ ]] || cols=80
     cols=$((10#$cols)); ((cols>=24)) || cols=24
-    if [[ -z $ROWS_OVERRIDE && $rows =~ ^[0-9]+$ ]] && ((rows>=20 && rows<COMPACT_ROWS)); then COMPACT_ROWS=$rows; fi
+    if [[ -z $ROWS_OVERRIDE && $rows =~ ^[0-9]+$ ]] && ((rows>=8 && rows<COMPACT_ROWS)); then COMPACT_ROWS=$rows; fi
     MODEL[terminal_rows]=${rows:-$COMPACT_ROWS}
     MODEL[terminal_columns]=$cols; MODEL[columns]=$((cols<MAX_WIDTH ? cols : MAX_WIDTH))
     MODEL[fastfetch_enabled]=${FETCH_OVERRIDE:-$MOTD_FASTFETCH}
@@ -2646,7 +2651,7 @@ ui_section_rows() {
 
 ui_plan_layout() {
     local id available total=0 changed=1 minimum rows reduction
-    UI_PLAN=()
+    UI_PLAN=(); UI_OMITTED_SECTIONS=0
     ((UI_REGISTRY_READY)) || ui_registry_init || return 2
     for id in "${SECTIONS[@]}"; do
         ui_section_enabled "$id" || continue
@@ -2665,10 +2670,18 @@ ui_plan_layout() {
         ((reduction<=total-available)) || reduction=$((total-available))
         ((UI_PLAN[$id]-=reduction,total-=reduction))
     done
-    # A deliberately overloaded custom layout needs a larger --rows value.
+    # A small terminal is a presentation constraint, not a configuration error.
+    # Keep complete sections and borders, reserve a visible omission notice,
+    # and prefer resources/identity/attention over secondary detail. Nothing is
+    # collected a second time, and no oversized screen is cropped after render.
     if ((total>available)); then
-        printf '%s\n' 'Configured section minimums exceed the row budget; use --rows 50 or hide a section.' >&2
-        return 2
+        ((available-=1))
+        for id in hints connections io sessions services processes resources system attention "${SECTIONS[@]}"; do
+            ((total>available)) || break
+            [[ ${UI_PLAN[$id]+set} ]] || continue
+            ((total-=UI_PLAN[$id],UI_OMITTED_SECTIONS+=1))
+            unset 'UI_PLAN[$id]'
+        done
     fi
     # Only an explicitly larger row budget expands the compact baseline.
     if ((COMPACT_ROWS>25)); then
@@ -2697,6 +2710,10 @@ ui_render_sections() {
         UI_SECTION_TITLE=${SECTION_TITLE[$id]}
         "${SECTION_RENDERER[$id]}" "${UI_PLAN[$id]}"
     done
+    if ((UI_OMITTED_SECTIONS)); then
+        UI_REMAIN=1
+        ui_row "+$UI_OMITTED_SECTIONS sections; resize for more." "${COLOR[muted]}"
+    fi
     ui_bottom
 }
 

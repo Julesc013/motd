@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "project_version": "0.3.0",
+  "recorded_at_utc": "2026-11-16T23:18:15.244461+00:00",
+  "scope": "Current generated outputs, transaction tests in temporary directories, actual native PowerShell on Linux, synthetic renderer/wizard fixtures and real PTY resize/input tests. No real login settings changed.",
+  "host": {
+    "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+    "python": "3.12.14"
+  },
+  "full_suite": {
+    "command": "MOTD_TEST_POWERSHELL=<PowerShell7.6.10>/pwsh MOTD_TEST_WRITE_RECORD=0 python3 -m unittest discover -s tests -v",
+    "tests_run": 173,
+    "passed": 168,
+    "failed": 0,
+    "skipped": 5,
+    "elapsed_seconds": 30.86,
+    "log": "build/verification-v03-final.log",
+    "log_sha256": "cb9c63c14b5249f056915d3b3b173a62e55a960e3105f3dbcfae918ffd6a1e1e",
+    "skips": [
+      "Four opt-in historical engine test groups were not configured for this full-suite invocation; the corresponding real engines passed the separately recorded current Unix matrix and33 shell/collector tests.",
+      "Numeric ownership restoration requires root; this non-root environment did not execute that test."
+    ]
+  },
+  "syntax_and_generation": {
+    "embedded_templates": "passed tools/embed_runtime.py --check",
+    "bash": "passed bash -n runtime/motd.bash",
+    "sh": "passed sh -n runtime/motd.sh",
+    "python": "passed python3 -m py_compile motd.py"
+  },
+  "additional_evidence": {
+    "unix": "build/verification-unix-current.json",
+    "powershell": "build/verification-powershell-current.json",
+    "gallery": "examples/gallery/manifest.json",
+    "wizard_pngs": "examples/wizard-manifest.json"
+  },
+  "source_sha256": {
+    "motd.py": "1cf8b11fa915849d5b0f5302a1083bbab547008e96389a1e12df37541e0119dd",
+    "runtime/motd.bash": "308272607da97f2aad699e2bb95e3d4cd116efb819570483a07999f837ecaa40",
+    "runtime/motd.ps1": "55b6e97a0f1eb26faaec1feb223709fddd58c8f31161ae7ad687d75163b4618c",
+    "runtime/motd.sh": "6ead729c7ec4389c9f204d3fb428e0ba0b36c0a9f26b7c7d37a1ef804607a189",
+    "tests/test_cli.py": "bda4894a44c24f10568ae95a4d9e97634f953de1ae0e8bea16836be1f9e0da8e",
+    "tests/test_gallery.py": "19c0e5caa1c5f510c5957a720adf9f8244c669134d95f5932ef64ddec8766b6b",
+    "tests/test_generation.py": "cb7e5bd3191bd1c51824a7b0bc0915aa98560b57518865c7303b30b4409da16b",
+    "tests/test_installation.py": "0c207ca08c72d4d52b67a5e7924151fac58af6f366af97fb8762ac504a98b482",
+    "tests/test_native_platforms.py": "1050855c1433289fecad96848066a1062ff33ea56faa5baaac77d2d1ef5a4431",
+    "tests/test_powershell.py": "d4547f5348e022a5e401d706d0603ddba780c15373b8040e805eea9e56b00329",
+    "tests/test_runtime.py": "7208f2af79659adac1f97df65b3d37be9b84d2ecdd516f270fe6a505b07423e3",
+    "tests/test_shell_compatibility.py": "d62f9aafabacbc180bc5dbfa5b56b81bfa59af981153bd58e772f6192ed8b7aa",
+    "tests/test_transactions.py": "f260a911d50972c3de1d59d85e4c2d15c6a27d3b3af86e082c3b149716ef6871",
+    "tests/test_unix_collectors.py": "1ec27a1c2c813e6cc28b617bab2c3ea975d5fb207089b8611a9b076689c2c21d",
+    "tests/test_wizard.py": "eb273e63dc5a80f3dc246ec0f49add8b553de58712816b8371f07d1e95f4f95e",
+    "tests/test_wizard_resize_review.py": "7d69a388ddffa0f765b66cbcb03eca6a4e16315009828c3d5e2a3c0d65864e4a"
+  },
+  "native_ci": "The published commit must pass its own Linux, macOS, Windows PowerShell5.1 and Windows PowerShell7 jobs; local Linux results do not substitute for those.",
+  "remaining_limits": [
+    "PowerShell1.0/2.0/3.0/4.0/5.0 have not been executed.",
+    "Historical Unix engines ran on current Linux; not every original OS/minor version.",
+    "No universal Linux/Unix/Windows/macOS distro or login-protocol certification.",
+    "The configurator and automatic installer retain their documented platform boundaries."
+  ]
+}

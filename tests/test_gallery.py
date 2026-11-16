@@ -48,6 +48,13 @@ class GalleryTests(unittest.TestCase):
         self.assertEqual(grid.y, 2)
         self.assertEqual(''.join(c.text for c in grid.cells[-1]), '     ')
 
+    def test_full_screen_wizard_frame_uses_last_row_without_scrolling(self):
+        grid = gallery.TerminalGrid(5, 3, reserve_prompt=False).feed('first\r\nnext\r\nlast')
+        self.assertEqual(grid.highest_row + 1, 3)
+        self.assertEqual(''.join(c.text for c in grid.cells[-1]), 'last ')
+        with self.assertRaisesRegex(gallery.GalleryError, 'scroll'):
+            grid.feed('\r\n')
+
     def test_actual_child_observes_requested_pty_geometry(self):
         for columns, rows in gallery.SIZES:
             raw, _ = gallery.capture_pty([sys.executable, '-c',

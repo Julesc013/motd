@@ -1,12 +1,14 @@
 # Compatibility and login surfaces
 
-Reference date: **2026-11-16**. Separate the machine that runs the configurator,
+Reference date: **2026-11-17**. Separate the machine that runs the configurator,
 the interpreter that runs a generated file, and the mechanism that displays it.
 A language target is not evidence that every operating system, minor release or
 login route has been tested. Exact local commands, source hashes and skips live in
-[Unix evidence](../build/verification-unix-legacy.json),
-[PowerShell evidence](../build/verification-powershell-legacy.json),
-[release verification](../build/verification-v03.json) and revision-specific CI.
+[current Unix evidence](../build/verification-unix-current.json),
+[current PowerShell evidence](../build/verification-powershell-current.json),
+[final local verification](../build/verification-v03-final.json) and revision-specific CI.
+The older `*-legacy.json` and `verification-v03.json` files retain the preceding
+checks and historical build provenance; they are not substituted for current results.
 
 ## One recipe, adaptive outputs
 
@@ -40,6 +42,33 @@ record, rather than the open-ended label "7 or newer".
 [Microsoft PowerShell lifecycle][ps-lifecycle] · [GNU Bash releases][bash-releases]
 · [Zsh release archive][zsh-releases]
 
+## Executed versions for this revision
+
+| Family | Executed versions and environment | Evidence scope |
+|---|---|---|
+| Bash 1–5 | 1.14.7, 2.05b, 3.2.0, 4.3.0 and 5.2.37 on current Linux | Historical source builds and current engine; generated display, geometry and hooks. Selected Bash 1/2 startup guards also use real interactive PTYs. |
+| Zsh 2–5 | 2.3.1, 3.0.8, 4.2.7 and 5.9 on current Linux | Actual entry-point execution, shared Bash path and a fixture that models missing Bash. Zsh 2 startup guards are exercised in a real interactive PTY. |
+| Portable sh | Host dash, plus the above historical Bash engines | Generated portable output, four geometries, missing helpers and collector fixtures. This is not a claim about every BusyBox build. |
+| Windows PowerShell 5.1 | 5.1.26100.33648 on Windows Server 2025 Datacenter, build 10.0.26100 in the preceding native run | The final revision has a separate 25-test native CI gate; consult that revision's job result. |
+| PowerShell 6 | 6.2.7 on Linux x86_64 | All 25 native tests; this portable runtime requires invariant globalization on this host. |
+| PowerShell 7 LTS | 7.6.10 on Linux; 7.6.9 on Windows Server 2025 | Native execution and geometry, literal configuration, hooks, error/missing-data behavior. |
+| Additional PS7 engine | 7.7.0 on Linux x86_64 | A separately executed engine, not an LTS designation. |
+| macOS | 26.7.2 arm64 with built-in Bash 3.2.57 and Zsh 5.9 | Four native-host tests: real generated files, local identity/collectors, geometry and delegation. |
+| PowerShell 1–4 and 5.0; other historical OS images; other Unix hosts | Not execution-verified | Compatibility targets or collector fixtures only. A Windows PowerShell 5.1 pass does not certify 5.0. No blanket all-versions/all-OS claim. |
+
+The current Unix matrix contains **608 successful cases**, including 8/15-row
+compact displays and the requested 25/50-row layouts, with ten live hook checks,
+twelve older-Bash colour checks and eighteen historical startup scenarios
+recorded separately. Some old interpreters needed compiler/platform source fixes
+to build on modern Linux; the exact diffs and hashes are in the Unix record.
+They were not pristine binaries running on their original operating systems.
+The [preceding native CI run](https://github.com/Julesc013/motd/actions/runs/43865806375)
+records the older Windows/macOS checks; its Linux gallery step intentionally
+awaited the subsequent gallery commit. Consult the final revision's CI for the
+complete release gate. The current Linux PowerShell record contains 25 passing
+tests on each of 6.2.7, 7.6.10 and 7.7.0. Counts are test evidence, not a census
+of all environments.
+
 ## Shared sections, explicit metric semantics
 
 All renderers expose `system`, `resources`, `services`, `processes`, `sessions`,
@@ -71,6 +100,18 @@ historical shells normalize content to printable ASCII and can use known
 one-cell Unicode borders; they do not claim a full Unicode-width engine. Font,
 code-page and terminal-emulator support remain separate from script syntax.
 See the [actual terminal PNG gallery](../examples/gallery/README.md).
+
+Saved recipes can select `display.charset = "auto" | "ascii" | "unicode"` and
+`display.color = "auto" | "always" | "never"`. These are defaults; explicit
+runtime flags can override them, while plain mode, `NO_COLOR` and mono retain
+colour suppression. Automatic character selection follows each backend's existing
+capability policy; portable old-shell output defaults to ASCII.
+
+The wizard reserves ten control rows and renders into the remaining viewport.
+POSIX input tests exercise resizing without pressing Enter, preservation of a
+partially typed answer, stale inherited geometry, and terminal-state restoration
+after EOF/Ctrl-C. The screen UI accepts 40×18 and larger terminals, with a line
+fallback; a resized window below the minimum retains the pending answer.
 
 Portable syntax does not guarantee portable metrics. Linux procfs, BSD sysctl,
 service managers, `ps` options and available utilities differ. BusyBox permits

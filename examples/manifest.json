@@ -4,12 +4,12 @@
     {
       "preset": "workshop",
       "path": "examples/workshop.bash",
-      "sha256": "2a187cbe1487f81a78f2f32a52f8f6949e3798879a854cfdc6c09996fb624ca5"
+      "sha256": "29c64f7eb86b9190666a47227441e71b1b1faab67c994456790a453aac9a01b4"
     },
     {
       "preset": "home-lab",
       "path": "examples/home-lab.bash",
-      "sha256": "eae7cfd54cf91589961b2bbc2b846f5bc1bb41b37ccb63dc3dfa721663b3d9ac"
+      "sha256": "4020a4955e0c9c36257cca155702924e4ac22ee7c6fddd3591151c3959cf153c"
     },
     {
       "preset": "public-console",
@@ -20,37 +20,37 @@
       "preset": "workshop",
       "shell": "zsh",
       "path": "examples/workshop.zsh",
-      "sha256": "6f99d7951d3ecefa548f086e9b17a2c3545f19715e22e9fab4efc3038a3a43f2"
+      "sha256": "14f840ab1f657e38f222e1b92c874b3e068d1aa37f556f32b0822e9220df0830"
     },
     {
       "preset": "workshop",
       "shell": "sh",
       "path": "examples/workshop.sh",
-      "sha256": "c86419caafde9d387b54069c9d5df496acca1729ae70e73d39a28ea9c1eb2908"
+      "sha256": "d77c6463db4cc324286d1c8c421083bcf8e40b1973c546ba8be8ae53a1fedc09"
     },
     {
       "preset": "workshop",
       "shell": "powershell",
       "path": "examples/workshop.ps1",
-      "sha256": "94eb18424d13c6b42606678e6f373fb95c36b8abdacf2e222487891742900a07"
+      "sha256": "340facb45f72e106fa114099edfbfcb9230a51d43eee0c390364a6108ca07f19"
     },
     {
       "preset": "home-lab",
       "shell": "zsh",
       "path": "examples/home-lab.zsh",
-      "sha256": "e5cf320f676c7aa51401eba389150682fb53f5c18a1b422089dfd08298f1c41e"
+      "sha256": "cf907bdc92ed2c3ff074443479791e49128d626c3b247748a88603a41350efd0"
     },
     {
       "preset": "home-lab",
       "shell": "sh",
       "path": "examples/home-lab.sh",
-      "sha256": "79a1a555514bd93a6bee54df24085a7740bbe6ca80311e3282bb4fd966120253"
+      "sha256": "896bec39acd4c39451149bc08c23c6658b0d61c17956c2e44efb112ef6e3e2ef"
     },
     {
       "preset": "home-lab",
       "shell": "powershell",
       "path": "examples/home-lab.ps1",
-      "sha256": "4dc74590c86c542b109e7b21160d7caba390cf5ed0aad632e58e109cda20043c"
+      "sha256": "85698bde4854560ed110e04eb258100b4f91840554166cc55a4ad1c530efbf69"
     }
   ]
 }

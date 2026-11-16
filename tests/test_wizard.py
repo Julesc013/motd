@@ -46,17 +46,21 @@ class WizardTests(unittest.TestCase):
 
     def test_page_preview_is_actual_fixture_bounded_to_screen(self):
         config = motd.preset_config('workshop')
-        motd.WizardUI('screen').page('Appearance | page 2/5',
+        ui = motd.WizardUI('screen')
+        frame = ui.frame('Appearance | page 2/5',
             [' 1. Heading: WORKSHOP STATUS', ' 2. Site: Workshop', ' 3. Theme: cyan',
              ' 4. Columns: 132', ' 5. Rows: 25'], config=config,
-            footer='Number edits | Enter next | B back | P preview | Q cancel')
-        output = self.output.getvalue()
-        self.assertIn('\x1b[2J\x1b[H', output)
-        self.assertIn('PREVIEW | synthetic data', output)
+            footer='Num edit | N next B back P view H calls Q', prompt='Page choice: ')
+        output = '\n'.join(frame)
+        self.assertIn('PREVIEW 80x14 | demo | calls off', output)
         self.assertIn('WORKSHOP STATUS', output)
-        lines = motd._SGR.sub('', output.replace('\x1b[2J\x1b[H', '')).splitlines()
-        self.assertLess(len(lines), 24, output)
-        self.assertTrue(all(len(line) <= 79 for line in lines), output)
+        lines = [motd._SGR.sub('', line) for line in frame]
+        self.assertEqual(len(lines), 24, output)
+        self.assertTrue(all(len(line) <= 80 for line in lines), output)
+        self.assertEqual(lines[8], 'Page choice: ')
+        self.assertTrue(lines[9].startswith('PREVIEW '))
+        self.assertTrue(any('resize for more' in line for line in lines[10:]))
+        self.assertTrue(any(line.startswith(('╚', '+')) for line in lines[10:]))
 
     def test_theme_selection_redraws_preview_before_accepting(self):
         config = motd.preset_config()
@@ -73,7 +77,7 @@ class WizardTests(unittest.TestCase):
 
     def test_navigation_back_retains_edits_and_invalid_value_does_not_replace_draft(self):
         # Destination -> Appearance; invalid width -> valid width -> Back -> Next.
-        answers = ['n', '4', 'bad', '4', '80', 'b', 'n', 'n', 'n', 'n', 'n']
+        answers = ['n', '4', 'bad', '4', '80', 'b', 'n', 'n', 'n', 'n', 'n', 'n', 'n']
         with patch('builtins.input', side_effect=answers):
             c = motd._configure(motd.preset_config(), motd.WizardUI('line'))
         self.assertEqual(c['display']['width'], 80)
@@ -112,6 +116,59 @@ class WizardTests(unittest.TestCase):
     def test_preview_clips_wide_cells_and_drops_terminal_control(self):
         result = motd.terminal_line('A\u754cB\x07\x1b[31mC', 3, color=False)
         self.assertEqual(result, 'A\u754c')
+
+    def test_all_configuration_pages_fit_five_question_rows(self):
+        for preset in motd.PRESET_NAMES:
+            pages = motd._configuration_pages(motd.preset_config(preset))
+            self.assertTrue(all(0 < len(fields) <= 5 for _, fields in pages))
+
+    def test_preview_replans_all_four_terminal_geometries_without_editing_recipe(self):
+        config = motd.preset_config()
+        original = motd.dump_config(config)
+        ui = motd.WizardUI('screen')
+        for width, height in ((40,25), (40,50), (80,25), (80,50)):
+            with self.subTest(width=width, height=height), patch('shutil.get_terminal_size', return_value=os.terminal_size((width,height))):
+                self.assertTrue(ui.screen)
+                frame = ui.frame('Appearance', ['1. Theme: cyan'], config=config, prompt='Page choice: ')
+                self.assertEqual(len(frame), height)
+                self.assertIn(f'{width}x{height-10}', frame[9])
+                self.assertIn('ws-bench-07', frame[10])
+                self.assertTrue(any(line.startswith(('╚', '+')) for line in (motd._SGR.sub('', line) for line in frame[10:])))
+                self.assertFalse(any('Preview unavailable' in line for line in frame))
+        self.assertEqual(motd.dump_config(config), original)
+
+    def test_call_samples_are_opt_in_ordered_and_never_execute(self):
+        with tempfile.TemporaryDirectory() as folder:
+            marker = Path(folder) / 'must-not-run'
+            config = motd.preset_config()
+            config['hooks']['before'] = [{'argv':['fastfetch']},
+                {'argv':['touch', str(marker)], 'preview_text':'Custom before sample'}]
+            config['hooks']['after'] = [{'argv':['echo', 'Session ready']}]
+            config = motd.validate_config(config)
+            ui = motd.WizardUI('screen')
+            with patch('shutil.get_terminal_size', return_value=os.terminal_size((80,50))):
+                hidden = '\n'.join(ui.frame('Theme', config=config))
+                self.assertNotIn('fastfetch', hidden)
+                self.assertNotIn('Session ready', hidden)
+                ui.show_calls = True
+                shown = '\n'.join(ui.frame('Theme', config=config))
+            self.assertLess(shown.index('fastfetch'), shown.index('WORKSHOP STATUS'))
+            self.assertLess(shown.index('Custom before sample'), shown.index('WORKSHOP STATUS'))
+            self.assertLess(shown.index('WORKSHOP STATUS'), shown.index('Session ready'))
+            self.assertFalse(marker.exists())
+            self.assertEqual(motd.validate_config(motd.tomllib.loads(motd.dump_config(config))), config)
+
+    def test_long_call_samples_are_labelled_and_scrollable(self):
+        config = motd.preset_config()
+        config['hooks']['before'] = [{'argv':['example'], 'preview_text':'\n'.join(f'Sample row {i}' for i in range(30))}]
+        ui = motd.WizardUI('screen'); ui.show_calls = True
+        with patch('shutil.get_terminal_size', return_value=os.terminal_size((40,25))):
+            first = ui.frame('Preview', config=config)
+            self.assertIn('J/K scroll', first[9])
+            ui.preview_offset = 25
+            later = ui.frame('Preview', config=config)
+            self.assertNotEqual(first[10:], later[10:])
+            self.assertTrue(any('ws-bench-07' in line for line in later))
 
 
 if __name__ == '__main__': unittest.main()

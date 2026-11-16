@@ -94,6 +94,14 @@ class UnixCollectorTests(unittest.TestCase):
             self.assertIn(text, result.stdout)
         self.assertNotIn('Memory available:', result.stdout)
 
+    def test_malformed_vm_stat_cannot_claim_zero_free_memory(self):
+        self.unix_helpers('Darwin')
+        self.helper('vm_stat', "printf '%s\\n' 'Mach Virtual Memory Statistics: (page size of 16384 bytes)' 'Pages free: unavailable.'")
+        result = self.run_script(self.script(fake_os=True), '--width', '100', '--rows', '60')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('Memory: unavailable', result.stdout)
+        self.assertNotIn('Memory free: 0', result.stdout)
+
     def test_bsd_enabled_scripts_are_not_reported_running(self):
         self.unix_helpers('FreeBSD')
         self.helper('sysctl', '''case "$*" in

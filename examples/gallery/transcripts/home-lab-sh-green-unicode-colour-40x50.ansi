@@ -1,0 +1,28 @@
+[1;32m┌ HOME LAB ────────────────────────────┐[0m
+[1;32m│[0m Home lab | Portable Unix             [1;32m│[0m
+[1;32m├ SYSTEM ──────────────────────────────┤[0m
+[1;32m│[0m Host: demo-host | Linux demo-kernel  [1;32m│[0m
+[1;32m│[0m Up: 86400 s | Load: 0.25 0.18 0.12   [1;32m│[0m
+[1;32m├ RESOURCES ───────────────────────────┤[0m
+[1;32m│[0m Memory available: 12582912 KiB       [1;32m│[0m
+[1;32m│[0m Root: 42% used; 286 GiB available    [1;32m│[0m
+[1;32m│[0m Total RAM: 16777216 KiB              [1;32m│[0m
+[1;32m│[0m Swap free: 4194304 / 4194304 KiB     [1;32m│[0m
+[1;32m│[0m Pressure CPU/mem/I/O: 0.1/0.0/0.2%   [1;32m│[0m
+[1;32m│[0m zram: 640 MiB data / 218 MiB RAM     [1;32m│[0m
+[1;32m├ SERVICES ────────────────────────────┤[0m
+[1;32m│[0m Services: 8 running; 0 failed        [1;32m│[0m
+[1;32m│[0m sshd: running                        [1;32m│[0m
+[1;32m│[0m cron: running                        [1;32m│[0m
+[1;32m│[0m docker: running                      [1;32m│[0m
+[1;32m│[0m nginx: running                       [1;32m│[0m
+[1;32m│[0m                                      [1;32m│[0m
+[1;32m├ ATTENTION ───────────────────────────┤[0m
+[1;32m│[0m DEMO fixture; no live machine data.  [1;32m│[0m
+[1;32m├ HINTS ───────────────────────────────┤[0m
+[1;32m│[0m Tasks: top - CPU and memory          [1;32m│[0m
+[1;32m│[0m I/O: iotop -o - If installed and pe~ [1;32m│[0m
+[1;32m│[0m Services: systemctl --failed - Fail~ [1;32m│[0m
+[1;32m│[0m Sessions: loginctl list-sessions - ~ [1;32m│[0m
+[1;32m│[0m Inspect: ps | df -Pk / | who         [1;32m│[0m
+[1;32m└──────────────────────────────────────┘[0m

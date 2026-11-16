@@ -1,0 +1,174 @@
+{
+  "generator": "0.3.0",
+  "source_sha256": {
+    "motd.py": "1cf8b11fa915849d5b0f5302a1083bbab547008e96389a1e12df37541e0119dd",
+    "tools/build_gallery.py": "8bf1d199d624174217b86f06bf02acb17a1eb265cf9ca1842a8523bcf3813ebf",
+    "runtime/motd.bash": "308272607da97f2aad699e2bb95e3d4cd116efb819570483a07999f837ecaa40",
+    "runtime/motd.ps1": "55b6e97a0f1eb26faaec1feb223709fddd58c8f31161ae7ad687d75163b4618c",
+    "runtime/motd.sh": "6ead729c7ec4389c9f204d3fb428e0ba0b36c0a9f26b7c7d37a1ef804607a189",
+    "tools/build_examples.py": "d6ec79cdb0095c2e75d96d23b9a206d64cf2a1d5baa999a3bf7720bd67dd8c4e"
+  },
+  "raster": {
+    "font_size_px": 30,
+    "cell_pixels": [
+      18,
+      38
+    ],
+    "display_scale": 2,
+    "font_variants": [
+      {
+        "style": {
+          "bold": false,
+          "italic": false
+        },
+        "path": "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
+        "sha256": "54bf827eb99404e8f430c330ad30f063334f637eba0109b6a18d4f566a8e9dd8",
+        "family": "DejaVu Sans Mono",
+        "face": "Book",
+        "fontconfig_version": "155320"
+      },
+      {
+        "style": {
+          "bold": true,
+          "italic": false
+        },
+        "path": "/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf",
+        "sha256": "0d3c03d1b667192f91223660a3163325cf83132662fe4d9f7d6e596bf7a995c2",
+        "family": "DejaVu Sans Mono",
+        "face": "Bold",
+        "fontconfig_version": "155320"
+      },
+      {
+        "style": {
+          "bold": false,
+          "italic": true
+        },
+        "path": "/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Oblique.ttf",
+        "sha256": "710323dd803666c37988df68e736c233d96efdf5c770c8ee28f4c4f4b84fb32d",
+        "family": "DejaVu Sans Mono",
+        "face": "Oblique",
+        "fontconfig_version": "155320"
+      },
+      {
+        "style": {
+          "bold": true,
+          "italic": true
+        },
+        "path": "/usr/share/fonts/truetype/dejavu/DejaVuSansMono-BoldOblique.ttf",
+        "sha256": "2084995adab143b149258f5944b7f863804796b753014526bd7f7915b1b20770",
+        "family": "DejaVu Sans Mono",
+        "face": "Bold Oblique",
+        "fontconfig_version": "155320"
+      }
+    ]
+  },
+  "compression": {
+    "pillow_level": 9,
+    "pillow_optimize": true,
+    "optimizer": "oxipng 10.2.1",
+    "decoded_rgba_verified": true
+  },
+  "note": "Same frame function as the live wizard; fixed terminal dimensions; synthetic data; hooks skipped.",
+  "images": [
+    {
+      "columns": 40,
+      "rows": 25,
+      "control_rows": 10,
+      "preview_rows": 15,
+      "calls_shown": false,
+      "configured_commands_executed": false,
+      "png": "wizard-40x25.png",
+      "transcript": "wizard-40x25.ansi",
+      "transcript_sha256": "5b413a1a1c0a54bcbf59731750f56df9ee6d268195c9535a1799ba2816c35580",
+      "cell_grid_sha256": "c90fd18e79e0b38aace003a758faf8bbd5823d824994f9f5506b2f8528f4d3aa",
+      "png_sha256": "1b8748fc1d01c3a2e7a458408721c194cda4b7b1ebc0d4e689fc7ca7542444eb",
+      "rgba_sha256": "54ed3dc585e5488434ba49ff6ec7c0efa637223adcfa88dc8d13ff365321e2f6",
+      "pixels": [
+        768,
+        1086
+      ],
+      "bytes": 82153,
+      "before_optimization_bytes": 118962
+    },
+    {
+      "columns": 40,
+      "rows": 50,
+      "control_rows": 10,
+      "preview_rows": 40,
+      "calls_shown": false,
+      "configured_commands_executed": false,
+      "png": "wizard-40x50.png",
+      "transcript": "wizard-40x50.ansi",
+      "transcript_sha256": "e079918a494e20295bd8721f28e0b7cf78cb718be15d40ed57161470acd5f881",
+      "cell_grid_sha256": "5de46f9470bafd22adbd83f26d5d253e42ef7cf5021bed7c8f31ce03a6d53d69",
+      "png_sha256": "4ba8ea318fdce8717bacc91c2b6d97bd0ccf582e9f29cd229b6f4c40381a9d26",
+      "rgba_sha256": "24d6df070151b6fdaa33059fa26048dad171c9c2ebbd7b857c2c33cc0158498b",
+      "pixels": [
+        768,
+        2036
+      ],
+      "bytes": 159173,
+      "before_optimization_bytes": 230930
+    },
+    {
+      "columns": 80,
+      "rows": 25,
+      "control_rows": 10,
+      "preview_rows": 15,
+      "calls_shown": false,
+      "configured_commands_executed": false,
+      "png": "wizard-80x25.png",
+      "transcript": "wizard-80x25.ansi",
+      "transcript_sha256": "fdeb84ee49238fffed0ee65ed87e37f4764685d13aab6dec6424ae44053737f0",
+      "cell_grid_sha256": "2d83eb54f398eb502f4b5675073d535e735d3c109c94d31b30ac6c46080c90db",
+      "png_sha256": "b6be9c801945576990be6641640aad8b187cec8c5af24ae3d1b1578de77bddf4",
+      "rgba_sha256": "dfa2274add219d3c2ba940d53405beabec5715635c17ef6f2c45a3e41787c82e",
+      "pixels": [
+        1488,
+        1086
+      ],
+      "bytes": 102234,
+      "before_optimization_bytes": 143004
+    },
+    {
+      "columns": 80,
+      "rows": 50,
+      "control_rows": 10,
+      "preview_rows": 40,
+      "calls_shown": false,
+      "configured_commands_executed": false,
+      "png": "wizard-80x50.png",
+      "transcript": "wizard-80x50.ansi",
+      "transcript_sha256": "1fb53af60b45a663c8f27dbb18dd153e6ca4b6f98fb7b3085154c455b78ab8d5",
+      "cell_grid_sha256": "4a06b2a82c7addbf579a04d799529b3407c5d6bb44908717b1f4745e20917f43",
+      "png_sha256": "77ca93d4c358d514708128f1a3f343219b4f0ce728c1614a8182f43a9a53d4c3",
+      "rgba_sha256": "b69a5e413cfaec9adc53c77b33dd64eb9cc63ca1b88273556a5f376379a48565",
+      "pixels": [
+        1488,
+        2036
+      ],
+      "bytes": 229728,
+      "before_optimization_bytes": 322054
+    },
+    {
+      "columns": 80,
+      "rows": 50,
+      "control_rows": 10,
+      "preview_rows": 40,
+      "calls_shown": true,
+      "configured_commands_executed": false,
+      "png": "wizard-call-samples-80x50.png",
+      "transcript": "wizard-call-samples-80x50.ansi",
+      "transcript_sha256": "e8a949a1dd278a7b04ca635ed7d294d57cc54b81d5ecf1f2d70583c527be16b2",
+      "cell_grid_sha256": "c2106361d99ff3d9563b3141d5fc1711792323cc196b143bb3df6a61cfc573c1",
+      "png_sha256": "a16a35d9dc77514a7e683321acf9ff0c6261c2d09c5c5bde48a450c309c81840",
+      "rgba_sha256": "2e6428bce202434187f040b5d63a920bcfe8c6316b0632e061e7db54a3321d3f",
+      "pixels": [
+        1488,
+        2036
+      ],
+      "bytes": 235595,
+      "before_optimization_bytes": 330177
+    }
+  ]
+}

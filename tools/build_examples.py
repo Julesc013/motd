@@ -3,14 +3,18 @@
 
 Run from the repository. The fixture is intentionally synthetic and labelled
 DEMO. This build tool never installs hooks or executes configured user calls.
-Only Python's standard library and the Bash runtime's normal tools are needed.
+The default text/SVG rebuild needs only Python's standard library and the Bash
+runtime's normal tools. Add --png to rasterize the actual wizard frames with the
+gallery's Pillow/wcwidth/font dependencies and optional lossless optimizer.
 """
+import argparse
 import html
 import io
 import json
 import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import sys
 from unittest.mock import patch
@@ -19,6 +23,11 @@ from contextlib import redirect_stdout
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 import motd
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--png', action='store_true', help='Also regenerate lossless wizard PNGs at all four terminal sizes')
+parser.add_argument('--optimizer', help='Optional oxipng executable for --png')
+args = parser.parse_args()
 
 COLORS = ['#171d2b', '#ed6a73', '#74d19b', '#edce77', '#76a9fa', '#c19deb', '#63d1df', '#e4e9f0']
 BRIGHT = ['#8390a3', '#ff8590', '#9beaaf', '#ffe599', '#9bc2ff', '#d7b5ff', '#8ae5ef', '#ffffff']
@@ -98,17 +107,69 @@ for name in ('workshop', 'home-lab'):
 class PreviewTerminal(io.StringIO):
     def isatty(self): return True
 
-capture = PreviewTerminal()
 config = motd.load_config(ROOT/'presets/workshop.toml'); config['display']['theme'] = 'green'
-with patch('sys.stdin', PreviewTerminal()), redirect_stdout(capture), \
-     patch('shutil.get_terminal_size', return_value=os.terminal_size((100, 38))), \
-     patch.dict(os.environ, {'TERM': 'xterm-256color'}):
-    os.environ.pop('NO_COLOR', None)
-    motd.WizardUI('screen').page('Theme', [' 1. Cyan', ' 2. Green [selected]', ' 3. Amber', ' 4. Mono'],
-        config=config, footer='Number changes the preview; Enter accepts. P preview | Q cancel')
-    print('Choice [2]: ')
-frame = capture.getvalue().replace('\x1b[2J\x1b[H', '')
-(ROOT/'examples/wizard-theme.preview.txt').write_text('\n'.join(line.rstrip() for line in SGR.sub('', frame).splitlines()) + '\n', encoding='utf-8')
+
+
+def wizard_frame(columns, rows, *, show_calls=False):
+    """Call the same pure frame function used by the interactive terminal UI."""
+    sample = motd.validate_config(config)
+    if show_calls:
+        sample['hooks']['before'] = [
+            {'argv': ['fastfetch'], 'timeout_seconds': 2, 'on_failure': 'continue'}]
+        sample['hooks']['after'] = [
+            {'argv': ['printf', '%s\\n', 'Session ready'],
+             'timeout_seconds': 1, 'on_failure': 'continue'}]
+    with patch('sys.stdin', PreviewTerminal()), redirect_stdout(PreviewTerminal()), \
+         patch('shutil.get_terminal_size', return_value=os.terminal_size((columns, rows))), \
+         patch.dict(os.environ, {'TERM': 'xterm-256color'}):
+        os.environ.pop('NO_COLOR', None)
+        ui = motd.WizardUI('screen'); ui.show_calls = show_calls
+        return ui.frame('Theme and call samples' if show_calls else 'Theme',
+            [' 1. Cyan', ' 2. Green [selected]', ' 3. Amber', ' 4. Mono'],
+            config=sample, footer='Number chooses | Enter accepts | P H Q',
+            prompt='Choice [2]: ')
+
+
+frame = '\n'.join(wizard_frame(100, 38)) + '\n'
+(ROOT/'examples/wizard-theme.preview.txt').write_text('\n'.join(line.rstrip() for line in SGR.sub('', frame).splitlines()).rstrip() + '\n', encoding='utf-8')
 (ROOT/'examples/wizard-theme.svg').write_text(svg_preview(frame, 'Actual wizard page · synthetic data · configured calls skipped'), encoding='utf-8')
+if args.png:
+    # Rasterize terminal cells, retaining each entire grid. No scaling, cropping,
+    # editor mockup or execution of user-configured hooks is involved.
+    from build_gallery import Renderer, TerminalGrid, SIZES, digest, save_lossless, source_hashes, font_metadata
+    renderer = Renderer()
+    images = []
+    views = [(columns, rows, False) for columns, rows in SIZES] + [(80, 50, True)]
+    for columns, rows, show_calls in views:
+        lines = wizard_frame(columns, rows, show_calls=show_calls)
+        if len(lines) != rows:
+            raise RuntimeError(f'Wizard returned {len(lines)} rows for a {rows}-row terminal')
+        ansi = '\r\n'.join(lines)
+        grid = TerminalGrid(columns, rows, reserve_prompt=False).feed(ansi)
+        stem = f'wizard-{"call-samples-" if show_calls else ""}{columns}x{rows}'
+        transcript = ROOT/'examples'/(stem + '.ansi')
+        transcript.write_bytes(ansi.encode('utf-8'))
+        path = ROOT/'examples'/(stem + '.png')
+        details = save_lossless(renderer.image(grid, title='MOTD | actual wizard frame'), path,
+                                optimizer=args.optimizer)
+        images.append({'columns': columns, 'rows': rows, 'control_rows': 10,
+                       'preview_rows': rows - 10, 'calls_shown': show_calls,
+                       'configured_commands_executed': False, 'png': path.name,
+                       'transcript': transcript.name,
+                       'transcript_sha256': digest(transcript.read_bytes()),
+                       'cell_grid_sha256': grid.fingerprint(), **details})
+    shutil.copyfile(ROOT/'examples/wizard-80x25.png', ROOT/'examples/wizard-theme.png')
+    wizard_sources = source_hashes()
+    wizard_sources['tools/build_examples.py'] = digest(Path(__file__).read_bytes())
+    (ROOT/'examples/wizard-manifest.json').write_text(json.dumps({
+        'generator': motd.VERSION, 'source_sha256': wizard_sources,
+        'raster': {'font_size_px': renderer.font_size,
+                   'cell_pixels': [renderer.cell_width, renderer.cell_height],
+                   'display_scale': 2, 'font_variants': font_metadata(renderer)},
+        'compression': {'pillow_level': 9, 'pillow_optimize': True,
+                        'optimizer': subprocess.check_output([args.optimizer, '--version'], text=True).strip() if args.optimizer else None,
+                        'decoded_rgba_verified': True},
+        'note': 'Same frame function as the live wizard; fixed terminal dimensions; synthetic data; hooks skipped.',
+        'images': images}, indent=2) + '\n', encoding='utf-8')
 (ROOT/'examples/manifest.json').write_text(json.dumps({'generator':motd.VERSION,'examples':records},indent=2)+'\n')
 print('Generated examples from current recipes and embedded runtime')

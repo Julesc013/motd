@@ -1,0 +1,8 @@
+# Source and generated text hashes must survive checkout on different hosts.
+* text=auto eol=lf
+
+# Retain original imports and raw terminal evidence byte for byte. CR/LF and
+# padding in a terminal transcript are data, not formatting to normalize.
+reference/** -text
+*.ansi binary
+*.png binary

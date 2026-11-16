@@ -4,7 +4,7 @@ A small configurator for messages of the day. Start from a preset, preview the s
 
 The configurator runs on **Linux with Python 3.11 or later and the standard library**. Generated displays do not need Python, TOML, this repository, or the configurator at login. Choose **Bash, Zsh, portable sh, or native PowerShell** output. Their dependencies and collector coverage differ; see the [compatibility guide](docs/compatibility.md).
 
-Version 0.3 adds automatic legacy-Unix dispatch, a native PowerShell core designed around PowerShell 1-era syntax, and a PNG gallery captured from real terminal output. Workshop and home-lab remain configurations over shared templates. Automatic installation remains Linux-specific; PowerShell output can be built and copied to its destination, while PowerShell profile installation is still manual. Historical language targets and actually tested engines are listed separately in the compatibility guide.
+Version 0.3 adds automatic legacy-Unix dispatch, a native PowerShell core designed around PowerShell 1-era syntax, a PNG gallery captured from real terminal output, and a wizard that reflows its preview while the window is resized. Workshop and home-lab remain configurations over shared templates. Automatic installation remains Linux-specific; PowerShell output can be built and copied to its destination, while PowerShell profile installation is still manual. Historical language targets and actually tested engines are listed separately in the compatibility guide.
 
 ## Start here
 
@@ -36,7 +36,7 @@ python3 motd.py wizard --ui screen
 python3 motd.py wizard --ui line
 ```
 
-The default `--ui auto` selects the screen interface for a compatible terminal at least 60 columns by 20 rows, with a line-mode fallback. No curses package or GUI toolkit is required. For command-line options:
+The default `--ui auto` selects the screen interface for a compatible terminal at least **40 columns by 18 rows**, with a line-mode fallback. No curses package or GUI toolkit is required. For command-line options:
 
 ```sh
 python3 motd.py --help
@@ -45,6 +45,40 @@ python3 motd.py --help
 This is a page rendered by the actual wizard with synthetic fixture data:
 
 ![Wizard theme selection with a preview](examples/wizard-theme.svg)
+
+### A fixed control area and a resizing preview
+
+The wizard reserves **10 rows** for its title, five question/choice rows, status,
+navigation, answer field and preview label. Longer menus are paginated; use `[` / `]`
+to see more choices. The preview starts on row 11 and is rendered for the current
+terminal dimensions. On Linux/POSIX, resizing redraws it while you are typing;
+your unfinished answer is retained. The preview geometry is temporary and does
+not rewrite the recipe's saved width/row settings.
+
+| Terminal | Control rows | Preview area |
+|---|---:|---|
+| 40×25 | 10 | 40×15 |
+| 40×50 | 10 | 40×40 |
+| 80×25 | 10 | 80×15 |
+| 80×50 | 10 | 80×40 |
+
+The renderers reduce detail and omit whole sections when a short viewport needs
+it, keeping complete borders and a visible omitted-section count. Normal runtime
+overrides accept 8–200 rows and 40–240 columns. The preview uses those limits in
+unusually large windows. If the window becomes too small during an answer, the
+answer remains intact and the full screen returns when the window is enlarged.
+
+Type `H` then Enter to include **sample before/after output**, or hide it again.
+Fastfetch is hidden by default and has a clearly synthetic built-in sample.
+Literal echo/printf examples can be displayed, and any command can supply a
+`preview_text` field. Unknown commands show a missing-sample placeholder.
+**No configured command executes for this preview.** `J`/`K` scroll a sample
+sequence longer than the preview area; `P` opens the dedicated preview page.
+See [sample configuration](docs/configuration.md#previewing-beforeafter-output).
+
+Five [wizard PNG views](examples/wizard-manifest.json) accompany the dashboard
+gallery: the four terminal sizes, plus [sample before/after calls](examples/wizard-call-samples-80x50.png).
+Examples include [40×25](examples/wizard-40x25.png) and [80×50](examples/wizard-80x50.png).
 
 For a quick command-line workflow:
 

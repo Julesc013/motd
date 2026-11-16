@@ -47,8 +47,10 @@ be compressed by 100%, or that one can prove the smallest possible PNG encoding.
 The manifest records actual before/after sizes and the optimizer used.
 Capture and pixel deduplication finish before compression starts. Four independent
 PNG optimizers then run concurrently by default, each using at most two threads;
-`--jobs` adjusts this limit. The full gallery uses maximum filter optimization
-with libdeflate, because a single-file Zopfli benchmark exceeded 90 seconds.
+`--jobs` adjusts this limit. The full gallery selects oxipng's `max` strategy set,
+fast filter evaluation and libdeflate, with a 30-second optimization budget per
+file. These exact options are recorded; they do not imply an exhaustive search
+of every PNG encoding.
 
 Four-size comparison sheets paste the original PNGs at their native pixel size;
 they do not rescale the 40-column and 80-column captures to equal widths.
@@ -58,6 +60,8 @@ they do not rescale the 40-column and 80-column captures to equal widths.
 The configurator and generated scripts do not acquire these dependencies. The
 developer gallery tool needs Pillow, wcwidth, the selected output interpreters,
 the installed monospace font and optional [oxipng](https://github.com/oxipng/oxipng).
+The build and verification tool runs on a POSIX host; it uses POSIX PTYs and
+`TIOCSWINSZ`. The PNGs and local HTML index can be viewed on any platform.
 
 ```sh
 python3 tools/build_gallery.py \
@@ -82,6 +86,25 @@ Open `examples/gallery/index.html` locally for the filterable index, or follow t
 PNG/transcript links in `examples/gallery/README.md`. The archive extracts into
 `examples/gallery/` relative to a repository root. Each raw transcript remains
 available for independent inspection and re-rendering.
+
+## Wizard resize examples
+
+The separate `examples/wizard-40x25.png`, `wizard-40x50.png`,
+`wizard-80x25.png` and `wizard-80x50.png` images use the live wizard's own frame
+function. Each shows the same theme-selection page with ten fixed control rows;
+the remaining 15 or 40 rows are passed to the adaptive MOTD preview. They retain
+the complete terminal grid and skip configured calls. The matching `.ansi`
+files and `wizard-manifest.json` retain source, transcript, cell and pixel hashes.
+The additional `wizard-call-samples-80x50.png` shows the optional Fastfetch and
+after-call sample view. Its call output is display-only demonstration text;
+the configured commands are never executed to produce the picture.
+
+```sh
+python3 tools/build_examples.py --png --optimizer /path/to/oxipng
+```
+
+Without `--png`, the example builder keeps the normal text/SVG workflow and
+does not require Pillow, wcwidth or a particular installed raster font.
 
 ## Verify retained evidence
 

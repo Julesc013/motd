@@ -22,13 +22,13 @@ param(
 
 if ($Version) { Write-Output ('MOTD ' + $MotdVersion + ' (native PowerShell 1+ syntax)'); return }
 if ($Help) {
-    Write-Output 'MOTD PowerShell: -Demo -DemoAlerts -Plain -Color -Ascii -Unicode -NoHooks -Width 40..240 -Rows 20..60'
+    Write-Output 'MOTD PowerShell: -Demo -DemoAlerts -Plain -Color -Ascii -Unicode -NoHooks -Width 40..240 -Rows 8..200'
     Write-Output 'Demonstrations use synthetic data and never run before/after calls.'
     Write-Output 'Local capability checks select CIM, WMI, .NET or Unix sources. Unavailable is not zero.'
     return
 }
 if ($Width -ne 0 -and ($Width -lt 40 -or $Width -gt 240)) { throw 'Width must be 40..240, or 0 for the recipe.' }
-if ($Rows -ne 0 -and ($Rows -lt 20 -or $Rows -gt 60)) { throw 'Rows must be 20..60, or 0 for the recipe.' }
+if ($Rows -ne 0 -and ($Rows -lt 8 -or $Rows -gt 200)) { throw 'Rows must be 8..200, or 0 for the recipe.' }
 if ($DemoAlerts) { $Demo = $true }
 
 # The mutable result object is shared with trap's child scope. A failed read
@@ -58,7 +58,21 @@ if (-not $Width -or -not $Rows) {
     $geometry = Read-MotdObservation { $Host.UI.RawUI.WindowSize }
     if ($geometry.Ok -and $geometry.Value.Count -gt 0) {
         if (-not $Width -and $geometry.Value[0].Width -ge 40) { $MotdWidth = [Math]::Min($MotdWidth, [int]$geometry.Value[0].Width) }
-        if (-not $Rows -and $geometry.Value[0].Height -ge 20) { $MotdHeight = [Math]::Min($MotdHeight, [int]$geometry.Value[0].Height) }
+        if (-not $Rows -and $geometry.Value[0].Height -ge 8) { $MotdHeight = [Math]::Min($MotdHeight, [int]$geometry.Value[0].Height) }
+    }
+}
+# Saved appearance choices act as defaults. Explicit positive switches override
+# them without PS2's BoundParameters variable, preserving the PS1 grammar target.
+if (-not $Ascii -and -not $Unicode) {
+    switch ($MotdConfig['display']['charset']) {
+        'ascii' { $Ascii = $true }
+        'unicode' { $Unicode = $true }
+    }
+}
+if (-not $Plain -and -not $Color) {
+    switch ($MotdConfig['display']['color']) {
+        'never' { $Plain = $true }
+        'always' { $Color = $true }
     }
 }
 # Old .NET returns null for an existing empty value. Enumerating the legacy
@@ -311,45 +325,54 @@ function Add-MotdServices {
         if ($DemoAlerts) { Add-MotdLine '[FAIL] demo-required-service' 'warning' }
         return
     }
-    $items = New-MotdList
+    # Normalize local provider rows once, then apply the same recipe filters and
+    # required-service checks on Windows, systemd and launchd. Provider failure
+    # never turns an unknown service into a known missing/stopped service.
+    $records = New-MotdList
+    $observed = $false
     if ($MotdWindows -and (Test-MotdCommand 'Get-Service')) {
         $read = Read-MotdObservation { Get-Service -ErrorAction Stop | Sort-Object Name }
         if ($read.Ok) {
+            $observed = $true
             foreach ($service in $read.Value) {
-                $excluded = $false
-                foreach ($pattern in @($MotdConfig['services']['exclude'])) { if ($service.Name -like $pattern) { $excluded = $true; break } }
-                if ($excluded) { continue }
-                if ($MotdConfig['services']['required'].Count -gt 0 -and $MotdConfig['services']['required'] -notcontains $service.Name) { continue }
-                [void]$items.Add('[' + $service.Status + '] ' + $service.Name)
-            }
-            foreach ($required in @($MotdConfig['services']['required'])) {
-                $matched = @($read.Value | Where-Object { $_.Name -eq $required })
-                if ($matched.Count -eq 0) { [void]$MotdNotices.Add('Required service missing: ' + $required) }
-                elseif ($matched[0].Status -ne 'Running') { [void]$MotdNotices.Add('Required service not running: ' + $required) }
+                [void]$records.Add(@{ Name = [string]$service.Name; State = [string]$service.Status; Running = ($service.Status -eq 'Running') })
             }
         }
     } elseif (Test-MotdCommand 'systemctl') {
         $read = Read-MotdExternal 'systemctl' @('list-units', '--type=service', '--all', '--plain', '--no-legend', '--no-pager')
         if ($read.Ok) {
+            $observed = $true
             foreach ($line in [regex]::Split($read.Text, '\r?\n')) {
                 if ($line -match '^\s*(\S+)\s+\S+\s+(\S+)\s+(\S+)') {
-                    $name = $matches[1]; $status = $matches[2]; $excluded = $false
-                    foreach ($pattern in @($MotdConfig['services']['exclude'])) { if ($name -like $pattern) { $excluded = $true; break } }
-                    if (-not $excluded -and ($MotdConfig['services']['required'].Count -eq 0 -or $MotdConfig['services']['required'] -contains $name)) {
-                        [void]$items.Add('[' + $status + '] ' + $name)
-                    }
+                    [void]$records.Add(@{ Name = $matches[1]; State = $matches[2]; Running = ($matches[2] -eq 'active') })
                 }
             }
         }
     } elseif (Test-MotdCommand 'launchctl') {
         $read = Read-MotdExternal 'launchctl' @('list')
         if ($read.Ok) {
+            $observed = $true
             foreach ($line in [regex]::Split($read.Text, '\r?\n')) {
                 if ($line -match '^(\d+|-)\s+(-?\d+)\s+(\S+)') {
                     $state = 'loaded'; if ($matches[1] -ne '-') { $state = 'run' }
-                    [void]$items.Add('[' + $state + '] ' + $matches[3])
+                    [void]$records.Add(@{ Name = $matches[3]; State = $state; Running = ($matches[1] -ne '-') })
                 }
             }
+        }
+    }
+    $items = New-MotdList
+    foreach ($record in $records) {
+        $excluded = $false
+        foreach ($pattern in @($MotdConfig['services']['exclude'])) { if ($record.Name -like $pattern) { $excluded = $true; break } }
+        if ($excluded) { continue }
+        if ($MotdConfig['services']['required'].Count -gt 0 -and $MotdConfig['services']['required'] -notcontains $record.Name) { continue }
+        [void]$items.Add('[' + $record.State + '] ' + $record.Name)
+    }
+    if ($observed) {
+        foreach ($required in @($MotdConfig['services']['required'])) {
+            $matched = @($records | Where-Object { $_.Name -eq $required })
+            if ($matched.Count -eq 0) { [void]$MotdNotices.Add('Required service not listed: ' + $required) }
+            elseif (-not $matched[0].Running) { [void]$MotdNotices.Add('Required service not running: ' + $required) }
         }
     }
     if ($items.Count -gt 0) {
@@ -559,12 +582,25 @@ function Write-MotdFrame {
         if ($id -eq 'processes') { $minimum = 3 }
         $allocated[$id] = [Math]::Min($minimum, $MotdSections[$id].Lines.Count); $used += $allocated[$id]
     }
+    $omitted = 0
+    if ($used -gt $capacity) {
+        # A resized wizard may offer less than the usual 20-row dashboard. Keep
+        # useful whole sections, prioritize resources and attention, and count
+        # omitted sections. Do not cut a frame or scroll over the question area.
+        foreach ($id in @('hints', 'connections', 'sessions', 'io', 'processes', 'services', 'system', 'resources', 'attention')) {
+            if ($used + 1 -le $capacity) { break }
+            if ($allocated.ContainsKey($id) -and $allocated[$id] -gt 0) {
+                $used -= $allocated[$id]; $allocated[$id] = 0; $omitted++
+            }
+        }
+        if ($omitted -gt 0) { $used++ }
+    }
     $order = @('resources', 'processes', 'services', 'io', 'sessions', 'connections', 'attention', 'hints', 'system')
     $changed = $true
     while ($used -lt $capacity -and $changed) {
         $changed = $false
         foreach ($id in $order) {
-            if ($allocated.ContainsKey($id) -and $allocated[$id] -lt $MotdSections[$id].Lines.Count -and $used -lt $capacity) {
+            if ($allocated.ContainsKey($id) -and $allocated[$id] -gt 0 -and $allocated[$id] -lt $MotdSections[$id].Lines.Count -and $used -lt $capacity) {
                 $allocated[$id]++; $used++; $changed = $true
             }
         }
@@ -573,11 +609,12 @@ function Write-MotdFrame {
         $lines = $MotdSections[$id].Lines
         for ($i = 0; $i -lt $allocated[$id]; $i++) { Write-MotdRow $lines[$i].Text $lines[$i].Tone }
     }
+    if ($omitted -gt 0) { Write-MotdRow ('... ' + $omitted + ' more sections; enlarge terminal') 'muted' }
     Write-Output ($bottomLeft + ($horizontal * ($MotdWidth - 2)) + $bottomRight)
 }
 
-# Read only selected local observations. A section kept in a short layout is not
-# removed wholesale to make room for a longer table; extra rows expand detail.
+# Read only selected local observations. Ordinary layouts keep every selected
+# section; compact previews explicitly omit lower-priority sections if needed.
 Invoke-MotdHooks 'before'
 foreach ($section in $MotdSectionOrder) {
     $MotdSections[$section] = @{ Lines = (New-MotdList) }

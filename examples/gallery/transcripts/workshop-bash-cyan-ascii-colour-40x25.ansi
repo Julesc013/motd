@@ -1,0 +1,24 @@
+[36m+=[0m [1;37mws-bench-07 | ...[0m [36m===[0m [90mDEMO 13:30:00[0m [36m+[0m
+[36m+=[0m [1;37mSYSTEM[0m [36m==============[0m [90mup 4d 06h 12m[0m [36m+[0m
+[36m|[0m [37mDomain workshop.example             [0m [36m|[0m
+[36m|[0m [37mIP eno1 192.0.2.17/24               [0m [36m|[0m
+[36m+=[0m [1;37mRESOURCES[0m [36m==============[0m [90mMax FS 38%[0m [36m+[0m
+[36m|[0m [1;37mRAM  [0m[37m8.0Gi/32.0Gi   [0m [1;34m##[0m[36m##[0m[35m[0m[90m....[0m        [36m|[0m
+[36m|[0m [1;37mDISK [0m[37m220Gi/600Gi    [0m [1;34m[0m[36m###[0m[33m[0m[90m.....[0m        [36m|[0m
+[36m|[0m [36mCache 8.3Gi[0m  [35mZ 640Mi[0m  S 2.0Gi/8.0Gi  [36m|[0m
+[36m+=[0m [1;37mSERVICES[0m [36m=[0m [90m16 run / 21 load / 0 ...[0m [36m+[0m
+[36m|[0m [1;37mSSH         [0m [32mRUN[0m[90m | [0m[1;37mRDP          [0m [32mRUN[0m [36m|[0m
+[36m|[0m [1;37mSMB         [0m [32mRUN[0m[90m | [0m[1;37mFTP         [0m [90mSTOP[0m [36m|[0m
+[36m+=[0m [1;37mTOP PROCESSES[0m [36m=[0m [90m184 tasks D0 Z0 ...[0m [36m+[0m
+[36m|[0m [1;37mCPU avg 2418 badblocks        [0m [1;33m82.4%[0m [36m|[0m
+[36m|[0m [1;37mRAM RSS 1632 postgres         [0m [1;35m1.3Gi[0m [36m|[0m
+[36m|[0m [1;37mI/O /s 2418 badblocks       [0m [1;36m181Mi/s[0m [36m|[0m
+[36m|[0m [90mI/O ~42ms | 184/184 readable PIDs   [0m [36m|[0m
+[36m+=[0m [1;37mSESSIONS[0m [36m==[0m [90m4 sessions / 1 users +3[0m [36m+[0m
+[36m|[0m [1;37mSSH #c11 pts/0 workshop             [0m [36m|[0m
+[36m|[0m [37m192.0.2.24 [online]                 [0m [36m|[0m
+[36m+=[0m [1;37mCONNECTIONS[0m [36m=======[0m [90m8 TCP / 3 admin[0m [36m+[0m
+[36m+=[0m [1;37mATTENTION[0m [36m================[0m [32mE0 W0 I0[0m [36m+[0m
+[36m|[0m [32mNo configured alerts in collected...[0m [36m|[0m
+[36m+=[0m [1;37mHINTS[0m [36m==============[0m [90mtop | iotop -o[0m [36m+[0m
+[36m+======================================+[0m

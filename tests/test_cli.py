@@ -271,26 +271,28 @@ class CliTests(unittest.TestCase):
                 ("Choice [1]:", "1"),  # Workshop preset.
                 *([("Choice [1]:", "")] if mode == 'screen' else []),
                 ("Page choice:", "1"),  # Destination: edit name.
-                ("Name [", "wizard-test"),
+                ("Name:" if mode == 'screen' else "Name [", "wizard-test"),
                 ("Page choice:", "n"),  # Appearance.
                 ("Page choice:", "1"),
-                ("Heading [", "Wizard smoke"),
+                ("Heading:" if mode == 'screen' else "Heading [", "Wizard smoke"),
                 ("Page choice:", "3"),  # Theme.
                 ("Choice [1]:", "2"),  # Green.
                 *([("Choice [2]:", "")] if mode == 'screen' else []),
                 ("Page choice:", "4"),
-                ("Maximum columns [", "80"),
-                ("Page choice:", "n"),  # Sections.
+                ("Maximum columns:" if mode == 'screen' else "Maximum columns [", "80"),
+                ("Page choice:", "n"),  # Characters and colour.
+                ("Page choice:", "n"),  # Sections (1/2).
+                ("Page choice:", "n"),  # Sections (2/2).
                 ("Page choice:", "n"),  # Content.
                 ("Page choice:", "n"),  # Hooks.
                 ("Page choice:", "n"),  # Review.
                 ("Choice [1]:", "1"),  # Synthetic preview.
                 *([("Preview:", "")] if mode == 'screen' else []),
                 ("Choice [1]:", "3"),  # Save recipe.
-                ("Recipe path", str(recipe)),
+                ("Recipe path:" if mode == 'screen' else "Recipe path [", str(recipe)),
                 *([("Press Enter to return to the wizard:", "")] if mode == 'screen' else []),
                 ("Choice [1]:", "4"),  # Build portable output.
-                ("Output path", str(output)),
+                ("Output path:" if mode == 'screen' else "Output path [", str(output)),
                 *([("Press Enter to return to the wizard:", "")] if mode == 'screen' else []),
                 ("Choice [1]:", "7"),  # Cancel; do not install.
             ]:
@@ -303,7 +305,7 @@ class CliTests(unittest.TestCase):
             text = transcript.decode("utf-8", errors="replace")
             self.assertEqual(process.returncode, 0, text[-4000:])
             if mode == 'screen':
-                self.assertIn('PREVIEW | synthetic data', text)
+                self.assertIn('PREVIEW 100x28 | demo | calls off', text)
                 self.assertIn('\x1b[2J\x1b[H', text)
             else:
                 self.assertIn("Synthetic demonstration", text)

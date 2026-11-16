@@ -1,0 +1,42 @@
++ WORKSHOP STATUS ---------------------+
+| Workshop | Portable Unix             |
++ SYSTEM ------------------------------+
+| Host: demo-host | Linux demo-kernel  |
+| Up: 86400 s | Load: 0.25 0.18 0.12   |
++ RESOURCES ---------------------------+
+| Memory available: 12582912 KiB       |
+| Root: 42% used; 286 GiB available    |
+| Total RAM: 16777216 KiB              |
+| Swap free: 4194304 / 4194304 KiB     |
+| Pressure CPU/mem/I/O: 0.1/0.0/0.2%   |
+| zram: 640 MiB data / 218 MiB RAM     |
++ SERVICES ----------------------------+
+| Services: 8 running; 0 failed        |
+| sshd: running                        |
+| cron: running                        |
+| docker: running                      |
+| nginx: running                       |
++ PROCESSES (visible sample) ----------+
+| CPU: compiler 32.4% (pid 2184)       |
+| RSS: database 842112 KiB (pid 1401)  |
+| I/O bytes: database 1090519040 B (p~ |
+| CPU = ps%; I/O = cumulative read+wr~ |
+| compiler 32.4% (pid 2184)            |
+| python 8.6% (pid 1902)               |
++ SESSIONS ----------------------------+
+| Sessions: 3 logged-in terminals      |
+| jules  pts/0  10:21  (192.0.2.10)    |
+| alex   pts/1  10:34  (192.0.2.20)    |
+| jules  tty1   09:08  (local)         |
++ CONNECTIONS -------------------------+
+| TCP: 12 established; 5 listening     |
+| ssh :22      2 established           |
+| https :443  10 established           |
++ ATTENTION ---------------------------+
+| DEMO fixture; no live machine data.  |
++ HINTS -------------------------------+
+| Tasks: top - CPU and memory          |
+| I/O: iotop -o - If installed and pe~ |
+| Services: systemctl --failed - Fail~ |
+| Sessions: loginctl list-sessions - ~ |
++--------------------------------------+

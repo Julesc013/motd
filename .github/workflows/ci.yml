@@ -41,6 +41,12 @@ jobs:
       - run: python3 tools/embed_runtime.py --check
       - name: Verify generated outputs and local collectors on macOS
         run: python3 -m unittest discover -s tests -p test_native_platforms.py -v
+      - name: Record native PowerShell on macOS
+        run: pwsh -NoLogo -NoProfile -Command '$PSVersionTable | Format-List'
+      - name: Verify native PowerShell output and local collectors on macOS
+        run: python3 -m unittest discover -s tests -p test_powershell.py -v
+        env:
+          MOTD_TEST_POWERSHELL: pwsh
   powershell-windows:
     runs-on: windows-latest
     strategy:

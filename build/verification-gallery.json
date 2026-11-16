@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "verified_at_utc": "2026-11-16T23:19:33.149654+00:00",
+  "generator": "0.3.0",
+  "source_sha256": {
+    "motd.py": "1cf8b11fa915849d5b0f5302a1083bbab547008e96389a1e12df37541e0119dd",
+    "tools/build_gallery.py": "8bf1d199d624174217b86f06bf02acb17a1eb265cf9ca1842a8523bcf3813ebf",
+    "runtime/motd.bash": "308272607da97f2aad699e2bb95e3d4cd116efb819570483a07999f837ecaa40",
+    "runtime/motd.ps1": "55b6e97a0f1eb26faaec1feb223709fddd58c8f31161ae7ad687d75163b4618c",
+    "runtime/motd.sh": "6ead729c7ec4389c9f204d3fb428e0ba0b36c0a9f26b7c7d37a1ef804607a189"
+  },
+  "gallery": {
+    "verified_logical_cases": 524,
+    "verified_unique_pngs": 196,
+    "verified_comparisons": 8,
+    "all_decoded_pixels_verified": true
+  },
+  "gallery_summary": {
+    "logical_cases": 524,
+    "shell_cases": 512,
+    "unique_pngs": 196,
+    "png_bytes": 21422365,
+    "png_bytes_before_optimization": 30543220,
+    "comparison_pngs": 8,
+    "comparison_png_bytes": 2774639,
+    "all_png_bytes": 24197004
+  },
+  "wizard": {
+    "verified_images": 5,
+    "control_rows": 10,
+    "sizes": [
+      [
+        40,
+        25
+      ],
+      [
+        40,
+        50
+      ],
+      [
+        80,
+        25
+      ],
+      [
+        80,
+        50
+      ]
+    ],
+    "sample_calls_view": [
+      80,
+      50
+    ],
+    "actual_calls_executed": false,
+    "source_transcript_cells_pixels_verified": true,
+    "png_bytes": 808883
+  },
+  "archive": {
+    "name": "motd-gallery.zip",
+    "bytes": 24850209,
+    "sha256": "ef91aa24f0b1293ae1dc01c0d86afa4bbf11c2d5f0cd82d200cb408c2b91d2fa",
+    "zip_integrity_passed": true
+  },
+  "visual_review": [
+    "wizard-40x25.png",
+    "wizard-call-samples-80x50.png",
+    "gallery/png/workshop-bash-cyan-unicode-colour-40x25.png",
+    "gallery/png/workshop-bash-cyan-unicode-colour-80x50.png"
+  ],
+  "compression": {
+    "pillow": {
+      "compress_level": 9,
+      "optimize": true
+    },
+    "optimizer": "oxipng 10.2.1",
+    "optimizer_level": "max",
+    "zopfli": false,
+    "fast_filter_evaluation": true,
+    "optimizer_budget_seconds": 30,
+    "parallel_files": 4,
+    "threads_per_optimizer": 2,
+    "lossy_operations": [],
+    "decoded_rgba_verified": true
+  }
+}
