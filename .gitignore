@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.venv/
+.state/
+build/*
+!build/README.md
+!build/verification-runtime.json
+!build/verification.json
