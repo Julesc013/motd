@@ -8,3 +8,6 @@ build/*
 !build/verification.json
 !build/verification-bash32.json
 !build/verification-bash43.json
+!build/verification-unix-legacy.json
+!build/verification-powershell-legacy.json
+!build/verification-v03.json

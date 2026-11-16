@@ -4,7 +4,7 @@ A small configurator for messages of the day. Start from a preset, preview the s
 
 The configurator runs on **Linux with Python 3.11 or later and the standard library**. Generated displays do not need Python, TOML, this repository, or the configurator at login. Choose **Bash, Zsh, portable sh, or native PowerShell** output. Their dependencies and collector coverage differ; see the [compatibility guide](docs/compatibility.md).
 
-Version 0.2 adds a page-by-page terminal wizard with previews, additional shell outputs, and a bounded compatibility specification. Workshop and home-lab are configurations over shared templates. Automatic installation remains Linux-specific; PowerShell output can be built and copied to its destination, while PowerShell profile installation is still manual.
+Version 0.3 adds automatic legacy-Unix dispatch, a native PowerShell core designed around PowerShell 1-era syntax, and a PNG gallery captured from real terminal output. Workshop and home-lab remain configurations over shared templates. Automatic installation remains Linux-specific; PowerShell output can be built and copied to its destination, while PowerShell profile installation is still manual. Historical language targets and actually tested engines are listed separately in the compatibility guide.
 
 ## Start here
 
@@ -70,10 +70,10 @@ python3 motd.py build --preset workshop --shell powershell --output ./workshop.p
 
 | Output | Behaviour |
 |---|---|
-| Bash | Full Linux dashboard; Bash 4.3+, Linux/procfs and GNU `timeout`, plus optional collector commands. |
-| Zsh | Standalone Zsh launcher for that same Bash renderer. Bash is still required. |
-| sh | Reduced native POSIX-shell display, with basic local `/proc` observations when available. Richer unsupported collectors are labelled. |
-| PowerShell | Native `.ps1` renderer targeting Windows PowerShell 5.1 syntax and PowerShell 7. OS-specific collectors differ; this is not full Bash telemetry parity. |
+| Bash | One file selects the enhanced Linux renderer on Bash 4.3+, or a portable renderer on older Bash and other Unix systems. No destination-side Python is needed. |
+| Zsh | Standalone entry point selects the same Unix renderer through `/bin/bash`, with `/bin/sh` when Bash is absent. Collector code is shared rather than duplicated in Zsh syntax. |
+| sh | Portable renderer with the same nine section IDs, adaptive layout, themes and hooks. Linux and Darwin/BSD collectors use available local interfaces; unavailable measurements are labelled. |
+| PowerShell | Native `.ps1` renderer using PowerShell 1-era literals and feature detection. Windows PowerShell 1–5 and PowerShell 6–7 are compatibility targets; exact engine/OS verification is recorded separately. |
 
 Generate on a modern Linux machine and copy the file to a destination that lacks Python 3.11. A targeted language version is distinct from a verified OS/version combination; the [compatibility matrix](docs/compatibility.md) and test records state that distinction.
 
@@ -88,6 +88,8 @@ The following gallery is rendered from synthetic fixture data by the actual engi
 ![Workshop synthetic preview](examples/workshop.svg)
 
 ![Home-lab synthetic preview](examples/home-lab.svg)
+
+The [PNG gallery](examples/gallery/README.md) covers **40×25, 40×50, 80×25 and 80×50** terminals across both dashboard presets, four output routes, four themes, ASCII/Unicode and colour/plain modes. Open `examples/gallery/index.html` locally for filters. Each capture retains its command, recipe, raw ANSI output, interpreter version and hashes. PNG optimization is lossless; a wider or taller screenshot comes from a newly executed layout, not resizing a smaller output. See [gallery reproduction](docs/gallery.md).
 
 Ordinary configuration is data. Optional commands are explicit argument arrays; shell expressions require an explicitly chosen shell invocation. Inspecting an existing script does not execute it.
 
@@ -117,7 +119,7 @@ Reconfigure managed outputs through the configurator. `repair --name NAME` uses 
 
 ## Project layout and decisions
 
-`runtime/` holds canonical Bash, portable sh and PowerShell templates. The downloadable `motd.py` embeds them so users need only one configurator file. Zsh reuses the Bash template. TOML presets select content and appearance; generated examples are rebuilt from those sources.
+`runtime/` holds canonical Bash, portable sh and PowerShell templates. The downloadable `motd.py` embeds them so users need only one configurator file. Bash and Zsh outputs embed the modern and portable Unix paths; selecting a path happens before modern Bash syntax is parsed. TOML presets select content and appearance; generated examples are rebuilt from those sources.
 
 `reference/` preserves the original workshop and home-lab scripts, workshop guide, verification record, and provenance. Those imports provide history and comparison material; changes belong in the canonical runtime and configurator.
 
@@ -143,6 +145,7 @@ restoration and older OS combinations need their own host evidence. Run:
 
 ```sh
 python3 tools/embed_runtime.py --check
+python3 -m pip install -r requirements-dev.txt
 python3 -m unittest discover -s tests -v
 ```
 

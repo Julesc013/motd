@@ -33,8 +33,8 @@ An installation owns its recorded files or explicitly marked integration region.
 | Target and scope | Integration contract | Boundary |
 |---|---|---|
 | `shell`, Bash user | Installs a `.bash` output and guarded blocks in `.bashrc` and the active Bash login file. | Interactive terminal sessions only. |
-| `shell`, Zsh user | Installs a `.zsh` output and guarded blocks in `.zshrc` and `.zprofile` under `ZDOTDIR` or the home directory. | The output launches the Bash renderer; it still requires compatible Bash. |
-| `shell`, sh user | Installs a `.sh` output and a guarded login-profile attachment. | Reduced native renderer; other startup routes need an explicit appropriate file. |
+| `shell`, Zsh user | Installs a `.zsh` output and guarded blocks in `.zshrc` and `.zprofile` under `ZDOTDIR` or the home directory. | The output delegates through `/bin/bash`, or `/bin/sh` when Bash is absent. |
+| `shell`, sh user | Installs a `.sh` output and a guarded login-profile attachment. | Portable native renderer; other startup routes need an explicit appropriate file. |
 | `shell`, system | Installs `/usr/local/bin/motd-ID`; Bash uses `/etc/profile.d/70-motd-ID.sh` by default. | Zsh and nonstandard routes need an explicit startup file. No assumption that all shells read `/etc/profile.d`. |
 | `shell`, PowerShell | Build/export only. | No automatic PowerShell profile or Windows filesystem installation. |
 | `issue` | Installs static public text; the system default is `/etc/issue`, with explicit backup/replacement. | agetty reads text, not Bash. Custom agetty options can select another file or disable issue display. |

@@ -1,0 +1,3 @@
+# Gallery generation/tests only. motd.py and generated outputs do not import these.
+Pillow>=10
+wcwidth>=0.2

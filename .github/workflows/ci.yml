@@ -17,11 +17,30 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y zsh
       - name: Require native PowerShell coverage
         run: pwsh -NoProfile -Command '$PSVersionTable.PSVersion.ToString()'
+      - name: Install gallery verification dependencies
+        run: python3 -m pip install -r requirements-dev.txt
       - run: python3 -m unittest discover -s tests -v
         env:
           MOTD_TEST_WRITE_RECORD: '0'
       - run: python3 tools/build_examples.py
       - run: git diff --exit-code -- examples presets
+      - name: Verify complete retained terminal capture evidence
+        run: python3 tools/build_gallery.py --verify --require-full
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.11'
+      - name: Record actual macOS and built-in interpreters
+        run: |
+          sw_vers
+          /bin/bash --version
+          /bin/zsh --version
+      - run: python3 tools/embed_runtime.py --check
+      - name: Verify generated outputs and local collectors on macOS
+        run: python3 -m unittest discover -s tests -p test_native_platforms.py -v
   powershell-windows:
     runs-on: windows-latest
     strategy:

@@ -8,9 +8,9 @@ files contain clearly labelled synthetic fixture data.
 | --- | --- |
 | `workshop.bash` | Standalone workshop dashboard with CPU/RSS/I/O and shared-account session detail |
 | `home-lab.bash` | Same runtime with the home-lab title, theme and service policy |
-| `workshop.zsh` | Zsh entry point for the shared Bash dashboard; still requires compatible Bash |
-| `workshop.sh` | Reduced native POSIX sh display for older/minimal shells |
-| `workshop.ps1` | Native PowerShell baseline; collector coverage differs from Bash |
+| `workshop.zsh` / `home-lab.zsh` | Zsh entry point for shared modern/portable Unix collection; delegates to Bash or sh |
+| `workshop.sh` / `home-lab.sh` | Portable Unix display with the same section model and available local collectors |
+| `workshop.ps1` / `home-lab.ps1` | Native PowerShell with legacy syntax targets and capability-aware collectors |
 | `public-console.issue` | Static console pre-login text, serialized for agetty |
 | `public-ssh-banner.txt` | Static public SSH pre-authentication text |
 | `public-notice.txt` | Generic public text without consumer-specific escape conversion |
@@ -25,8 +25,10 @@ bash workshop.bash --rows 50
 ```
 
 The last command reads the local machine. No Python, TOML parser, repository or
-network download is required by these Bash examples. Linux/procfs, Bash 4.3+
-and the runtime's supported helper tools are still required.
+network download is required by these examples. Each Bash file selects the
+enhanced Linux/Bash4.3+ path or the embedded portable Unix path automatically.
+Collector availability depends on the destination; missing measurements are
+labelled. Historical Bash1 requires an external `printf`.
 
 To install an existing exact Bash output through the configurator:
 
@@ -39,7 +41,7 @@ this path installs executable bytes; embedded metadata is not an authenticity
 signature. Use `--config ../presets/workshop.toml` to regenerate from a recipe
 instead. Static imports are already serialized bytes and are copied unchanged.
 
-The interpreter variants use the same workshop recipe with `shell` changed.
+The interpreter variants use the same preset recipe with `shell` changed.
 Unmodified preset hints adapt to PowerShell commands. Try their demonstrations:
 
 ```sh
@@ -48,9 +50,20 @@ sh workshop.sh --demo
 pwsh -NoProfile -File workshop.ps1 -Demo
 ```
 
-On Windows PowerShell, invoke `powershell -NoProfile -File workshop.ps1 -Demo`
-under the machine's existing execution policy. The configurator does not change
-that policy. See [coverage and supported attachment routes](../docs/compatibility.md).
+On Windows PowerShell2+, invoke `powershell -NoProfile -File workshop.ps1 -Demo`
+under the machine's existing execution policy. For the PowerShell1 launch target,
+use `powershell.exe -NoProfile -Command "& './workshop.ps1' -Demo -Plain"` or the
+call operator inside the host. PS1–4 remain targeted until real-engine tests
+are available. See [coverage and attachment routes](../docs/compatibility.md).
+
+## Terminal PNGs
+
+The [full gallery](gallery/README.md) includes all four terminal sizes requested:
+40×25, 40×50, 80×25 and 80×50. Open `gallery/index.html` locally to filter by
+preset, output route, theme, character set and colour mode. Each picture comes
+from actual sized-PTY output with synthetic data; raw ANSI transcripts and
+effective recipes accompany it. The renderer changes its layout and content
+budget before capture. PNG compression preserves every decoded pixel.
 
 `tools/build_examples.py` renders the SVG wizard page using the real UI and a
 fixed 100-by-38 terminal. Its PNG is a review/export copy, regenerated with:

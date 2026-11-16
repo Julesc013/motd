@@ -1,8 +1,9 @@
 # Working on MOTD
 
 Keep this project small: one Python configurator, canonical interpreter templates,
-TOML recipes and generated standalone outputs. Zsh reuses the Bash renderer;
-portable sh and PowerShell have explicit reduced native backends. Do not introduce
+TOML recipes and generated standalone outputs. Bash and Zsh share automatic
+modern/portable Unix dispatch; PowerShell has a native legacy-compatible core.
+Collection capabilities remain OS-specific. Do not introduce
 a daemon, plugin framework, package repository or duplicated collectors without
 a concrete need.
 
@@ -12,6 +13,8 @@ a concrete need.
 - Edit templates in `runtime/`, then run `python3 tools/embed_runtime.py`.
 - Do not hand-edit embedded literals or maintained examples separately.
 - Update presets and regenerate examples with `python3 tools/build_examples.py`.
+- Rebuild the terminal PNG gallery with `tools/build_gallery.py` after renderer
+  changes; retain real PTY transcripts and reject wrap/scroll rather than crop it.
 - Keep historical files in `reference/` unchanged; their timing evidence is historical.
 
 ## Behavior
@@ -42,6 +45,10 @@ Run relevant native-shell parsing and execution tests for changed backends.
 Record exact interpreter/OS versions and skips. A PowerShell7/Linux pass does not
 prove Windows PowerShell5.1 behaviour; a portable-sh pass under dash does not
 prove every BusyBox build or historical Bourne shell.
+PowerShell 1-era syntax is a target until tested with a real PowerShell 1 engine.
+Do not label Bash or Zsh major families as Microsoft-style LTS releases. PNG
+compression must preserve decoded pixels; high compression is not a promise of
+the mathematically smallest possible PNG.
 
 Record scope and uncertainty. A test in a container does not prove a real SSH,
 agetty or systemd deployment. Do not describe journalled multi-file replacement

@@ -1,5 +1,5 @@
 #!/bin/bash
-# MOTD Bash runtime 0.2.0 | derived from Workshop MOTD 1.2.0, 2026-11-16.
+# MOTD Bash runtime 0.3.0 | derived from Workshop MOTD 1.2.0, 2026-11-16.
 # Bash 4.3+ and GNU timeout; optional GNU df, procps ps, iproute2, systemd.
 # Standalone output: generate settings with motd.py, then use --demo or --help.
 # No daemon, installation side effects, network requests, recursive disk scans,
@@ -263,13 +263,13 @@ DISK_IDS=() ATTENTION=() HEALTH_NOTES=() HOST_IPS=()
 FASTFETCH_TEXT='' OUTPUT='' REPLY=''
 DEMO=0 PLAIN=0 ASCII=0 WIDTH_OVERRIDE='' FETCH_OVERRIDE='' THEME_OVERRIDE=''
 PROC_ROOT=/proc SYS_ROOT=/sys ETC_ROOT=/etc RUN_ROOT=/run
-VERSION=0.2.0
+VERSION=0.3.0
 
 usage() {
     printf '%s\n' \
-      'MOTD adaptive runtime 0.1.0 - standalone Linux status display.' \
+      'MOTD adaptive runtime 0.3.0 - standalone Linux status display.' \
       'Usage: motd.bash [--rows 20..60]' \
-      '       [--width 24..240] [--theme cyan|amber|green|mono] [--plain] [--ascii]' \
+      '       [--width 24..240] [--theme cyan|amber|green|mono] [--plain] [--ascii|--unicode]' \
       '       [--sections system,resources,services,processes,sessions,connections,attention,hints]' \
       '       [--hide SECTION,...] [--show SECTION,...]' \
       '       [--hide-item SECTION.ITEM,...] [--show-item SECTION.ITEM,...]' \
@@ -301,6 +301,7 @@ parse_options() {
             --demo-alerts) DEMO=2; shift ;;
             --plain) PLAIN=1; shift ;;
             --ascii) ASCII=1; shift ;;
+            --unicode) ASCII=0; shift ;;
             --no-fastfetch) FETCH_OVERRIDE=0; shift ;;
             --journal) SHOW_JOURNAL=1; shift ;;
             --no-journal) SHOW_JOURNAL=0; shift ;;

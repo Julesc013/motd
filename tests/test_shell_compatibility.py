@@ -1,12 +1,13 @@
 """Real shell execution and startup guards; all written files are temporary.
 
-The portable baseline is tested without external helpers. Zsh deliberately
-reuses Bash's full runtime, so execution equivalence matters more than a second
-set of copied collector expectations. No real startup file is installed.
+The portable renderer can retain core procfs observations without helpers.
+Old Bash versions render through automatic fallback; Zsh deliberately shares
+the Unix dispatcher. No real startup file is installed.
 """
 from __future__ import annotations
 
 import errno
+import fcntl
 from contextlib import redirect_stdout
 import io
 import os
@@ -17,6 +18,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import termios
 import time
 import unittest
 from unittest.mock import patch
@@ -130,12 +132,12 @@ class ShellCompatibilityTests(unittest.TestCase):
 
     @unittest.skipUnless(os.environ.get('MOTD_TEST_BASH32'),
                          'Set MOTD_TEST_BASH32 to an actual Bash 3.2 binary for the historical boundary test')
-    def test_bash32_stops_before_hooks_and_can_use_the_native_sh_fallback(self):
+    def test_bash32_automatically_renders_with_portable_backend(self):
         interpreter = os.environ['MOTD_TEST_BASH32']
         version = subprocess.run([interpreter, '--version'], capture_output=True,
                                  text=True, timeout=5)
         self.assertIn('version 3.2.', version.stdout)
-        sentinel = self.root / 'unsupported-interpreter-hook'
+        sentinel = self.root / 'old-interpreter-hook'
         for shell in ('bash', 'zsh'):
             with self.subTest(shell=shell):
                 config = self.config(shell)
@@ -143,18 +145,154 @@ class ShellCompatibilityTests(unittest.TestCase):
                     'argv': ['/bin/sh', '-c', ': > ' + shlex.quote(str(sentinel))],
                     'timeout_seconds': 1, 'on_failure': 'continue'}]
                 path = self.artifact(config)
-                result = subprocess.run([interpreter, str(path), '--plain'],
+                result = subprocess.run([interpreter, str(path), '--demo', '--plain'],
                                         capture_output=True, text=True, timeout=5)
                 self.assertEqual(result.returncode, 0, result.stderr)
-                self.assertEqual(result.stdout, '')
-                self.assertIn('Bash 4.3 or newer', result.stderr)
-                self.assertFalse(sentinel.exists(), 'An unsupported interpreter reached executable hooks')
+                self.assertIn('Portable Unix', result.stdout)
+                self.assertIn('demo-host', result.stdout)
+                self.assertNotIn('Bash 4.3 or newer', result.stderr)
+                self.assertFalse(sentinel.exists(), 'A demo reached executable hooks')
         portable = self.artifact(self.config('sh'))
         result = subprocess.run([interpreter, str(portable), '--demo', '--plain'],
                                 capture_output=True, text=True, timeout=5)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn('demo-host', result.stdout)
-        self.assertIn('Portable sh baseline', result.stdout)
+        self.assertIn('Portable Unix', result.stdout)
+
+    def test_optional_historical_bash_binaries_render_instead_of_rejecting(self):
+        found = False
+        for variable, prefix in [('MOTD_TEST_BASH1', '1.'), ('MOTD_TEST_BASH2', '2.'),
+                                  ('MOTD_TEST_BASH32', '3.2.'), ('MOTD_TEST_BASH43', '4.3.')]:
+            interpreter = os.environ.get(variable)
+            if not interpreter:
+                continue
+            found = True
+            version = subprocess.run([interpreter, '-c', 'echo "$BASH_VERSION"'],
+                                     capture_output=True, text=True, timeout=5)
+            self.assertTrue(version.stdout.startswith(prefix), version.stdout)
+            with self.subTest(interpreter=version.stdout.strip()):
+                config = motd.preset_config('workshop')
+                for shell in ('bash', 'sh'):
+                    config['shell'] = shell
+                    path = self.artifact(config)
+                    result = subprocess.run([interpreter, str(path), '--demo', '--plain',
+                                             '--ascii', '--width', '40', '--rows', '25'],
+                                            capture_output=True, text=True, timeout=8)
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertIn('SYSTEM', result.stdout)
+                    self.assertLessEqual(len(result.stdout.splitlines()), 24)
+                    self.assertTrue(all(len(line) <= 40 for line in result.stdout.splitlines()))
+                    if prefix in ('1.', '2.', '3.2.') or shell == 'sh':
+                        self.assertIn('Portable Unix', result.stdout)
+                        for section in ('SERVICES', 'PROCESSES', 'SESSIONS', 'CONNECTIONS', 'HINTS'):
+                            self.assertIn(section, result.stdout)
+        if not found:
+            self.skipTest('Set MOTD_TEST_BASH1/2/32/43 to real historical Bash executables')
+
+    def test_optional_historical_zsh_launchers_and_no_bash_fallback(self):
+        found = False
+        config = motd.preset_config('workshop', shell='zsh')
+        path = self.artifact(config)
+        fallback = self.root / 'no-bash.zsh'
+        # Model an absent /bin/bash in a temporary copy, never the host paths.
+        fallback.write_text(path.read_text().replace('[ -x /bin/bash ]',
+                                                     '[ -x /nonexistent-motd-test/bash ]', 1))
+        for variable, prefix in [('MOTD_TEST_ZSH2', '2.'), ('MOTD_TEST_ZSH3', '3.'),
+                                  ('MOTD_TEST_ZSH4', '4.')]:
+            interpreter = os.environ.get(variable)
+            if not interpreter:
+                continue
+            found = True
+            version = subprocess.run([interpreter, '-c', 'echo "${ZSH_VERSION:-$VERSION}"'],
+                                     capture_output=True, text=True, timeout=5)
+            self.assertTrue(version.stdout.removeprefix('zsh v').startswith(prefix), version.stdout)
+            for candidate in (path, fallback):
+                with self.subTest(interpreter=version.stdout.strip(), fallback=candidate == fallback):
+                    result = subprocess.run([interpreter, str(candidate), '--demo', '--plain',
+                                             '--ascii', '--width', '40', '--rows', '25'],
+                                            capture_output=True, text=True, timeout=8)
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertIn('SYSTEM', result.stdout)
+                    self.assertLessEqual(len(result.stdout.splitlines()), 24)
+                    self.assertTrue(all(len(line) <= 40 for line in result.stdout.splitlines()))
+                    if candidate == fallback:
+                        self.assertIn('Portable Unix', result.stdout)
+                        self.assertIn('demo-host', result.stdout)
+        if not found:
+            self.skipTest('Set MOTD_TEST_ZSH2/3/4 to actual historical Zsh executables')
+
+    def test_optional_historical_startup_guards_on_a_real_pty(self):
+        """Check the actual old shell, not a modern shell with a fake version.
+
+        The attachment runs a temporary marker script; no real profile is
+        written. Bash 1's login convention is exercised with leading '-' argv0.
+        """
+        found = False
+        display = self.root / "old shell's display"
+        display.write_text("#!/bin/sh\nprintf '%s\\n' HISTORICAL-DISPLAY\n")
+
+        def invoke(interpreter, kind, startup, interactive, login, first_family):
+            master, slave = pty.openpty()
+            arguments = [('~' if False else '-') + kind if login and first_family else kind]
+            if kind == 'zsh': arguments.append('-f')
+            if interactive: arguments.append('-i')
+            if login and not first_family: arguments.append('-l')
+            command = '. ' + shlex.quote(str(startup)) + '; . ' + shlex.quote(str(startup))
+            arguments += ['-c', command]
+            environment = os.environ.copy()
+            environment.update(HOME=str(self.root), TERM='xterm')
+
+            def controlling_terminal():
+                os.setsid()
+                fcntl.ioctl(0, termios.TIOCSCTTY, 0)
+
+            try:
+                result = subprocess.run(arguments, executable=interpreter, stdin=slave,
+                                        stdout=slave, stderr=slave, env=environment,
+                                        preexec_fn=controlling_terminal, timeout=8)
+                os.close(slave); slave = None
+                chunks = []
+                while True:
+                    try: chunk = os.read(master, 4096)
+                    except OSError as error:
+                        if error.errno == errno.EIO: break
+                        raise
+                    if not chunk: break
+                    chunks.append(chunk)
+                return result.returncode, b''.join(chunks).decode(errors='replace')
+            finally:
+                if slave is not None: os.close(slave)
+                os.close(master)
+
+        for variable, kind, first_family in [('MOTD_TEST_BASH1', 'bash', True),
+                                             ('MOTD_TEST_BASH2', 'bash', False),
+                                             ('MOTD_TEST_ZSH2', 'zsh', False)]:
+            interpreter = os.environ.get(variable)
+            if not interpreter: continue
+            found = True
+            interpreter = str(Path(interpreter).resolve())
+            config = self.config(kind)
+            startup = self.root / (variable + '.profile')
+            for frequency, interactive, login, hush, count in [
+                ('interactive', False, False, False, 0),
+                ('interactive', True, False, False, 1),
+                ('interactive', True, False, True, 0),
+                ('login', True, False, False, 0),
+                ('login', True, True, False, 1),
+                ('login', True, True, True, 0),
+            ]:
+                with self.subTest(shell=variable, frequency=frequency, interactive=interactive,
+                                  login=login, hush=hush):
+                    config['frequency'] = frequency
+                    startup.write_text(motd.shell_block(config, str(display)))
+                    hushfile = self.root / '.hushlogin'
+                    if hush: hushfile.touch()
+                    elif hushfile.exists(): hushfile.unlink()
+                    status, output = invoke(interpreter, kind, startup, interactive, login, first_family)
+                    self.assertEqual(status, 0, output)
+                    self.assertEqual(output.count('HISTORICAL-DISPLAY'), count, output)
+        if not found:
+            self.skipTest('Set MOTD_TEST_BASH1/2 or MOTD_TEST_ZSH2 for real historical startup tests')
 
     def test_sh_is_recoverable_and_runs_under_dash_without_helpers(self):
         config = self.config()
@@ -170,7 +308,7 @@ class ShellCompatibilityTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn('demo-host', result.stdout)
         self.assertIn('12582912 KiB', result.stdout)
-        self.assertIn('not collected by the portable sh backend', result.stdout)
+        self.assertIn('Services: 8 running; 0 failed', result.stdout)
         self.assertFalse(sentinel.exists(), 'Displayed text executed as shell code')
         self.assertNotIn('\x1b', result.stdout)
 
@@ -235,7 +373,7 @@ class ShellCompatibilityTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn('hook 1 failed (127)', result.stderr)
         self.assertFalse(sentinel.exists())
-        self.assertIn('Portable sh baseline', result.stdout)
+        self.assertIn('Portable Unix', result.stdout)
 
     def test_sh_hook_deadline_keeps_partial_output_and_stops_when_requested(self):
         config = self.config()

@@ -3,9 +3,10 @@
 ## The boundary
 
 Python runs when someone creates or manages a display. The selected interpreter
-runs the generated output at login. Bash remains the full workshop renderer;
-Zsh launches that shared renderer, while portable sh and PowerShell have smaller
-native templates. Public prelogin destinations receive static text.
+runs the generated output at login. Generated Bash and Zsh files select the
+enhanced Linux/Bash renderer or the portable Unix renderer at invocation time.
+PowerShell has a native template using PowerShell 1-era syntax and capability
+checks. Public prelogin destinations receive static text.
 
 The source remains reviewable while users download one `motd.py` and deploy one
 generated file. Output compatibility and installation compatibility are separate:
@@ -27,8 +28,10 @@ The recommendation is an engineering judgment about development and deployment c
 
 `runtime/` contains canonical templates for Bash, native sh and PowerShell.
 Packaging embeds them verbatim in `motd.py`; generation supplies validated settings
-and wrapper behaviour. Zsh uses the Bash body, so a full-dashboard fix reaches both
-routes. A preset does not receive its own duplicated collectors.
+and wrapper behaviour. Zsh delegates through the available Unix interpreter, so
+a renderer fix reaches both entry points. The portable body is parsed and can exit
+before an old interpreter reaches modern Bash syntax. A preset does not receive
+its own duplicated collectors.
 
 Presets are TOML data. Configuration chooses values, sections, labels and
 presentation; it is not sourced as shell code. Generated shell metadata records
@@ -40,9 +43,10 @@ its recipe remains a separate file or transaction archive.
 installation scope and audience are distinct choices. Older schema1 recipes omit
 `shell` and retain Bash. Historical scripts remain under `reference/` with provenance.
 
-Each backend states its actual metrics and missing-data behaviour. Portable sh
-is deliberately reduced; native PowerShell uses its own OS capabilities and metric
-labels. Sharing configuration does not make those collectors equivalent. There is
+Each backend states its actual metrics and missing-data behaviour. The portable
+and PowerShell backends implement the shared section model while using local OS
+capabilities and explicit metric labels. Sharing configuration does not make
+those measurements or timing guarantees equivalent. There is
 no generic plugin ABI or layout language. A new collector needs a concrete user
 need, defined units and evidence that it does not degrade the normal display.
 
@@ -100,3 +104,18 @@ dashboard uses Linux/procfs, Bash 4.3+ and GNU `timeout`. Each additional backen
 and attachment needs its own capability and version evidence. The
 [compatibility specification](../specs/compatibility.md) defines that boundary
 without turning every possible platform into a prerequisite for this version.
+
+## Evidence-based previews
+
+The developer gallery runs generated artifacts in controlling pseudo-terminals
+at each requested geometry. A strict cell decoder rejects wrapping, scrolling,
+unsupported escape sequences and output that consumes the prompt row. It does
+not delete inconvenient output to make a screenshot fit. Rendering preserves
+the entire grid, including unused rows. Lossless PNG optimization is accepted
+only when decoded RGBA pixels match before and after optimization.
+
+Synthetic fixtures make comparisons reproducible without publishing host data.
+Each logical case retains its transcript, effective recipe, command, engine
+version and source hashes even when identical pictures share a PNG. Gallery-only
+Pillow, wcwidth and optional oxipng dependencies are absent from normal generation
+and login execution.

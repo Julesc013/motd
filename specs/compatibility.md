@@ -10,8 +10,9 @@ for the version and attachment boundaries.
 
 Keep one downloadable Python configurator, TOML recipes, a small set of embedded
 canonical output templates, and one transaction engine. Add an output backend
-when its interpreter requires different syntax. Reuse the Bash renderer through
-a Zsh launcher instead of maintaining a second copy of all its collectors.
+when its interpreter requires different syntax. Reuse modern/portable Unix
+dispatch through the Bash and Zsh entry points instead of maintaining a second
+copy of all collectors for each shell major version.
 
 Separate these choices in the recipe and UI:
 
@@ -19,7 +20,7 @@ Separate these choices in the recipe and UI:
 |---|---|
 | Action | Create, install, inspect, audit, repair, reconfigure, upgrade, recover, rollback or uninstall |
 | Target | Interactive shell output, agetty issue text, OpenSSH banner text, or generic static text |
-| Shell | Bash, Zsh launcher, native PowerShell, or reduced native sh output |
+| Shell | Bash with automatic fallback, Zsh launcher, native PowerShell, or portable native sh output |
 | Attachment | The exact startup file or public-text destination on the target machine |
 | Display | Theme, section selection, geometry, messages and hints |
 
@@ -33,14 +34,19 @@ authentication settings.
    enum values and unsupported settings produce an actionable error.
 2. Generated outputs run independently of Python and the source tree. Their
    comments/help identify the actual interpreter and dependencies.
-3. Zsh output declares its Bash dependency. It must not describe itself as a
-   native Zsh collector implementation.
+3. Zsh output declares its interpreter delegation: `/bin/bash` when present,
+   otherwise `/bin/sh`. It must not describe itself as a native Zsh collector
+   implementation. An inherited `ZSH_VERSION` must not create an exec loop.
 4. Native sh output avoids Bash arrays, namerefs and Bash-only substitutions.
-   Reduced collection is explicit; unavailable data is not presented as zero,
-   healthy, or measured.
-5. PowerShell output targets Windows PowerShell 5.1 syntax and PowerShell 7.
+   The shared nine sections remain selectable. Unavailable data is not presented
+   as zero, healthy, or measured. Old Bash executes this branch before parsing
+   any later modern-Bash syntax. Bash 1 requires an available `printf` utility.
+5. PowerShell output targets Windows PowerShell 1-era syntax through families
+   1–5 and PowerShell 6–7, using feature checks and legacy API fallbacks.
    Host capability checks determine available collectors. A PS7/Linux test does
-   not establish PS5.1/Windows compatibility.
+   not establish PS1–5/Windows compatibility. A modern-parser syntax check does
+   not verify any historical engine. Emit configuration as data-only literals;
+   do not depend on the later JSON cmdlet or advanced-function grammar.
 6. Static outputs contain deliberate public content. They do not run hooks or
    collect private login telemetry. The `issue` encoder is agetty-specific;
    generic text has no claim of universal consumer escaping.
@@ -117,10 +123,10 @@ Do not use “all versions” or “all newer versions” as a test result.
 
 | Boundary | Minimum useful evidence |
 |---|---|
-| Bash full renderer | Minimum-version syntax/runtime smoke plus a current Bash; no configuration injection or metric semantic changes |
+| Bash dispatch | Real historical major-family executions plus modern Bash; enhanced-renderer minimum-version checks; old engines exit before modern syntax and configured hooks still obey preview suppression |
 | Zsh launcher | Actual Zsh invocation, correct argument forwarding, duplicate/interactive guards, and the shared Bash demonstration |
 | Portable sh | At least dash plus a BusyBox ash build before claiming both; restricted environment and missing-utility behaviour |
-| PowerShell | Actual Windows PowerShell 5.1 and PS7 parsing/demo/quoting checks; OS-specific collector checks recorded separately |
+| PowerShell | Actual Windows PowerShell5.1, PS6 and PS7 checks; PS1–4 retain targeted status until their real engines execute the tests; OS-specific collector checks recorded separately |
 | Hooks | Exactly-once calls, literal arguments, timeout/failure behaviour, and suppression during preview |
 | Terminal wizard | Page navigation, updated preview, line fallback, cancellation, resize/narrow-terminal handling and no install before confirmation |
 | New attachment | Temporary-file install/upgrade/uninstall/drift tests, followed by an isolated real host/session test before an end-to-end claim |
@@ -130,3 +136,28 @@ compatibility boundary or resolving a concrete regression. A missing optional
 interpreter can skip a local test, but release evidence must name that skip.
 Newer versions are candidates for the same checks; they are not automatically
 certified by an open-ended version comparison.
+
+## 6. Reproducible PNG gallery
+
+The maintained dashboard matrix is two presets × four output routes × four
+themes × two character sets × two colour modes × four terminal sizes: **512
+logical captures**. Three static public output formats add **12 captures** at
+the same four sizes. Do not invent colour/theme behavior for static notices.
+
+- Run the generated output in an actual controlling PTY set to 40×25, 40×50,
+  80×25 or 80×50. Set runtime dimensions explicitly for reproducible captures;
+  automatic geometry is tested separately without those flags.
+- Use synthetic populated fixtures and suppress hooks. Retain raw ANSI bytes,
+  effective TOML recipes, command lines, interpreter versions, and source hashes.
+- Decode terminal cells and styles. Fail on unhandled sequences, wrapping,
+  scrolling or overwriting the reserved prompt row. Do not crop overflow away.
+- Preserve the full requested grid, including blank rows. Render high-resolution
+  PNGs with a recorded font and cell geometry; contact sheets keep source pixels.
+- Optimize PNGs losslessly and verify decoded RGBA hashes before and after.
+  "100%" denotes preserved pixels, not a 100% byte reduction or a proof of the
+  globally smallest possible compressed representation.
+- Deduplicate identical pictures while retaining every logical case and its
+  independent execution transcript. Provide a filterable local HTML index.
+- CI verifies retained recipes, source/output/transcript/pixel hashes, dimensions
+  and complete matrix coverage. A renderer change invalidates the old gallery;
+  recapture before claiming that the images show the new revision.

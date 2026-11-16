@@ -30,7 +30,7 @@ if sys.version_info < (3, 11):
     raise SystemExit('The configurator requires Python 3.11+. Generated Bash does not.')
 import tomllib
 
-VERSION = '0.2.0'
+VERSION = '0.3.0'
 SHELLS = ('bash', 'zsh', 'sh', 'powershell')
 TARGETS = ('shell', 'issue', 'ssh-banner', 'text')
 SECTION_IDS = ('system', 'resources', 'services', 'processes', 'sessions',
@@ -320,19 +320,43 @@ def hook_wrapper(config):
 
 
 def portable_runtime_assignments(config):
-    """Render validated data as POSIX assignments and literal display calls."""
+    """Render validated configuration as literal POSIX assignments/callbacks.
+
+    Only data is serialized here; the portable collector is a canonical
+    embedded template, with no runtime configurator dependency.
+    """
     c = validate_config(config)
     d = c['display']
-    settings = {'TITLE': d['title'], 'SITE_LABEL': d['site'], 'THEME': d['theme'],
-                'MAX_WIDTH': d['width'], 'ROWS': d['rows'],
-                'SECTIONS': ' '.join(d['sections'])}
+    settings = {
+        'TITLE': d['title'], 'SITE_LABEL': d['site'], 'THEME': d['theme'],
+        'MAX_WIDTH': d['width'], 'ROWS': d['rows'],
+        'TOP_N': d['top_entries'],
+        # A hard portable-shell cap avoids tens of thousands of shell reads.
+        'PROCESS_LIMIT': min(512, c['collection']['process_limit']),
+        'SHOW_SWAP': int(d['show_swap']),
+        'SHOW_COMPRESSION': int(d['show_compression']),
+        'SHOW_PRESSURE': int(d['show_pressure']),
+        'SECTIONS': ' '.join(d['sections']),
+    }
     lines = [f'{key}={shlex.quote(str(value))}' for key, value in settings.items()]
     for name, items in [('motd_messages', c['messages']),
                         ('motd_hints', [f"{h['label']}: {h['command']} - {h['note']}" for h in c['hints']])]:
         lines.append(name + '() {')
         lines.extend('    motd_line ' + shlex.quote(item) for item in items)
-        if not items: lines.append('    :')
+        if not items:
+            lines.append('    :')
         lines.append('}')
+    lines.append('motd_required_services() {')
+    for item in c['services']['required']:
+        lines.append("    printf '%s\\n' " + shlex.quote(item))
+    if not c['services']['required']:
+        lines.append('    :')
+    lines.append('}')
+    lines.append('motd_service_allowed() {')
+    for item in c['services']['exclude']:
+        lines.append('    motd_exclude_pattern=' + shlex.quote(item))
+        lines.append('    case "$1" in $motd_exclude_pattern) return 1 ;; esac')
+    lines.extend(['    return 0', '}'])
     return '\n'.join(lines) + '\n' + portable_hook_wrapper(c)
 
 
@@ -362,30 +386,78 @@ def portable_hook_wrapper(config):
 
 
 def zsh_launcher():
-    """Execute the same standalone file with Bash before Zsh parses its body.
+    """Execute the same file through a compatible Unix shell before parsing it.
 
-    Keep this before Bash-specific hook/collector syntax. Zsh integration uses
-    the shared Bash runtime; it is not a promise of a native Zsh collector port.
+    Bash supplies the enhanced Linux renderer when available. /bin/sh supplies
+    the portable renderer otherwise. The PID marker also handles an exported
+    ZSH_VERSION inherited by a different interpreter without an exec loop.
     """
-    return ('# Zsh entry point; the shared dashboard requires /bin/bash 4.3+.\n'
-            'if [ -n "${ZSH_VERSION-}" ] && [ -z "${BASH_VERSION-}" ]; then\n'
-            '    exec /bin/bash "$0" "$@"\n'
+    return ('# Zsh entry point; select the available Unix renderer.\n'
+            '# Zsh 2 reports VERSION; later families report ZSH_VERSION.\n'
+            'if { [ -n "${ZSH_VERSION-}" ] || case "${VERSION-}" in '
+            "'zsh v2.'*) true ;; *) false ;; esac; } "
+            '&& [ "${_MOTD_DISPATCH_PID-}" != "$$" ]; then\n'
+            '    _MOTD_DISPATCH_PID=$$; export _MOTD_DISPATCH_PID\n'
+            '    if [ -x /bin/bash ]; then exec /bin/bash "$0" "$@"; fi\n'
+            '    exec /bin/sh "$0" "$@"\n'
             'fi\n')
 
 
-def powershell_assignments(config):
-    """Use literal ASCII JSON so UTF-8 without BOM works in Windows PS 5.1.
+def portable_body(config):
+    if SH_TEMPLATE.count('# @MOTD_CONFIG@') != 1:
+        raise MotdError('Embedded portable template has an invalid configuration marker')
+    return SH_TEMPLATE.replace('# @MOTD_CONFIG@', portable_runtime_assignments(config))
 
-    Single quotes are doubled for PowerShell's literal string. JSON handles all
-    remaining quoting and Unicode, and ConvertFrom-Json only parses data.
+
+def unix_dispatch(config):
+    """Place old-shell syntax first, before any modern Bash syntax is parsed.
+
+    The selected interpreter and OS decide the renderer at invocation time. A
+    modern configurator is not needed on the destination. OSTYPE is Bash's
+    compile-time platform identifier; generic Unix uses the portable collectors.
     """
+    return ('# Runtime compatibility: enhanced Linux/Bash or portable Unix.\n'
+            '_motd_modern=0\n'
+            'case "${BASH_VERSION-}:${OSTYPE-}" in\n'
+            '  4.[3-9]*:linux*|[5-9].*:linux*|[1-9][0-9].*:linux*) _motd_modern=1 ;;\n'
+            'esac\n'
+            'if [ "$_motd_modern" -eq 0 ]; then\n' + portable_body(config) +
+            '\n    exit $?\nfi\nunset _motd_modern\n')
+
+
+def powershell_literal(value, depth=0):
+    """Emit the fixed validated recipe using PowerShell 1-era literal syntax.
+
+    UTF-8 decoding is data-only, not eval. Ordinary ASCII strings remain directly
+    inspectable. Non-ASCII strings use .NET 2's Base64/UTF8 APIs so the generated
+    source remains ASCII and works with old Windows PowerShell's ANSI file read.
+    """
+    if isinstance(value, bool):
+        return '$true' if value else '$false'
+    if value is None:
+        return '$null'
+    if isinstance(value, (int, float)):
+        return str(value)
+    if isinstance(value, str):
+        if value.isascii():
+            return "'" + value.replace("'", "''") + "'"
+        encoded = base64.b64encode(value.encode('utf-8')).decode('ascii')
+        return "([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('" + encoded + "')))"
+    if isinstance(value, list):
+        return '@(' + '; '.join(powershell_literal(item, depth + 1) for item in value) + ')'
+    if isinstance(value, dict):
+        indent = '    ' * (depth + 1)
+        return '@{\n' + '\n'.join(indent + powershell_literal(key) + ' = ' + powershell_literal(item, depth + 1)
+                                  for key, item in value.items()) + '\n' + '    ' * depth + '}'
+    raise MotdError('Unsupported value in PowerShell configuration')
+
+
+def powershell_assignments(config):
     c = validate_config(config)
-    payload = json.dumps(c, ensure_ascii=True, separators=(',', ':')).replace("'", "''")
-    return f"$MotdVersion = '{VERSION}'\n$MotdConfig = ConvertFrom-Json -InputObject '{payload}'"
+    return f"$MotdVersion = '{VERSION}'\n$MotdConfig = " + powershell_literal(c)
 
 
 def generate_powershell_body(config):
-    """Return body only; caller adds the usual checked metadata/header."""
     if PS_TEMPLATE.count('# @MOTD_CONFIG@') != 1:
         raise MotdError('Embedded PowerShell template has an invalid configuration marker')
     return PS_TEMPLATE.replace('# @MOTD_CONFIG@', powershell_assignments(config))
@@ -407,14 +479,13 @@ def generate_artifact(config):
         body += generate_powershell_body(c)
         header = '# Native PowerShell output; invoke with & ./message.ps1\n'
     elif c['shell'] == 'sh':
-        if SH_TEMPLATE.count('# @MOTD_CONFIG@') != 1:
-            raise MotdError('Embedded sh template has an invalid configuration marker')
-        body += SH_TEMPLATE.replace('# @MOTD_CONFIG@', portable_runtime_assignments(c))
+        body += portable_body(c)
         header = '#!/bin/sh\n'
     else:
         if BASH_TEMPLATE.count('# @MOTD_CONFIG@') != 1 or BASH_TEMPLATE.count('# @MOTD_HOOKS@') != 1:
             raise MotdError('Embedded Bash template has invalid configuration/hook markers')
         if c['shell'] == 'zsh': body += zsh_launcher()
+        body += unix_dispatch(c)
         # The canonical minimum-version guard runs before any configured call.
         body += BASH_TEMPLATE.replace('# @MOTD_CONFIG@', runtime_assignments(c)).replace('# @MOTD_HOOKS@', hook_wrapper(c))
         header = '#!/usr/bin/env ' + c['shell'] + '\n'
@@ -519,13 +590,19 @@ def shell_block(config, artifact_path):
     marker = '_MOTD_SEEN_' + c['name'].replace('-', '_')
     tests = ['[ -t 1 ]', '[ ! -e "$HOME/.hushlogin" ]']
     if kind == 'bash': tests.insert(0, '[ -n "${BASH_VERSION-}" ]')
-    elif kind == 'zsh': tests.insert(0, '[ -n "${ZSH_VERSION-}" ]')
+    elif kind == 'zsh':
+        tests.insert(0, ('{ [ -n "${ZSH_VERSION-}" ] || case "${VERSION-}" in '
+                         "'zsh v2.'*) true ;; *) false ;; esac; }"))
     elif kind != 'sh': raise MotdError('This helper supports Bash, Zsh and POSIX sh startup files')
     if c['audience'] == 'ssh': tests.append('[ -n "${SSH_CONNECTION-}${SSH_TTY-}" ]')
     if c['audience'] == 'local': tests.append('[ -z "${SSH_CONNECTION-}${SSH_TTY-}" ]')
     frequency = ':'
     if c['frequency'] == 'login':
-        if kind == 'bash': frequency = 'shopt -q login_shell'
+        if kind == 'bash':
+            # Bash 1 has no shopt; its login invocation uses a leading '-'.
+            frequency = ('{ case "${BASH_VERSION-}" in '
+                         '1.*) case "$0" in -*) true ;; *) false ;; esac ;; '
+                         '*) shopt -q login_shell ;; esac; }')
         elif kind == 'zsh': frequency = '[[ -o login ]]'
     executable = '/bin/bash' if kind == 'bash' else ('zsh' if kind == 'zsh' else '/bin/sh')
     return '\n'.join([
@@ -2020,7 +2097,7 @@ def _configure(config, ui=None):
         'target': [('Authenticated shell greeting', 'shell'), ('agetty pre-login issue text', 'issue'),
                    ('SSH pre-authentication banner file', 'ssh-banner'), ('Generic static text', 'text')],
         'shell': [('Bash: full Linux dashboard', 'bash'), ('Zsh: shared Bash dashboard', 'zsh'),
-                  ('POSIX sh: reduced portable display', 'sh'), ('PowerShell: native baseline', 'powershell')],
+                  ('POSIX sh: portable Unix display', 'sh'), ('PowerShell: native, legacy-aware', 'powershell')],
         'audience': [('All eligible sessions', 'all'), ('SSH environment markers present', 'ssh'),
                      ('Non-SSH sessions (not proof of a physical console)', 'local')],
         'frequency': [('Login startup', 'login'), ('Every interactive shell', 'interactive')],
@@ -2362,7 +2439,7 @@ def entrypoint():
 
 # BEGIN EMBEDDED BASH — regenerated by tools/embed_runtime.py
 BASH_TEMPLATE = r'''#!/bin/bash
-# MOTD Bash runtime 0.2.0 | derived from Workshop MOTD 1.2.0, 2026-11-16.
+# MOTD Bash runtime 0.3.0 | derived from Workshop MOTD 1.2.0, 2026-11-16.
 # Bash 4.3+ and GNU timeout; optional GNU df, procps ps, iproute2, systemd.
 # Standalone output: generate settings with motd.py, then use --demo or --help.
 # No daemon, installation side effects, network requests, recursive disk scans,
@@ -2626,13 +2703,13 @@ DISK_IDS=() ATTENTION=() HEALTH_NOTES=() HOST_IPS=()
 FASTFETCH_TEXT='' OUTPUT='' REPLY=''
 DEMO=0 PLAIN=0 ASCII=0 WIDTH_OVERRIDE='' FETCH_OVERRIDE='' THEME_OVERRIDE=''
 PROC_ROOT=/proc SYS_ROOT=/sys ETC_ROOT=/etc RUN_ROOT=/run
-VERSION=0.2.0
+VERSION=0.3.0
 
 usage() {
     printf '%s\n' \
-      'MOTD adaptive runtime 0.1.0 - standalone Linux status display.' \
+      'MOTD adaptive runtime 0.3.0 - standalone Linux status display.' \
       'Usage: motd.bash [--rows 20..60]' \
-      '       [--width 24..240] [--theme cyan|amber|green|mono] [--plain] [--ascii]' \
+      '       [--width 24..240] [--theme cyan|amber|green|mono] [--plain] [--ascii|--unicode]' \
       '       [--sections system,resources,services,processes,sessions,connections,attention,hints]' \
       '       [--hide SECTION,...] [--show SECTION,...]' \
       '       [--hide-item SECTION.ITEM,...] [--show-item SECTION.ITEM,...]' \
@@ -2664,6 +2741,7 @@ parse_options() {
             --demo-alerts) DEMO=2; shift ;;
             --plain) PLAIN=1; shift ;;
             --ascii) ASCII=1; shift ;;
+            --unicode) ASCII=0; shift ;;
             --no-fastfetch) FETCH_OVERRIDE=0; shift ;;
             --journal) SHOW_JOURNAL=1; shift ;;
             --no-journal) SHOW_JOURNAL=0; shift ;;
@@ -5170,20 +5248,26 @@ if [[ ${BASH_SOURCE[0]} == "$0" ]]; then main "$@"; fi
 
 # BEGIN EMBEDDED SH — regenerated by tools/embed_runtime.py
 SH_TEMPLATE = r'''#!/bin/sh
-# Portable MOTD baseline. POSIX shell syntax; no Bash, Python or service manager.
-# This deliberately small renderer does not reproduce the Linux Bash collectors.
-# Linux /proc files provide cheap local observations when available. Missing
-# counters stay unavailable; no external command or network lookup fills them in.
-# GNU-compatible timeout is required only for explicitly configured hooks.
+# Portable Unix renderer, embedded before the modern Bash renderer.
+# Old Bourne/POSIX syntax: no arrays, [[ ]], local, namerefs, process
+# substitution, printf -v or Bash-only slicing. Bash 1 needs external printf.
+# Collectors only read local data. No network, installation or privileged work.
 
 TITLE='SYSTEM STATUS'
 SITE_LABEL=''
 THEME=mono
 MAX_WIDTH=80
 ROWS=25
+TOP_N=3
+PROCESS_LIMIT=128
+SHOW_SWAP=1
+SHOW_COMPRESSION=1
+SHOW_PRESSURE=1
 SECTIONS='system resources attention hints'
 motd_messages() { :; }
 motd_hints() { :; }
+motd_required_services() { :; }
+motd_service_allowed() { return 0; }
 motd_before_hooks() { :; }
 motd_after_hooks() { :; }
 
@@ -5194,6 +5278,9 @@ MOTD_DEMO_ALERTS=0
 MOTD_HOOKS_ENABLED=1
 MOTD_PLAIN=0
 MOTD_FORCE_COLOR=0
+MOTD_ASCII=1
+motd_explicit_width=0
+motd_explicit_rows=0
 while [ "$#" -gt 0 ]; do
     case "$1" in
         --demo) MOTD_DEMO=1; MOTD_HOOKS_ENABLED=0 ;;
@@ -5201,454 +5288,1064 @@ while [ "$#" -gt 0 ]; do
         --no-hooks) MOTD_HOOKS_ENABLED=0 ;;
         --plain) MOTD_PLAIN=1 ;;
         --color) MOTD_FORCE_COLOR=1 ;;
-        --ascii) : ;; # The baseline already uses ASCII framing.
+        --ascii) MOTD_ASCII=1 ;;
+        --unicode) MOTD_ASCII=0 ;;
         --width|--rows)
-            motd_option=$1
-            shift
-            case "${1-}" in
-                ''|*[!0-9]*) printf '%s\n' 'Width/rows require an integer.' >&2; exit 2 ;;
-            esac
-            # Check length first: never feed an unbounded integer into old shells.
-            if [ "${#1}" -gt 3 ]; then
-                printf '%s\n' 'Width/rows are outside the supported range.' >&2
-                exit 2
-            fi
+            motd_option=$1; shift
+            case "${1-}" in ''|*[!0-9]*) printf '%s\n' 'Width/rows require an integer.' >&2; exit 2 ;; esac
+            if [ "${#1}" -gt 3 ]; then printf '%s\n' 'Width/rows are outside the supported range.' >&2; exit 2; fi
             motd_number=$1
-            # Old shells may read leading-zero arithmetic as octal.
-            while [ "${motd_number#0}" != "$motd_number" ] && [ "${#motd_number}" -gt 1 ]; do
-                motd_number=${motd_number#0}
-            done
+            while [ "${motd_number#0}" != "$motd_number" ] && [ "${#motd_number}" -gt 1 ]; do motd_number=${motd_number#0}; done
             if [ "$motd_option" = --width ]; then
                 if [ "$motd_number" -lt 40 ] || [ "$motd_number" -gt 240 ]; then exit 2; fi
                 MAX_WIDTH=$motd_number
+                motd_explicit_width=1
             else
                 if [ "$motd_number" -lt 20 ] || [ "$motd_number" -gt 60 ]; then exit 2; fi
                 ROWS=$motd_number
+                motd_explicit_rows=1
             fi ;;
-        --version) printf '%s\n' 'MOTD portable sh baseline'; exit 0 ;;
+        --version) printf '%s\n' 'MOTD portable Unix renderer'; exit 0 ;;
         --list-sections) printf '%s\n' 'system resources services processes sessions connections attention hints io'; exit 0 ;;
         --help|-h)
-            printf '%s\n' 'Portable MOTD: --demo --demo-alerts --plain --color --ascii --no-hooks --width N --rows N' \
-                'Basic identity, Linux memory/load/uptime where available, messages and hints.' \
-                'Advanced service, process, session, connection and I/O collectors are unavailable.'
+            printf '%s\n' 'MOTD: --demo --demo-alerts --plain --color --ascii --unicode --no-hooks --width N --rows N' \
+                'Portable Unix: identity, memory, storage, services, processes, sessions, connections, notices and hints.' \
+                'Missing OS facilities and inaccessible observations say unavailable.'
             exit 0 ;;
         *) printf '%s\n' "Unknown portable MOTD option: $1" >&2; exit 2 ;;
     esac
     shift
 done
+motd_before_hooks || exit "$?"
+# Old Bash releases predate current multibyte libraries. C locale gives exact
+# byte semantics for printable-ASCII content, decimal parsers and shell ranges.
+LC_ALL=C
+export LC_ALL
 
-# No arbitrary helper programs run during data collection. Configuration text is
-# quoted by the generator; the display helper also replaces terminal controls.
-# Width clipping is by shell characters, not a Unicode grapheme-width engine.
-motd_remaining=$((ROWS - 1))
-motd_line() {
-    if [ "$motd_remaining" -le 0 ]; then return; fi
-    if [ "$motd_remaining" -eq 1 ]; then
-        printf '%s\n' '[More content omitted]'
-        motd_remaining=0
-        return
+# Successful helper output is capped in a private capture file. GNU timeout or
+# gtimeout is preferred. A POSIX watchdog otherwise bounds the direct child;
+# it is not a process sandbox. Failed queries never become successful zeros.
+motd_tmp=''; motd_timeout=''; motd_awk=''; motd_helpers=0
+if [ "$MOTD_DEMO" -eq 0 ] || { [ -t 1 ] && { [ "$motd_explicit_width" -eq 0 ] || [ "$motd_explicit_rows" -eq 0 ]; }; }; then
+    if command -v awk >/dev/null 2>&1; then motd_awk=awk; fi
+    if command -v timeout >/dev/null 2>&1; then motd_timeout=timeout
+    elif command -v gtimeout >/dev/null 2>&1; then motd_timeout=gtimeout; fi
+    if command -v mktemp >/dev/null 2>&1 && command -v rm >/dev/null 2>&1 && command -v cat >/dev/null 2>&1; then
+        motd_tmp=$(umask 077; mktemp -d "${TMPDIR:-/tmp}/motd.XXXXXXXX" 2>/dev/null) || motd_tmp=''
+        if [ -n "$motd_tmp" ] && [ -d "$motd_tmp" ]; then motd_helpers=1; fi
     fi
-    motd_rest=$1
-    motd_clean=''
-    motd_count=0
-    while [ -n "$motd_rest" ] && [ "$motd_count" -lt "$MAX_WIDTH" ]; do
-        motd_character=${motd_rest%"${motd_rest#?}"}
-        motd_rest=${motd_rest#?}
-        case "$motd_character" in [[:cntrl:]]) motd_character='?' ;; esac
-        motd_clean=$motd_clean$motd_character
-        motd_count=$((motd_count + 1))
-    done
-    printf '%s\n' "$motd_clean"
-    motd_remaining=$((motd_remaining - 1))
+fi
+motd_cleanup() { if [ -n "$motd_tmp" ] && [ -d "$motd_tmp" ]; then rm -rf "$motd_tmp"; fi; }
+trap 'motd_cleanup' 0
+trap 'exit 130' 2
+trap 'exit 143' 15
+motd_run() {
+    MOTD_CAPTURE=''; MOTD_STATUS=127
+    if [ "$motd_helpers" -ne 1 ] || ! command -v "$1" >/dev/null 2>&1; then return 127; fi
+    if [ -n "$motd_timeout" ]; then
+        (ulimit -f 512 2>/dev/null || :; "$motd_timeout" -k 0.1 0.35 "$@" > "$motd_tmp/capture" 2>/dev/null)
+        MOTD_STATUS=$?
+    elif command -v sleep >/dev/null 2>&1; then
+        (ulimit -f 512 2>/dev/null || :; exec "$@") > "$motd_tmp/capture" 2>/dev/null &
+        motd_child=$!
+        (sleep 1; kill -TERM "$motd_child" 2>/dev/null; sleep 1; kill -KILL "$motd_child" 2>/dev/null) >/dev/null 2>&1 &
+        motd_watch=$!
+        wait "$motd_child" 2>/dev/null; MOTD_STATUS=$?
+        kill "$motd_watch" 2>/dev/null || :
+        wait "$motd_watch" 2>/dev/null || :
+    else return 127; fi
+    if [ "$MOTD_STATUS" -eq 0 ]; then MOTD_CAPTURE=$(cat "$motd_tmp/capture" 2>/dev/null); return 0; fi
+    return "$MOTD_STATUS"
 }
 
-motd_heading() {
-    # Colour is an optional enhancement. NO_COLOR and dumb/redirected terminals
-    # remain plain; no terminal escape sequence is sourced from configuration.
-    if [ "$MOTD_PLAIN" -eq 0 ] && [ "$THEME" != mono ] && { [ -t 1 ] || [ "$MOTD_FORCE_COLOR" -eq 1 ]; } && [ -z "${NO_COLOR+x}" ] && [ "${TERM-dumb}" != dumb ]; then
-        case "$THEME" in
-            cyan) printf '\033[1;36m' ;;
-            green) printf '\033[1;32m' ;;
-            amber) printf '\033[1;33m' ;;
-        esac
-        motd_line "$1"
-        printf '\033[0m'
-    else
-        motd_line "$1"
+# Actual terminal geometry wins over inherited environment values. Geometry
+# discovery is optional and bounded, and explicit preview dimensions win over
+# both. Invalid environment text never reaches arithmetic or command parsing.
+motd_terminal_columns=${COLUMNS-}
+motd_terminal_rows=${LINES-}
+if [ -t 1 ] && { [ "$motd_explicit_width" -eq 0 ] || [ "$motd_explicit_rows" -eq 0 ]; }; then
+    if motd_run stty size; then
+        read -r motd_terminal_rows motd_terminal_columns <<MOTD_GEOMETRY_END
+$MOTD_CAPTURE
+MOTD_GEOMETRY_END
     fi
-}
+    case "$motd_terminal_columns" in ''|*[!0-9]*) motd_terminal_columns='' ;; esac
+    case "$motd_terminal_rows" in ''|*[!0-9]*) motd_terminal_rows='' ;; esac
+    if [ "${#motd_terminal_columns}" -gt 3 ]; then motd_terminal_columns=''; fi
+    if [ "${#motd_terminal_rows}" -gt 3 ]; then motd_terminal_rows=''; fi
+    while [ "${motd_terminal_columns#0}" != "$motd_terminal_columns" ] && [ "${#motd_terminal_columns}" -gt 1 ]; do motd_terminal_columns=${motd_terminal_columns#0}; done
+    while [ "${motd_terminal_rows#0}" != "$motd_terminal_rows" ] && [ "${#motd_terminal_rows}" -gt 1 ]; do motd_terminal_rows=${motd_terminal_rows#0}; done
+    if [ "$motd_explicit_width" -eq 0 ] && [ -n "$motd_terminal_columns" ]; then
+        if [ "$motd_terminal_columns" -ge 40 ] && [ "$motd_terminal_columns" -lt "$MAX_WIDTH" ]; then MAX_WIDTH=$motd_terminal_columns; fi
+    fi
+    if [ "$motd_explicit_rows" -eq 0 ] && [ -n "$motd_terminal_rows" ]; then
+        if [ "$motd_terminal_rows" -ge 20 ] && [ "$motd_terminal_rows" -lt "$ROWS" ]; then ROWS=$motd_terminal_rows; fi
+    fi
+fi
 
-motd_host=unavailable
-motd_os=unavailable
-motd_release=unavailable
-motd_uptime=unavailable
-motd_load=unavailable
-motd_total=unavailable
-motd_available=unavailable
-motd_free=unavailable
+motd_host=unavailable; motd_os=unavailable; motd_release=unavailable
+motd_uptime=unavailable; motd_load=unavailable
+motd_total=unavailable; motd_available=unavailable; motd_free=unavailable
+motd_swap_total=unavailable; motd_swap_free=unavailable
+motd_disk='Storage: unavailable'; motd_pressure='Pressure: unavailable'
+motd_compression='Compression: unavailable'
+motd_service_rows='unavailable: no supported service query'
+motd_service_summary='Service state: unavailable'
+motd_service_manager=unavailable
+motd_cpu_rows=unavailable; motd_rss_rows=unavailable
+motd_io_rows='unavailable: per-process I/O needs Linux procfs'
+motd_session_rows=unavailable; motd_session_summary='Sessions: unavailable'
+motd_connections='Connections: unavailable'; motd_connection_rows=''
+motd_disk_io='Device I/O: unavailable'
+motd_attention='Observations are local and may be partial.'
+
 if [ "$MOTD_DEMO" -eq 1 ]; then
-    motd_host=demo-host
-    motd_os=Linux
-    motd_release=demo-kernel
-    motd_uptime=86400
-    motd_load='0.25 0.18 0.12'
-    motd_total=16777216
-    motd_available=12582912
-    motd_free=8388608
+    motd_host=demo-host; motd_os=Linux; motd_release=demo-kernel
+    motd_uptime=86400; motd_load='0.25 0.18 0.12'
+    motd_total=16777216; motd_available=12582912; motd_free=8388608
+    motd_swap_total=4194304; motd_swap_free=4194304
+    motd_disk='Root: 42% used; 286 GiB available'
+    motd_pressure='Pressure CPU/mem/I/O: 0.1/0.0/0.2%'
+    motd_compression='zram: 640 MiB data / 218 MiB RAM'
+    motd_service_summary='Services: 8 running; 0 failed'
+    motd_service_rows='sshd: running
+cron: running
+docker: running
+nginx: running'
+    motd_cpu_rows='compiler 32.4% (pid 2184)
+python 8.6% (pid 1902)
+sshd 0.4% (pid 822)'
+    motd_rss_rows='database 842112 KiB (pid 1401)
+compiler 214016 KiB (pid 2184)
+python 98304 KiB (pid 1902)'
+    motd_io_rows='database 1090519040 B (pid 1401)
+compiler 20971520 B (pid 2184)
+python 4194304 B (pid 1902)'
+    motd_session_summary='Sessions: 3 logged-in terminals'
+    motd_session_rows='jules  pts/0  10:21  (192.0.2.10)
+alex   pts/1  10:34  (192.0.2.20)
+jules  tty1   09:08  (local)'
+    motd_connections='TCP: 12 established; 5 listening'
+    motd_connection_rows='ssh :22      2 established
+https :443  10 established'
+    motd_disk_io='Device I/O: 42 GiB read / 18 GiB written'
+    motd_attention='DEMO fixture; no live machine data.'
+    if [ "$MOTD_DEMO_ALERTS" -eq 1 ]; then
+        motd_service_summary='Services: 7 running; 1 failed'
+        motd_service_rows='backup: failed
+sshd: running
+cron: running
+docker: running'
+        motd_disk='Root: 94% used; 29 GiB available'; motd_swap_free=262144
+        motd_pressure='Pressure CPU/mem/I/O: 2.1/8.3/12.4%'
+        motd_attention='DEMO WARNING: disk 94%; backup failed.'
+    fi
 else
-    # All reads are of fixed local procfs files. The scan has a hard line-count
-    # bound; kernel/filesystem stalls are still outside a shell's timing control.
-    if [ -r /proc/sys/kernel/hostname ]; then IFS= read -r motd_host < /proc/sys/kernel/hostname || :; fi
-    if [ -r /proc/sys/kernel/ostype ]; then IFS= read -r motd_os < /proc/sys/kernel/ostype || :; fi
-    if [ -r /proc/sys/kernel/osrelease ]; then IFS= read -r motd_release < /proc/sys/kernel/osrelease || :; fi
+    # Fixed Linux procfs reads need no external command and have line caps.
+    if [ -r /proc/sys/kernel/hostname ]; then read -r motd_host < /proc/sys/kernel/hostname || :; fi
+    if [ -r /proc/sys/kernel/ostype ]; then read -r motd_os < /proc/sys/kernel/ostype || :; fi
+    if [ -r /proc/sys/kernel/osrelease ]; then read -r motd_release < /proc/sys/kernel/osrelease || :; fi
+    if [ "$motd_os" = unavailable ] && motd_run uname -s; then motd_os=$MOTD_CAPTURE; fi
+    if [ "$motd_host" = unavailable ] && motd_run uname -n; then motd_host=$MOTD_CAPTURE; fi
+    if [ "$motd_release" = unavailable ] && motd_run uname -r; then motd_release=$MOTD_CAPTURE; fi
     if [ -r /proc/uptime ]; then
-        read -r motd_uptime motd_unused < /proc/uptime || :
-        motd_uptime=${motd_uptime%%.*}
+        read -r motd_uptime motd_unused < /proc/uptime || :; motd_uptime=${motd_uptime%%.*}
         case "$motd_uptime" in ''|*[!0-9]*) motd_uptime=unavailable ;; esac
     fi
     if [ -r /proc/loadavg ]; then
         read -r motd_load1 motd_load5 motd_load15 motd_unused < /proc/loadavg || :
-        if [ -n "$motd_load1" ] && [ -n "$motd_load5" ] && [ -n "$motd_load15" ]; then
-            motd_load="$motd_load1 $motd_load5 $motd_load15"
-        fi
+        motd_load="$motd_load1 $motd_load5 $motd_load15"
     fi
     if [ -r /proc/meminfo ]; then
         motd_mem_lines=0
         while read -r motd_key motd_value motd_unit; do
-            motd_mem_lines=$((motd_mem_lines + 1))
-            if [ "$motd_mem_lines" -gt 128 ]; then break; fi
+            motd_mem_lines=$((motd_mem_lines + 1)); if [ "$motd_mem_lines" -gt 128 ]; then break; fi
             case "$motd_value" in ''|*[!0-9]*) continue ;; esac
             case "$motd_key" in
-                MemTotal:) motd_total=$motd_value ;;
-                MemAvailable:) motd_available=$motd_value ;;
-                MemFree:) motd_free=$motd_value ;;
+                MemTotal:) motd_total=$motd_value ;; MemAvailable:) motd_available=$motd_value ;;
+                MemFree:) motd_free=$motd_value ;; SwapTotal:) motd_swap_total=$motd_value ;;
+                SwapFree:) motd_swap_free=$motd_value ;;
             esac
         done < /proc/meminfo
     fi
+    if [ -n "$motd_awk" ]; then
+        case "$motd_os" in
+            Darwin)
+                if motd_run sysctl -n hw.memsize; then
+                    motd_total=$(printf '%s\n' "$MOTD_CAPTURE" | awk '/^[0-9]+$/ {printf "%.0f",$1/1024}')
+                    motd_total=${motd_total:-unavailable}
+                fi
+                if motd_run vm_stat; then
+                    # Free is not equivalent to Linux MemAvailable.
+                    motd_free=$(printf '%s\n' "$MOTD_CAPTURE" | awk '/page size of/ {for(i=1;i<=NF;i++)if($i=="of")p=$(i+1)} /^Pages free:/ {gsub(/\./,"",$3);f=$3} END {if(p>0&&f!="")printf "%.0f",p*f/1024}')
+                    motd_free=${motd_free:-unavailable}
+                fi ;;
+            FreeBSD|OpenBSD|NetBSD|DragonFly)
+                if motd_run sysctl -n hw.physmem; then
+                    motd_total=$(printf '%s\n' "$MOTD_CAPTURE" | awk '/^[0-9]+$/ {printf "%.0f",$1/1024}')
+                    motd_total=${motd_total:-unavailable}
+                fi
+                if [ "$motd_os" = FreeBSD ] || [ "$motd_os" = DragonFly ]; then
+                    if motd_run sysctl -n vm.stats.vm.v_free_count hw.pagesize; then
+                        motd_free=$(printf '%s\n' "$MOTD_CAPTURE" | awk 'NR==1{n=$1} NR==2{if(n~/^[0-9]+$/&&$1~/^[0-9]+$/)printf "%.0f",n*$1/1024}')
+                        motd_free=${motd_free:-unavailable}
+                    fi
+                fi ;;
+        esac
+        case "$motd_os" in
+            Darwin|FreeBSD|OpenBSD|NetBSD|DragonFly)
+                if motd_run sysctl -n vm.loadavg; then motd_load=$(printf '%s\n' "$MOTD_CAPTURE" | awk '{gsub(/[{}]/,"");print $1" "$2" "$3}'); fi
+                if motd_run sysctl -n kern.boottime; then
+                    motd_boot=$(printf '%s\n' "$MOTD_CAPTURE" | awk '{gsub(/[,{}]/," ");for(i=1;i<=NF;i++)if($i=="sec"&&$(i+1)=="="){print $(i+2);exit}}')
+                    if motd_run date +%s; then
+                        motd_uptime=$(printf '%s %s\n' "$MOTD_CAPTURE" "$motd_boot" | awk '$1~/^[0-9]+$/&&$2~/^[0-9]+$/&&$1>=$2 {printf "%.0f",$1-$2}')
+                        motd_uptime=${motd_uptime:-unavailable}
+                    fi
+                fi ;;
+        esac
+        if motd_run df -Pk /; then
+            motd_disk=$(printf '%s\n' "$MOTD_CAPTURE" | awk 'NR==2&&$4~/^[0-9]+$/ {printf "Root: %s used; %.1f GiB available",$5,$4/1048576}')
+            motd_disk=${motd_disk:-Storage: unavailable}
+        fi
+        if [ -r /proc/pressure/cpu ] && [ -r /proc/pressure/memory ] && [ -r /proc/pressure/io ]; then
+            motd_pressure=$(awk '/^some /{for(i=2;i<=NF;i++)if($i~/^avg10=/){sub(/^avg10=/,"",$i);v[++n]=$i;break}} END{if(n==3)printf "Pressure CPU/mem/I/O: %s/%s/%s%%",v[1],v[2],v[3]}' /proc/pressure/cpu /proc/pressure/memory /proc/pressure/io 2>/dev/null)
+            motd_pressure=${motd_pressure:-Pressure: unavailable}
+        fi
+        if [ -r /sys/block/zram0/mm_stat ]; then
+            motd_compression=$(awk 'NR==1&&$1~/^[0-9]+$/&&$3~/^[0-9]+$/ {printf "zram0: %.0f MiB data / %.0f MiB RAM",$1/1048576,$3/1048576;exit}' /sys/block/zram0/mm_stat 2>/dev/null)
+            motd_compression=${motd_compression:-Compression: unavailable}
+        fi
+        # CPU is the percentage reported by ps, not an instantaneous sample.
+        # Only a capped visible process sample is ranked; all counters may be
+        # incomplete because of access controls or disappearing processes.
+        if motd_run ps -A -o pid= -o pcpu= -o rss= -o comm=; then
+            motd_ps=$MOTD_CAPTURE
+            motd_cpu_rows=$(printf '%s\n' "$motd_ps" | awk -v n="$TOP_N" -v cap="$PROCESS_LIMIT" 'NR<=cap&&$1~/^[0-9]+$/&&$2~/^[0-9.]+$/{for(i=1;i<=n;i++)if($2+0>v[i]||s[i]==""){for(j=n;j>i;j--){v[j]=v[j-1];s[j]=s[j-1]}v[i]=$2;s[i]=$4" "$2"% (pid "$1")";break}} END{for(i=1;i<=n;i++)if(s[i]!="")print s[i]}')
+            motd_rss_rows=$(printf '%s\n' "$motd_ps" | awk -v n="$TOP_N" -v cap="$PROCESS_LIMIT" 'NR<=cap&&$1~/^[0-9]+$/&&$3~/^[0-9]+$/{for(i=1;i<=n;i++)if($3+0>v[i]||s[i]==""){for(j=n;j>i;j--){v[j]=v[j-1];s[j]=s[j-1]}v[i]=$3;s[i]=$4" "$3" KiB (pid "$1")";break}} END{for(i=1;i<=n;i++)if(s[i]!="")print s[i]}')
+            motd_cpu_rows=${motd_cpu_rows:-unavailable}; motd_rss_rows=${motd_rss_rows:-unavailable}
+        fi
+        if [ "$motd_os" = Linux ] && [ "$motd_helpers" -eq 1 ]; then
+            : > "$motd_tmp/io"
+            motd_scanned=0; motd_readable=0
+            for motd_io_path in /proc/[0-9]*/io; do
+                motd_scanned=$((motd_scanned + 1)); if [ "$motd_scanned" -gt "$PROCESS_LIMIT" ]; then break; fi
+                if [ ! -r "$motd_io_path" ]; then continue; fi
+                motd_pid=${motd_io_path#/proc/}; motd_pid=${motd_pid%/io}
+                motd_read=''; motd_written=''; motd_io_lines=0
+                while read -r motd_key motd_value; do
+                    motd_io_lines=$((motd_io_lines + 1)); if [ "$motd_io_lines" -gt 16 ]; then break; fi
+                    case "$motd_value" in ''|*[!0-9]*) continue ;; esac
+                    case "$motd_key" in read_bytes:) motd_read=$motd_value ;; write_bytes:) motd_written=$motd_value ;; esac
+                done < "$motd_io_path" 2>/dev/null
+                if [ -z "$motd_read" ] || [ -z "$motd_written" ]; then continue; fi
+                motd_readable=$((motd_readable + 1)); motd_name="pid-$motd_pid"
+                if [ -r "/proc/$motd_pid/comm" ]; then read -r motd_name < "/proc/$motd_pid/comm" || :; fi
+                printf '%s %s %s %s\n' "$motd_pid" "$motd_read" "$motd_written" "$motd_name" >> "$motd_tmp/io"
+            done
+            motd_io_rows=$(awk -v n="$TOP_N" '{x=$2+$3;for(i=1;i<=n;i++)if(x>v[i]||s[i]==""){for(j=n;j>i;j--){v[j]=v[j-1];s[j]=s[j-1]}v[i]=x;s[i]=sprintf("%s %.0f B (pid %s)",$4,x,$1);break}} END{for(i=1;i<=n;i++)if(s[i]!="")print s[i]}' "$motd_tmp/io")
+            motd_io_rows=${motd_io_rows:-unavailable: no readable process I/O}
+            motd_disk_io="Process I/O: $motd_readable readable; scan cap $PROCESS_LIMIT"
+        fi
+        if motd_run who; then
+            motd_session_summary=$(printf '%s\n' "$MOTD_CAPTURE" | awk 'NF{n++} END{printf "Sessions: %d logged-in terminals",n}')
+            motd_session_rows=$(printf '%s\n' "$MOTD_CAPTURE" | awk -v n="$TOP_N" 'NF&&++i<=n{print}')
+            motd_session_rows=${motd_session_rows:-No logged-in terminals reported.}
+        fi
+        if motd_run ss -Htan; then
+            motd_connections=$(printf '%s\n' "$MOTD_CAPTURE" | awk '$1=="ESTAB"{e++}$1=="LISTEN"{l++}END{printf "TCP: %d established; %d listening",e,l}')
+            motd_connection_rows=$(printf '%s\n' "$MOTD_CAPTURE" | awk -v n="$TOP_N" 'NF&&++i<=n{print $1" "$4" > "$5}')
+        elif motd_run netstat -an; then
+            motd_connections=$(printf '%s\n' "$MOTD_CAPTURE" | awk '/^tcp/{if($NF=="ESTABLISHED")e++;if($NF=="LISTEN")l++}END{printf "TCP: %d established; %d listening",e,l}')
+            motd_connection_rows=$(printf '%s\n' "$MOTD_CAPTURE" | awk -v n="$TOP_N" '/^tcp/&&++i<=n{print $4" > "$5" "$NF}')
+        fi
+        if motd_run systemctl list-units --all --type=service --no-legend --no-pager --plain; then
+            motd_service_manager=systemd
+            motd_service_summary=$(printf '%s\n' "$MOTD_CAPTURE" | awk '$1~/\.service$/{if($3=="active")a++;if($3=="failed")f++}END{printf "Services: %d active; %d failed",a,f}')
+            motd_service_rows=$(printf '%s\n' "$MOTD_CAPTURE" | awk '$1~/\.service$/&&$3=="failed"{print $1": "$3"/"$4} $1~/\.service$/&&$3!="failed"{other=other $1": "$3"/"$4"\n"} END{printf "%s",other}')
+            motd_service_rows=${motd_service_rows:-No loaded services reported.}
+        elif [ "$motd_os" = Darwin ] && motd_run launchctl list; then
+            motd_service_manager=launchd
+            motd_service_summary=$(printf '%s\n' "$MOTD_CAPTURE" | awk 'NR>1&&NF>=3{if($1~/^[0-9]+$/)r++;else i++;if($2~/^[0-9]+$/&&$2!=0)e++}END{printf "Launchd: %d running; %d idle; %d nonzero exit",r,i,e}')
+            motd_service_rows=$(printf '%s\n' "$MOTD_CAPTURE" | awk -v n="$TOP_N" 'NR>1&&NF>=3&&++i<=n{print $3": "($1=="-"?"idle":"running")" (exit "$2")"}')
+        elif motd_run rc-status --all; then
+            motd_service_summary='OpenRC: reported local runlevel state'
+            motd_service_rows=$(printf '%s\n' "$MOTD_CAPTURE" | awk -v n="$TOP_N" '/\[/{if(++i<=n)print}')
+            motd_service_rows=${motd_service_rows:-No service status rows reported.}
+        else
+            case "$motd_os" in FreeBSD|DragonFly)
+                if motd_run service -e; then
+                    motd_service_summary='BSD rc: enabled scripts; state unqueried'
+                    motd_service_rows=$(printf '%s\n' "$MOTD_CAPTURE" | awk -v n="$TOP_N" 'NF&&++i<=n{print $0": enabled"}')
+                    motd_service_rows=${motd_service_rows:-No enabled rc scripts reported.}
+                fi ;; esac
+        fi
+    fi
 fi
-motd_host=${motd_host:-unavailable}
-motd_os=${motd_os:-unavailable}
-motd_release=${motd_release:-unavailable}
 
-motd_before_hooks || exit "$?"
-motd_heading "$TITLE"
-if [ -n "$SITE_LABEL" ]; then motd_line "$SITE_LABEL"; fi
-motd_line 'Portable sh baseline'
+# Exclusions are literal glob patterns compiled by the configurator, never eval.
+# Required patterns are checked against the available inventory. Missing data
+# is not called a failure and an enabled rc script is not called running.
+motd_filtered_services=''
+while read -r motd_service_row; do
+    motd_service_name=${motd_service_row%%:*}
+    if motd_service_allowed "$motd_service_name"; then
+        motd_filtered_services="$motd_filtered_services$motd_service_row
+"
+    fi
+done <<MOTD_FILTER_END
+$motd_service_rows
+MOTD_FILTER_END
+motd_service_rows=$motd_filtered_services
+if [ "$motd_service_manager" = systemd ] && [ -n "$motd_awk" ]; then
+    motd_service_summary=$(printf '%s\n' "$motd_service_rows" | awk '/: active\//{a++}/: failed\//{f++}END{printf "Services: %d active; %d failed",a,f}')
+fi
+motd_required_patterns=$(motd_required_services)
+motd_required_rows=''
+while read -r motd_required_pattern; do
+    if [ -z "$motd_required_pattern" ]; then continue; fi
+    motd_required_seen=0
+    while read -r motd_service_row; do
+        motd_service_name=${motd_service_row%%:*}
+        case "$motd_service_name" in $motd_required_pattern|$motd_required_pattern.service)
+            motd_required_seen=1
+            motd_required_rows="$motd_required_rows$motd_service_row
+"
+            case "$motd_service_row" in *': failed/'*|*': inactive/'*) motd_attention="Required service: $motd_service_row" ;; esac ;;
+        esac
+    done <<MOTD_REQUIRED_INVENTORY_END
+$motd_service_rows
+MOTD_REQUIRED_INVENTORY_END
+    if [ "$motd_required_seen" -eq 0 ]; then
+        motd_required_rows="$motd_required_rows$motd_required_pattern: unavailable (not reported)
+"
+    fi
+done <<MOTD_REQUIRED_PATTERNS_END
+$motd_required_patterns
+MOTD_REQUIRED_PATTERNS_END
+motd_service_rows="$motd_required_rows$motd_service_rows"
+
+# Allocate rows before rendering so the last sections retain representation.
+# A section has a heading + minimum one row. Extra rows first enable all three
+# process metrics and storage, then expand the lists. One row stays for a prompt.
+motd_inner=$((MAX_WIDTH - 4)); motd_sections=0
+for motd_section in $SECTIONS; do motd_sections=$((motd_sections + 1)); done
+motd_extra=$((ROWS - 4 - 2 * motd_sections)); if [ "$motd_extra" -lt 0 ]; then motd_extra=0; fi
+motd_process_extra=0; motd_resource_extra=0
+case " $SECTIONS " in *' processes '*)
+    if [ "$motd_extra" -gt 1 ]; then motd_process_extra=2; motd_extra=$((motd_extra - 2))
+    elif [ "$motd_extra" -gt 0 ]; then motd_process_extra=1; motd_extra=$((motd_extra - 1)); fi ;; esac
+case " $SECTIONS " in *' resources '*) if [ "$motd_extra" -gt 0 ]; then motd_resource_extra=1; motd_extra=$((motd_extra - 1)); fi ;; esac
+motd_share=0
+if [ "$motd_sections" -gt 0 ]; then motd_share=$((motd_extra / motd_sections)); motd_extra=$((motd_extra % motd_sections)); fi
+motd_budget=$((ROWS - 1)); motd_section_budget=0; motd_color=''; motd_reset=''
+if [ "$MOTD_PLAIN" -eq 0 ] && [ "$THEME" != mono ] && { [ -t 1 ] || [ "$MOTD_FORCE_COLOR" -eq 1 ]; } && [ -z "${NO_COLOR+x}" ] && [ "${TERM-dumb}" != dumb ]; then
+    case "$THEME" in cyan) motd_color=$(printf '\033[1;36m') ;; green) motd_color=$(printf '\033[1;32m') ;; amber) motd_color=$(printf '\033[1;33m') ;; esac
+    motd_reset=$(printf '\033[0m')
+fi
+if [ "$MOTD_ASCII" -eq 1 ]; then motd_v='|'; motd_h='-'; motd_tl='+'; motd_tr='+'; motd_ml='+'; motd_mr='+'; motd_bl='+'; motd_br='+'
+else motd_v='│'; motd_h='─'; motd_tl='┌'; motd_tr='┐'; motd_ml='├'; motd_mr='┤'; motd_bl='└'; motd_br='┘'; fi
+
+motd_clean_text() {
+    # Historical shells count bytes, not terminal cells. Printable-ASCII content
+    # plus known one-cell Unicode borders gives reproducible columns and removes
+    # terminal controls. Modern runtime retains its richer text support.
+    motd_rest=$1; motd_clean=''; motd_count=0
+    while [ -n "$motd_rest" ] && [ "$motd_count" -lt "$2" ]; do
+        motd_character=${motd_rest%"${motd_rest#?}"}; motd_rest=${motd_rest#?}
+        case "$motd_character" in [\ -~]) : ;; *) motd_character='?' ;; esac
+        motd_clean=$motd_clean$motd_character; motd_count=$((motd_count + 1))
+    done
+    if [ -n "$motd_rest" ] && [ "$2" -gt 0 ]; then motd_clean=${motd_clean%?}'~'; fi
+}
+motd_border() {
+    if [ "$motd_budget" -le 0 ]; then return; fi
+    motd_clean_text "$3" "$motd_inner"
+    # Use the counted characters: old Bash ${#var} in arithmetic can apply
+    # historical word-splitting semantics to values containing spaces.
+    motd_rule=" $motd_clean "; motd_fill=$((MAX_WIDTH - 4 - motd_count))
+    if [ -z "$3" ]; then motd_rule=''; motd_fill=$((MAX_WIDTH - 2)); fi
+    while [ "$motd_fill" -gt 0 ]; do motd_rule=$motd_rule$motd_h; motd_fill=$((motd_fill - 1)); done
+    printf '%s%s%s%s%s\n' "$motd_color" "$1" "$motd_rule" "$2" "$motd_reset"
+    motd_budget=$((motd_budget - 1))
+}
+motd_line() {
+    if [ "$motd_section_budget" -le 0 ] || [ "$motd_budget" -le 1 ]; then return; fi
+    motd_clean_text "$1" "$motd_inner"
+    printf '%s%s%s %-*s %s%s%s\n' "$motd_color" "$motd_v" "$motd_reset" "$motd_inner" "$motd_clean" "$motd_color" "$motd_v" "$motd_reset"
+    motd_section_budget=$((motd_section_budget - 1)); motd_budget=$((motd_budget - 1))
+}
+motd_rows() {
+    # The here-document keeps row-budget mutations in this shell.
+    while read -r motd_row; do
+        if [ "$motd_section_budget" -le 0 ]; then break; fi
+        if [ -n "$motd_row" ]; then motd_line "$motd_row"; fi
+    done <<MOTD_ROWS_END
+$1
+MOTD_ROWS_END
+}
+motd_first() { motd_first_row=${1%%'
+'*}; }
+
+motd_border "$motd_tl" "$motd_tr" "$TITLE"
+motd_section_budget=1
+if [ -n "$SITE_LABEL" ]; then motd_line "$SITE_LABEL | Portable Unix"
+else motd_line 'Portable Unix | local observations'; fi
 for motd_section in $SECTIONS; do
+    motd_section_budget=$((1 + motd_share))
+    if [ "$motd_extra" -gt 0 ]; then motd_section_budget=$((motd_section_budget + 1)); motd_extra=$((motd_extra - 1)); fi
     case "$motd_section" in
         system)
-            motd_heading 'SYSTEM'
-            motd_line "Host: $motd_host | OS: $motd_os $motd_release"
-            motd_line "Uptime: $motd_uptime s | Load (1/5/15 min): $motd_load" ;;
+            motd_border "$motd_ml" "$motd_mr" 'SYSTEM'
+            motd_line "Host: $motd_host | $motd_os $motd_release"
+            motd_line "Up: $motd_uptime s | Load: $motd_load" ;;
         resources)
-            motd_heading 'RESOURCES'
-            if [ "$motd_available" != unavailable ]; then
-                motd_line "Memory available: $motd_available KiB / $motd_total KiB total"
-            elif [ "$motd_free" != unavailable ]; then
-                motd_line "Memory free: $motd_free KiB / $motd_total KiB total (available: unavailable)"
-            else
-                motd_line 'Memory: unavailable'
-            fi
-            motd_line 'Storage, swap detail and pressure: unavailable in portable baseline' ;;
+            motd_section_budget=$((motd_section_budget + motd_resource_extra))
+            motd_border "$motd_ml" "$motd_mr" 'RESOURCES'
+            if [ "$motd_available" != unavailable ]; then motd_line "Memory available: $motd_available KiB"
+            elif [ "$motd_free" != unavailable ]; then motd_line "Memory free: $motd_free KiB (not available)"
+            else motd_line 'Memory: unavailable'; fi
+            motd_line "$motd_disk"
+            motd_line "Total RAM: $motd_total KiB"
+            if [ "$SHOW_SWAP" -eq 1 ]; then motd_line "Swap free: $motd_swap_free / $motd_swap_total KiB"; fi
+            if [ "$SHOW_PRESSURE" -eq 1 ]; then motd_line "$motd_pressure"; fi
+            if [ "$SHOW_COMPRESSION" -eq 1 ]; then motd_line "$motd_compression"; fi ;;
+        services)
+            motd_border "$motd_ml" "$motd_mr" 'SERVICES'; motd_line "$motd_service_summary"
+            while read -r motd_service_row; do
+                if [ "$motd_section_budget" -le 0 ]; then break; fi
+                motd_service_name=${motd_service_row%%:*}
+                if motd_service_allowed "$motd_service_name"; then motd_line "$motd_service_row"; fi
+            done <<MOTD_SERVICES_END
+$motd_service_rows
+MOTD_SERVICES_END
+            ;;
+        processes)
+            motd_section_budget=$((motd_section_budget + motd_process_extra))
+            motd_border "$motd_ml" "$motd_mr" 'PROCESSES (visible sample)'
+            motd_first "$motd_cpu_rows"; motd_line "CPU: $motd_first_row"
+            motd_first "$motd_rss_rows"; motd_line "RSS: $motd_first_row"
+            motd_first "$motd_io_rows"; motd_line "I/O bytes: $motd_first_row"
+            motd_line 'CPU = ps%; I/O = cumulative read+write'
+            motd_rows "$motd_cpu_rows"; motd_rows "$motd_rss_rows" ;;
+        sessions)
+            motd_border "$motd_ml" "$motd_mr" 'SESSIONS'; motd_line "$motd_session_summary"; motd_rows "$motd_session_rows" ;;
+        connections)
+            motd_border "$motd_ml" "$motd_mr" 'CONNECTIONS'; motd_line "$motd_connections"; motd_rows "$motd_connection_rows" ;;
         attention)
-            motd_heading 'NOTICES'
-            if [ "$MOTD_DEMO_ALERTS" -eq 1 ]; then motd_line 'DEMO: Example warning; no live fault is implied.'; fi
-            motd_messages ;;
+            motd_border "$motd_ml" "$motd_mr" 'ATTENTION'
+            case "$motd_attention" in 'DEMO WARNING:'*|'Required service:'*) motd_line "$motd_attention" ;; esac
+            motd_messages
+            motd_line "$motd_attention" ;;
         hints)
-            motd_heading 'HINTS'
-            motd_hints ;;
-        services|processes|sessions|connections|io)
-            motd_line "$motd_section: not collected by the portable sh backend" ;;
+            motd_border "$motd_ml" "$motd_mr" 'HINTS'; motd_hints; motd_line 'Inspect: ps | df -Pk / | who' ;;
+        io)
+            motd_border "$motd_ml" "$motd_mr" 'I/O (cumulative; visible sample)'; motd_line "$motd_disk_io"; motd_rows "$motd_io_rows" ;;
     esac
 done
+motd_border "$motd_bl" "$motd_br" ''
 motd_after_hooks || exit "$?"
 '''
 # END EMBEDDED SH
 
 # BEGIN EMBEDDED PS — regenerated by tools/embed_runtime.py
-PS_TEMPLATE = r'''# Native PowerShell baseline: Windows PowerShell 5.1 and PowerShell 7 syntax.
-# This backend has its own local capability checks. It does not run Bash or
-# pretend that unavailable Windows/Linux observations are healthy or zero.
-# Use the call operator (& ./message.ps1), not dot-sourcing, to keep its scope local.
-#Requires -Version 5.1
-[CmdletBinding()]
+PS_TEMPLATE = r'''# Native PowerShell MOTD. Language baseline: Windows PowerShell 1.0 / .NET 2.
+# Current engines are tested separately; old syntax does not certify an old OS.
+# No JSON parser, advanced-function attributes, try/catch, -join/-split, -in,
+# generic type syntax, PS3 automatic variables, or implicit execution-policy change.
+# Invoke with & ./message.ps1; do not dot-source it into an ordinary profile.
+#Requires -Version 1.0
 param(
     [switch] $Demo,
+    [switch] $DemoAlerts,
     [switch] $Plain,
     [switch] $Color,
     [switch] $Ascii,
-    [Alias('no-hooks')] [switch] $NoHooks,
-    [ValidateRange(0, 240)] [int] $Width = 0,
-    [ValidateRange(0, 60)] [int] $Rows = 0,
+    [switch] $Unicode,
+    [switch] $NoHooks,
+    [int] $Width = 0,
+    [int] $Rows = 0,
     [switch] $Version,
     [switch] $Help
 )
 
 # @MOTD_CONFIG@
 
-if ($Version) { Write-Output ('MOTD ' + $MotdVersion + ' (native PowerShell)'); return }
+if ($Version) { Write-Output ('MOTD ' + $MotdVersion + ' (native PowerShell 1+ syntax)'); return }
 if ($Help) {
-    Write-Output 'MOTD native PowerShell: -Demo -Plain -Color -Ascii -NoHooks -Width 40..240 -Rows 20..60'
-    Write-Output 'Demo uses synthetic data and never runs configured before/after calls.'
+    Write-Output 'MOTD PowerShell: -Demo -DemoAlerts -Plain -Color -Ascii -Unicode -NoHooks -Width 40..240 -Rows 20..60'
+    Write-Output 'Demonstrations use synthetic data and never run before/after calls.'
+    Write-Output 'Local capability checks select CIM, WMI, .NET or Unix sources. Unavailable is not zero.'
     return
 }
-if ($Width -ne 0 -and $Width -lt 40) { throw 'Width must be 40..240, or 0 for the recipe.' }
-if ($Rows -ne 0 -and $Rows -lt 20) { throw 'Rows must be 20..60, or 0 for the recipe.' }
-$MotdWindows = [Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT
-$MotdWidth = if ($Width) { $Width } else { [int]$MotdConfig.display.width }
-$MotdHeight = if ($Rows) { $Rows } else { [int]$MotdConfig.display.rows }
-$MotdLines = New-Object 'System.Collections.Generic.List[object]'
-$MotdNotices = New-Object 'System.Collections.Generic.List[string]'
-$MotdColor = -not $Plain -and -not $env:NO_COLOR -and $MotdConfig.display.theme -ne 'mono'
-if (-not $Color) {
-    try { $MotdColor = $MotdColor -and $Host.UI.SupportsVirtualTerminal -and -not [Console]::IsOutputRedirected }
-    catch { $MotdColor = $false }
+if ($Width -ne 0 -and ($Width -lt 40 -or $Width -gt 240)) { throw 'Width must be 40..240, or 0 for the recipe.' }
+if ($Rows -ne 0 -and ($Rows -lt 20 -or $Rows -gt 60)) { throw 'Rows must be 20..60, or 0 for the recipe.' }
+if ($DemoAlerts) { $Demo = $true }
+
+# The mutable result object is shared with trap's child scope. A failed read
+# cannot fall through into a successful/zero observation. Unlike try/catch this
+# syntax exists in PowerShell 1. A partial result is rejected when Ok is false.
+function Read-MotdObservation([scriptblock] $Action) {
+    $result = @{ Ok = $true; Value = $null; Error = '' }
+    $ErrorActionPreference = 'Stop'
+    trap { $result.Ok = $false; $result.Error = $_.Exception.Message; continue }
+    $result.Value = @(& $Action)
+    return $result
 }
-$MotdEscape = [char]27
-$MotdAccent = switch ($MotdConfig.display.theme) { 'green' { '32' } 'amber' { '33' } default { '36' } }
+
+function New-MotdList { return ,(New-Object System.Collections.ArrayList) }
+function Test-MotdCommand([string] $Name) { return (@(Get-Command $Name -ErrorAction SilentlyContinue).Count -gt 0) }
+function Join-MotdText($Items, [string] $Separator) { return [string]::Join($Separator, [string[]]@($Items)) }
+
+$MotdWindows = [Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT
+$MotdEngine = '1.0'
+if ($PSVersionTable -and $PSVersionTable.PSVersion) { $MotdEngine = [string]$PSVersionTable.PSVersion }
+$MotdMajor = [int]$MotdEngine.Split('.')[0]
+$MotdWidth = [int]$MotdConfig['display']['width']
+$MotdHeight = [int]$MotdConfig['display']['rows']
+if ($Width) { $MotdWidth = $Width }
+if ($Rows) { $MotdHeight = $Rows }
+if (-not $Width -or -not $Rows) {
+    $geometry = Read-MotdObservation { $Host.UI.RawUI.WindowSize }
+    if ($geometry.Ok -and $geometry.Value.Count -gt 0) {
+        if (-not $Width -and $geometry.Value[0].Width -ge 40) { $MotdWidth = [Math]::Min($MotdWidth, [int]$geometry.Value[0].Width) }
+        if (-not $Rows -and $geometry.Value[0].Height -ge 20) { $MotdHeight = [Math]::Min($MotdHeight, [int]$geometry.Value[0].Height) }
+    }
+}
+$MotdNoColor = $null -ne [Environment]::GetEnvironmentVariable('NO_COLOR')
+$MotdColor = -not $Plain -and -not $MotdNoColor -and $MotdConfig['display']['theme'] -ne 'mono'
+if (-not $Color) {
+    $terminal = Read-MotdObservation { $Host.UI.SupportsVirtualTerminal -and -not [Console]::IsOutputRedirected }
+    $MotdColor = $MotdColor -and $terminal.Ok -and $terminal.Value.Count -gt 0 -and $terminal.Value[0]
+}
+$MotdAccent = '36'
+switch ($MotdConfig['display']['theme']) { 'green' { $MotdAccent = '32' } 'amber' { $MotdAccent = '33' } }
+$MotdEscape = [string][char]27
+$MotdNotices = New-MotdList
+$MotdSections = @{}
+$MotdSectionOrder = @($MotdConfig['display']['sections'])
+$MotdCurrentSection = ''
+$MotdProcesses = $null
+$MotdQueryCache = @{}
 
 function ConvertTo-MotdText([object] $Value) {
-    # Runtime observations are also untrusted display text. Drop terminal control
-    # characters rather than allowing a process/service name to move the cursor.
     $safe = [regex]::Replace([string]$Value, '[\x00-\x1f\x7f-\x9f]', '?')
     if ($Ascii) { $safe = [regex]::Replace($safe, '[^\x20-\x7e]', '?') }
     return $safe
 }
 
 function Add-MotdLine([string] $Text, [string] $Tone = 'normal') {
-    [void]$MotdLines.Add(@{ Text = (ConvertTo-MotdText $Text); Tone = $Tone })
+    $section = $MotdSections[$MotdCurrentSection]
+    [void]$section.Lines.Add(@{ Text = (ConvertTo-MotdText $Text); Tone = $Tone })
 }
 
 function Format-MotdBytes([double] $Bytes) {
     if ($Bytes -lt 0) { return 'unavailable' }
-    if ($Bytes -ge 1GB) { return ('{0:N1} GiB' -f ($Bytes / 1GB)) }
-    return ('{0:N0} MiB' -f ($Bytes / 1MB))
+    if ($Bytes -ge 1073741824.0) { return ('{0:N1} GiB' -f ($Bytes / 1073741824.0)) }
+    return ('{0:N0} MiB' -f ($Bytes / 1048576.0))
+}
+
+function Format-MotdShortBytes([double] $Bytes) {
+    if ($Bytes -lt 0) { return '?' }
+    if ($Bytes -ge 1073741824.0) { return ('{0:N1}G' -f ($Bytes / 1073741824.0)) }
+    if ($Bytes -ge 1048576.0) { return ('{0:N0}M' -f ($Bytes / 1048576.0)) }
+    if ($Bytes -ge 1024.0) { return ('{0:N0}K' -f ($Bytes / 1024.0)) }
+    return ('{0:N0}B' -f $Bytes)
 }
 
 function Format-MotdBar([double] $Used, [double] $Total) {
     if ($Total -le 0 -or $Used -lt 0) { return '[unavailable]' }
-    $filled = [int][Math]::Round(12 * [Math]::Max(0.0, [Math]::Min(1.0, $Used / $Total)))
-    return '[' + ('#' * $filled) + ('-' * (12 - $filled)) + ']'
+    $length = 12
+    if ($MotdWidth -lt 60) { $length = 8 }
+    $filled = [int][Math]::Round($length * [Math]::Max(0.0, [Math]::Min(1.0, $Used / $Total)))
+    $full = '#'; $empty = '-'
+    if ($Unicode -and -not $Ascii) { $full = [string][char]0x2588; $empty = [string][char]0x2591 }
+    return '[' + ($full * $filled) + ($empty * ($length - $filled)) + ']'
 }
 
 function ConvertTo-MotdWindowsArgument([string] $Argument) {
-    # Windows PowerShell's .NET Framework lacks ProcessStartInfo.ArgumentList.
-    # Quote one argv element using the standard Windows C-runtime rules. No
-    # shell, Invoke-Expression, string interpolation or implicit cmd.exe is used.
     $quoted = [regex]::Replace($Argument, '(\\*)"', '${1}${1}\"')
     $quoted = [regex]::Replace($quoted, '(\\+)$', '${1}${1}')
     return '"' + $quoted + '"'
 }
 
+function Set-MotdArguments($Info, $Arguments) {
+    if ($null -ne $Info.PSObject.Properties['ArgumentList']) {
+        foreach ($argument in $Arguments) { [void]$Info.ArgumentList.Add([string]$argument) }
+    } else {
+        $quoted = @($Arguments | ForEach-Object { ConvertTo-MotdWindowsArgument ([string]$_) })
+        $Info.Arguments = Join-MotdText $quoted ' '
+    }
+}
+
+function Stop-MotdProcess($Process) {
+    # Old .NET stops the direct child. Current .NET may stop its descendants.
+    # This is not a sandbox and does not promise containment on old Windows.
+    if ($MotdMajor -ge 7) { $Process.Kill($true) }
+    else { $Process.Kill() }
+    [void]$Process.WaitForExit(250)
+}
+
 function Invoke-MotdHooks([string] $Phase) {
     if ($Demo -or $NoHooks) { return }
     $number = 0
-    foreach ($hook in @($MotdConfig.hooks.$Phase)) {
+    foreach ($hook in @($MotdConfig['hooks'][$Phase])) {
         $number++
-        $process = New-Object Diagnostics.Process
-        $status = 127
-        try {
+        $state = @{ Process = (New-Object Diagnostics.Process); Status = 127 }
+        $read = Read-MotdObservation {
             $info = New-Object Diagnostics.ProcessStartInfo
             $info.FileName = [string]$hook.argv[0]
             $info.UseShellExecute = $false
-            # Inherit output; redirected pipe buffers cannot deadlock this wait.
-            # A hook must name an executable, or explicitly name an interpreter
-            # for a script/cmdlet. Existing execution policy remains in force.
-            $arguments = @($hook.argv | Select-Object -Skip 1)
-            if ($null -ne $info.PSObject.Properties['ArgumentList']) {
-                foreach ($argument in $arguments) { [void]$info.ArgumentList.Add([string]$argument) }
-            } else {
-                $info.Arguments = (@($arguments | ForEach-Object { ConvertTo-MotdWindowsArgument $_ }) -join ' ')
-            }
-            $process.StartInfo = $info
-            [void]$process.Start()
-            $milliseconds = [int][Math]::Ceiling(1000 * [double]$hook.timeout_seconds)
-            if ($process.WaitForExit($milliseconds)) { $status = $process.ExitCode }
-            else {
-                $status = 124
-                # Process-tree termination is available in PowerShell 7's .NET.
-                # Windows PowerShell 5.1 can terminate only the direct child;
-                # descendants are not claimed to be contained by this timeout.
-                if ($PSVersionTable.PSVersion.Major -ge 7) { $process.Kill($true) }
-                else { $process.Kill() }
-                [void]$process.WaitForExit(250)
-            }
-        } catch { [Console]::Error.WriteLine('MOTD hook could not complete: ' + $_.Exception.Message) }
-        finally { $process.Dispose() }
-        if ($status -ne 0) {
-            $message = 'MOTD ' + $Phase + ' hook ' + $number + ' failed (' + $status + ').'
+            $arguments = New-MotdList
+            for ($i = 1; $i -lt $hook.argv.Count; $i++) { [void]$arguments.Add([string]$hook.argv[$i]) }
+            Set-MotdArguments $info $arguments
+            $state.Process.StartInfo = $info
+            [void]$state.Process.Start()
+            $milliseconds = [int][Math]::Ceiling(1000.0 * [double]$hook.timeout_seconds)
+            if ($state.Process.WaitForExit($milliseconds)) { $state.Status = $state.Process.ExitCode }
+            else { $state.Status = 124; Stop-MotdProcess $state.Process }
+        }
+        $state.Process.Dispose()
+        if (-not $read.Ok) { [Console]::Error.WriteLine('MOTD hook could not complete: ' + $read.Error) }
+        if ($state.Status -ne 0) {
+            $message = 'MOTD ' + $Phase + ' hook ' + $number + ' failed (' + $state.Status + ').'
             [Console]::Error.WriteLine($message)
             if ($hook.on_failure -eq 'stop') { throw $message }
         }
     }
 }
 
+function Read-MotdExternal([string] $File, $Arguments) {
+    # Only fixed local observation commands call this helper. No shell is used.
+    # Bounded output avoids redirect-buffer deadlock: a noisy command times out,
+    # its partial output is discarded, and the observation becomes unavailable.
+    $state = @{ Process = (New-Object Diagnostics.Process); Text = ''; Status = 127 }
+    $read = Read-MotdObservation {
+        $info = New-Object Diagnostics.ProcessStartInfo
+        $info.FileName = $File; $info.UseShellExecute = $false
+        $info.RedirectStandardOutput = $true; $info.RedirectStandardError = $true
+        Set-MotdArguments $info $Arguments
+        $state.Process.StartInfo = $info
+        [void]$state.Process.Start()
+        if ($state.Process.WaitForExit(1000)) {
+            $state.Status = $state.Process.ExitCode
+            $state.Text = $state.Process.StandardOutput.ReadToEnd()
+        } else { $state.Status = 124; Stop-MotdProcess $state.Process }
+    }
+    $state.Process.Dispose()
+    return @{ Ok = ($read.Ok -and $state.Status -eq 0); Text = $state.Text; Error = $read.Error; Status = $state.Status }
+}
+
+function Read-MotdClass([string] $Class) {
+    if ($MotdQueryCache.ContainsKey($Class)) { return $MotdQueryCache[$Class] }
+    $read = @{ Ok = $false; Value = @(); Error = 'No local CIM/WMI provider' }
+    if ($MotdWindows) {
+        if (Test-MotdCommand 'Get-CimInstance') {
+            $read = Read-MotdObservation { Get-CimInstance -ClassName $Class -OperationTimeoutSec 1 -ErrorAction Stop }
+        }
+        if (-not $read.Ok -and (Test-MotdCommand 'Get-WmiObject')) {
+            $read = Read-MotdObservation { Get-WmiObject -Class $Class -ErrorAction Stop }
+        }
+    }
+    # WMI and module startup are not covered by a hard total renderer deadline.
+    $MotdQueryCache[$Class] = $read
+    return $read
+}
+
 function Add-MotdSystem {
     if ($Demo) {
-        Add-MotdLine 'SYSTEM     demo-host | Windows / Linux | PowerShell 7 (synthetic)' 'accent'
-        Add-MotdLine '           8 logical CPUs | User operator | Local or SSH session'
-    } else {
-        Add-MotdLine ('SYSTEM     ' + [Environment]::MachineName + ' | ' + [Environment]::OSVersion.VersionString) 'accent'
-        $session = if ($env:SSH_CONNECTION -or $env:SSH_TTY) { 'SSH' } else { 'Local/other transport' }
-        Add-MotdLine ('           ' + [Environment]::ProcessorCount + ' logical CPUs | User ' + [Environment]::UserName + ' | ' + $session)
+        Add-MotdLine 'SYSTEM  demo-host | 8 logical CPUs' 'accent'
+        Add-MotdLine 'Windows / Unix | User operator'
+        Add-MotdLine 'Up 4d 06h | PowerShell capability demo'
+        return
     }
+    Add-MotdLine ('SYSTEM  ' + [Environment]::MachineName + ' | ' + [Environment]::ProcessorCount + ' CPUs') 'accent'
+    Add-MotdLine ([Environment]::OSVersion.VersionString)
+    $session = 'non-SSH/unknown transport'
+    if ($env:SSH_CONNECTION -or $env:SSH_TTY) { $session = 'SSH markers present' }
+    Add-MotdLine ('User ' + [Environment]::UserName + ' | ' + $session)
+    Add-MotdLine ('PowerShell ' + $MotdEngine)
 }
 
 function Add-MotdResources {
+    $total = -1.0; $used = -1.0; $swapTotal = -1.0; $swapUsed = -1.0
+    $diskTotal = -1.0; $diskUsed = -1.0; $rootPath = '/'
     if ($Demo) {
-        Add-MotdLine ('MEMORY     6.0 GiB / 16.0 GiB ' + (Format-MotdBar 6 16)) 'accent'
-        Add-MotdLine ('STORAGE    System volume 120.0 GiB / 512.0 GiB ' + (Format-MotdBar 120 512))
-        Add-MotdLine '           Swap/compression/pressure detail unavailable in this backend'
-        return
-    }
-    $total = -1.0; $used = -1.0
-    try {
-        if ($MotdWindows) {
-            # A local CIM query supplies actual physical memory, not this
-            # PowerShell process's managed heap. Its one-second operation timeout
-            # is not a hard whole-render deadline (module startup is additional).
-            $osInfo = Get-CimInstance -ClassName Win32_OperatingSystem -OperationTimeoutSec 1 -ErrorAction Stop
-            $total = 1024.0 * $osInfo.TotalVisibleMemorySize
-            $used = $total - 1024.0 * $osInfo.FreePhysicalMemory
-        } elseif ([IO.File]::Exists('/proc/meminfo')) {
-            $memory = @{}
-            foreach ($line in [IO.File]::ReadAllLines('/proc/meminfo')) {
-                if ($line -match '^(MemTotal|MemAvailable):\s+(\d+)\s+kB') { $memory[$matches[1]] = 1024.0 * [double]$matches[2] }
-            }
-            if ($memory.ContainsKey('MemTotal') -and $memory.ContainsKey('MemAvailable')) {
-                $total = $memory.MemTotal; $used = $total - $memory.MemAvailable
+        $total = 17179869184.0; $used = 6442450944.0
+        $diskTotal = 549755813888.0; $diskUsed = 128849018880.0
+        $swapTotal = 8589934592.0; $swapUsed = 536870912.0
+    } elseif ($MotdWindows) {
+        $read = Read-MotdClass 'Win32_OperatingSystem'
+        if ($read.Ok -and $read.Value.Count -gt 0) {
+            $osInfo = $read.Value[0]
+            if ($null -ne $osInfo.TotalVisibleMemorySize -and [double]$osInfo.TotalVisibleMemorySize -gt 0) {
+                $total = 1024.0 * [double]$osInfo.TotalVisibleMemorySize
+                if ($null -ne $osInfo.FreePhysicalMemory -and [double]$osInfo.FreePhysicalMemory -ge 0 -and 1024.0 * [double]$osInfo.FreePhysicalMemory -le $total) {
+                    $used = $total - 1024.0 * [double]$osInfo.FreePhysicalMemory
+                }
             }
         }
-    } catch { [void]$MotdNotices.Add('Physical memory observation unavailable.') }
-    if ($total -gt 0) {
-        Add-MotdLine ('MEMORY     ' + (Format-MotdBytes $used) + ' / ' + (Format-MotdBytes $total) + ' ' + (Format-MotdBar $used $total)) 'accent'
-    } else { Add-MotdLine 'MEMORY     unavailable (no supported physical-memory source)' 'warning' }
-    try {
-        # Inspect only the system volume. Do not probe network or removable drives.
-        $rootPath = if ($MotdWindows) { $env:SystemDrive + '\' } else { '/' }
-        $drive = New-Object IO.DriveInfo($rootPath)
-        $diskUsed = [double]$drive.TotalSize - [double]$drive.TotalFreeSpace
-        Add-MotdLine ('STORAGE    ' + $rootPath + ' ' + (Format-MotdBytes $diskUsed) + ' / ' + (Format-MotdBytes $drive.TotalSize) + ' ' + (Format-MotdBar $diskUsed $drive.TotalSize))
-    } catch { Add-MotdLine 'STORAGE    unavailable (system volume could not be read)' 'warning' }
-    if ($MotdConfig.display.show_swap -or $MotdConfig.display.show_compression -or $MotdConfig.display.show_pressure) {
-        Add-MotdLine '           Swap/compression/pressure detail unavailable in this backend'
+        if ($MotdConfig['display']['show_swap']) {
+            $read = Read-MotdClass 'Win32_PageFileUsage'
+            if ($read.Ok -and $read.Value.Count -gt 0) {
+                $swapTotal = 0.0; $swapUsed = 0.0
+                foreach ($pageFile in $read.Value) {
+                    $swapTotal += 1048576.0 * [double]$pageFile.AllocatedBaseSize
+                    $swapUsed += 1048576.0 * [double]$pageFile.CurrentUsage
+                }
+            }
+        }
+    } elseif ([IO.File]::Exists('/proc/meminfo')) {
+        $read = Read-MotdObservation { [IO.File]::ReadAllLines('/proc/meminfo') }
+        if ($read.Ok) {
+            $memory = @{}
+            foreach ($line in $read.Value) {
+                if ($line -match '^(MemTotal|MemAvailable|MemFree|Buffers|Cached|SReclaimable|Shmem|SwapTotal|SwapFree):\s+(\d+)\s+kB') {
+                    $memory[$matches[1]] = 1024.0 * [double]$matches[2]
+                }
+            }
+            if ($memory.ContainsKey('MemTotal')) {
+                $total = $memory.MemTotal
+                if ($memory.ContainsKey('MemAvailable')) { $used = $total - $memory.MemAvailable }
+                else { [void]$MotdNotices.Add('MemAvailable missing; physical used memory is unavailable.') }
+            }
+            if ($memory.ContainsKey('SwapTotal') -and $memory.ContainsKey('SwapFree')) {
+                $swapTotal = $memory.SwapTotal; $swapUsed = $swapTotal - $memory.SwapFree
+            }
+        }
+    } elseif (Test-MotdCommand 'sysctl') {
+        $read = Read-MotdExternal 'sysctl' @('-n', 'hw.memsize')
+        if (-not $read.Ok) { $read = Read-MotdExternal 'sysctl' @('-n', 'hw.physmem') }
+        if ($read.Ok -and $read.Text.Trim() -match '^\d+$') { $total = [double]$read.Text.Trim() }
+        [void]$MotdNotices.Add('BSD/macOS memory total detected; used memory needs a platform-specific source.')
+    }
+    if (-not $Demo) {
+        if ($MotdWindows) { $rootPath = $env:SystemDrive + '\' }
+        $read = Read-MotdObservation { New-Object -TypeName IO.DriveInfo -ArgumentList $rootPath }
+        if ($read.Ok -and $read.Value.Count -gt 0) {
+            $drive = $read.Value[0]
+            $size = Read-MotdObservation { $drive.TotalSize; $drive.TotalFreeSpace }
+            if ($size.Ok -and $size.Value.Count -eq 2) { $diskTotal = [double]$size.Value[0]; $diskUsed = $diskTotal - [double]$size.Value[1] }
+        }
+    }
+    if ($MotdWidth -lt 60) {
+        Add-MotdLine ('MEM ' + (Format-MotdShortBytes $used) + '/' + (Format-MotdShortBytes $total) + ' ' + (Format-MotdBar $used $total)) 'accent'
+        Add-MotdLine ('DISK ' + (Format-MotdShortBytes $diskUsed) + '/' + (Format-MotdShortBytes $diskTotal) + ' ' + (Format-MotdBar $diskUsed $diskTotal))
+    } else {
+        Add-MotdLine ('MEMORY ' + (Format-MotdBytes $used) + ' / ' + (Format-MotdBytes $total) + ' ' + (Format-MotdBar $used $total)) 'accent'
+        Add-MotdLine ('STORAGE ' + $rootPath + ' ' + (Format-MotdBytes $diskUsed) + ' / ' + (Format-MotdBytes $diskTotal) + ' ' + (Format-MotdBar $diskUsed $diskTotal))
+    }
+    if ($MotdConfig['display']['show_swap']) { Add-MotdLine ('Swap/pagefile ' + (Format-MotdShortBytes $swapUsed) + '/' + (Format-MotdShortBytes $swapTotal)) }
+    if ($MotdConfig['display']['show_compression']) {
+        if ($Demo) { Add-MotdLine 'Compressed memory: 256 MiB (demo)' 'muted' }
+        else { Add-MotdLine 'Compression amount: unavailable' 'muted' }
+    }
+    if ($MotdConfig['display']['show_pressure']) {
+        $pressure = 'Pressure: unavailable'
+        if ($Demo) { $pressure = 'Pressure: memory some avg10 0.00%' }
+        elseif ([IO.File]::Exists('/proc/pressure/memory')) {
+            $read = Read-MotdObservation { [IO.File]::ReadAllLines('/proc/pressure/memory') }
+            if ($read.Ok -and $read.Value.Count -gt 0 -and $read.Value[0] -match 'some avg10=([0-9.]+)') { $pressure = 'Pressure: memory some avg10 ' + $matches[1] + '%' }
+        }
+        Add-MotdLine $pressure 'muted'
     }
 }
 
 function Add-MotdServices {
-    if ($Demo) { Add-MotdLine 'SERVICES   [RUN] sshd   [RUN] example-worker   [STOP] optional-service' 'accent'; return }
-    if (-not $MotdWindows) { Add-MotdLine 'SERVICES   unavailable (native service collector currently Windows only)' 'warning'; return }
-    try {
-        $services = @(Get-Service -ErrorAction Stop | Sort-Object Name)
-        $shown = New-Object 'System.Collections.Generic.List[string]'
-        foreach ($service in $services) {
-            $excluded = $false
-            foreach ($pattern in @($MotdConfig.services.exclude)) { if ($service.Name -like $pattern) { $excluded = $true; break } }
-            if ($excluded) { continue }
-            $required = @($MotdConfig.services.required)
-            if ($required.Count -gt 0 -and $service.Name -notin $required) { continue }
-            [void]$shown.Add(('[' + $service.Status + '] ' + $service.Name))
+    if ($Demo) {
+        Add-MotdLine 'SERVICES  16 run / 21 loaded' 'accent'
+        Add-MotdLine '[RUN] sshd  [RUN] storage-worker' 'good'
+        Add-MotdLine '[RUN] backup  [STOP] optional-web'
+        if ($DemoAlerts) { Add-MotdLine '[FAIL] demo-required-service' 'warning' }
+        return
+    }
+    $items = New-MotdList
+    if ($MotdWindows -and (Test-MotdCommand 'Get-Service')) {
+        $read = Read-MotdObservation { Get-Service -ErrorAction Stop | Sort-Object Name }
+        if ($read.Ok) {
+            foreach ($service in $read.Value) {
+                $excluded = $false
+                foreach ($pattern in @($MotdConfig['services']['exclude'])) { if ($service.Name -like $pattern) { $excluded = $true; break } }
+                if ($excluded) { continue }
+                if ($MotdConfig['services']['required'].Count -gt 0 -and $MotdConfig['services']['required'] -notcontains $service.Name) { continue }
+                [void]$items.Add('[' + $service.Status + '] ' + $service.Name)
+            }
+            foreach ($required in @($MotdConfig['services']['required'])) {
+                $matched = @($read.Value | Where-Object { $_.Name -eq $required })
+                if ($matched.Count -eq 0) { [void]$MotdNotices.Add('Required service missing: ' + $required) }
+                elseif ($matched[0].Status -ne 'Running') { [void]$MotdNotices.Add('Required service not running: ' + $required) }
+            }
         }
-        if ($shown.Count) {
-            Add-MotdLine ('SERVICES   ' + ((@($shown | Select-Object -First 6)) -join '   ')) 'accent'
-            if ($shown.Count -gt 6) { Add-MotdLine ('           Showing 6 of ' + $shown.Count + ' matched services; stopped is not necessarily failed.') }
-        } else { Add-MotdLine 'SERVICES   No services matched the configured selection.' }
-        foreach ($name in @($MotdConfig.services.required)) {
-            if ($name -notin @($services | ForEach-Object { $_.Name })) { [void]$MotdNotices.Add('Required service not found: ' + $name) }
+    } elseif (Test-MotdCommand 'systemctl') {
+        $read = Read-MotdExternal 'systemctl' @('list-units', '--type=service', '--all', '--plain', '--no-legend', '--no-pager')
+        if ($read.Ok) {
+            foreach ($line in [regex]::Split($read.Text, '\r?\n')) {
+                if ($line -match '^\s*(\S+)\s+\S+\s+(\S+)\s+(\S+)') {
+                    $name = $matches[1]; $status = $matches[2]; $excluded = $false
+                    foreach ($pattern in @($MotdConfig['services']['exclude'])) { if ($name -like $pattern) { $excluded = $true; break } }
+                    if (-not $excluded -and ($MotdConfig['services']['required'].Count -eq 0 -or $MotdConfig['services']['required'] -contains $name)) {
+                        [void]$items.Add('[' + $status + '] ' + $name)
+                    }
+                }
+            }
         }
-    } catch { Add-MotdLine 'SERVICES   unavailable (service query failed or access denied)' 'warning' }
+    } elseif (Test-MotdCommand 'launchctl') {
+        $read = Read-MotdExternal 'launchctl' @('list')
+        if ($read.Ok) {
+            foreach ($line in [regex]::Split($read.Text, '\r?\n')) {
+                if ($line -match '^(\d+|-)\s+(-?\d+)\s+(\S+)') {
+                    $state = 'loaded'; if ($matches[1] -ne '-') { $state = 'run' }
+                    [void]$items.Add('[' + $state + '] ' + $matches[3])
+                }
+            }
+        }
+    }
+    if ($items.Count -gt 0) {
+        Add-MotdLine ('SERVICES  ' + $items.Count + ' matched') 'accent'
+        foreach ($line in @($items | Select-Object -First 10)) { Add-MotdLine $line }
+        if ($items.Count -gt 10) { Add-MotdLine ('Showing 10 of ' + $items.Count + '; not a health verdict') 'muted' }
+    } else { Add-MotdLine 'SERVICES unavailable/no matched records' 'warning' }
+}
+
+function Read-MotdProcesses {
+    if ($null -ne $MotdProcesses) { return }
+    $script:MotdProcesses = New-MotdList
+    if ($Demo) {
+        foreach ($row in @(
+            @{ Pid = 812; Name = 'storage-worker'; Cpu = 152.4; Memory = 805306368.0; Io = 57982058496.0 },
+            @{ Pid = 946; Name = 'disk-check'; Cpu = 18.7; Memory = 134217728.0; Io = 85899345920.0 },
+            @{ Pid = 1120; Name = 'database'; Cpu = 38.6; Memory = 2147483648.0; Io = 6871947673.0 },
+            @{ Pid = 1304; Name = 'backup'; Cpu = 8.2; Memory = 268435456.0; Io = 25769803776.0 }
+        )) { [void]$MotdProcesses.Add($row) }
+        return
+    }
+    $read = Read-MotdObservation { [Diagnostics.Process]::GetProcesses() }
+    if (-not $read.Ok) { [void]$MotdNotices.Add('Process enumeration unavailable.'); return }
+    $seen = 0
+    foreach ($process in $read.Value) {
+        if ($seen -ge [int]$MotdConfig['collection']['process_limit']) { $process.Dispose(); continue }
+        $seen++
+        $row = @{ Pid = -1; Name = '?'; Cpu = -1.0; Memory = -1.0; Io = -1.0 }
+        $identity = Read-MotdObservation { $process.Id; $process.ProcessName }
+        if ($identity.Ok -and $identity.Value.Count -eq 2) { $row.Pid = $identity.Value[0]; $row.Name = $identity.Value[1] }
+        $cpu = Read-MotdObservation { $process.TotalProcessorTime.TotalSeconds }
+        if ($cpu.Ok -and $cpu.Value.Count -gt 0) { $row.Cpu = [double]$cpu.Value[0] }
+        $memory = Read-MotdObservation { $process.WorkingSet64 }
+        if ($memory.Ok -and $memory.Value.Count -gt 0) { $row.Memory = [double]$memory.Value[0] }
+        if (-not $MotdWindows -and [IO.File]::Exists('/proc/' + $row.Pid + '/io')) {
+            $ioRead = Read-MotdObservation { [IO.File]::ReadAllLines('/proc/' + $row.Pid + '/io') }
+            if ($ioRead.Ok) {
+                $readBytes = -1.0; $writeBytes = -1.0
+                foreach ($line in $ioRead.Value) {
+                    if ($line -match '^read_bytes:\s+(\d+)') { $readBytes = [double]$matches[1] }
+                    if ($line -match '^write_bytes:\s+(\d+)') { $writeBytes = [double]$matches[1] }
+                }
+                if ($readBytes -ge 0 -and $writeBytes -ge 0) { $row.Io = $readBytes + $writeBytes }
+            }
+        }
+        if ($row.Pid -ge 0) { [void]$MotdProcesses.Add($row) }
+        $process.Dispose()
+    }
+    if ($seen -lt $read.Value.Count) { [void]$MotdNotices.Add('Process limit reached; rankings are partial.') }
+    if ($MotdWindows -and ($MotdConfig['display']['sections'] -contains 'io')) {
+        $ioRead = Read-MotdClass 'Win32_Process'
+        if ($ioRead.Ok) {
+            $byPid = @{}
+            foreach ($row in $MotdProcesses) { $byPid[[string]$row.Pid] = $row }
+            foreach ($item in $ioRead.Value) {
+                $key = [string]$item.ProcessId
+                if ($byPid.ContainsKey($key) -and $null -ne $item.ReadTransferCount -and $null -ne $item.WriteTransferCount) {
+                    $byPid[$key].Io = [double]$item.ReadTransferCount + [double]$item.WriteTransferCount
+                }
+            }
+        }
+    }
 }
 
 function Add-MotdProcesses {
-    Add-MotdLine 'PROCESSES  PID    CPU total (s)    Working set    Name' 'accent'
+    Read-MotdProcesses
+    if (-not $MotdProcesses.Count) { Add-MotdLine 'PROCESSES unavailable' 'warning'; return }
+    $cpu = @($MotdProcesses | Sort-Object { $_.Cpu } -Descending)
+    $memory = @($MotdProcesses | Sort-Object { $_.Memory } -Descending)
+    Add-MotdLine ('PROCESSES  CPU total (s) / memory') 'accent'
+    $count = [Math]::Min([int]$MotdConfig['display']['top_entries'], [Math]::Max($cpu.Count, $memory.Count))
+    for ($i = 0; $i -lt $count; $i++) {
+        if ($i -lt $cpu.Count) {
+            $row = $cpu[$i]; $cpuText = '?'
+            if ($row.Cpu -ge 0) { $cpuText = '{0:N1}' -f $row.Cpu }
+            Add-MotdLine ('CPU {0,7}s {1,5} {2}' -f $cpuText, $row.Pid, $row.Name)
+        }
+        if ($i -lt $memory.Count) {
+            $row = $memory[$i]
+            Add-MotdLine ('MEM {0,8} {1,5} {2}' -f (Format-MotdShortBytes $row.Memory), $row.Pid, $row.Name)
+        }
+    }
+    Add-MotdLine ('Working sets / cumulative CPU; ' + $MotdProcesses.Count + ' sampled') 'muted'
+}
+
+function Add-MotdIo {
+    Read-MotdProcesses
+    $records = @($MotdProcesses | Where-Object { $_.Io -ge 0 } | Sort-Object { $_.Io } -Descending)
+    Add-MotdLine 'I/O  cumulative process R+W bytes' 'accent'
+    if ($records.Count -gt 0) {
+        foreach ($row in @($records | Select-Object -First ([int]$MotdConfig['display']['top_entries']))) {
+            Add-MotdLine ('{0,8} {1,5} {2}' -f (Format-MotdShortBytes $row.Io), $row.Pid, $row.Name)
+        }
+        Add-MotdLine ($records.Count.ToString() + '/' + $MotdProcesses.Count + ' readable; totals are not rates') 'muted'
+    } else { Add-MotdLine 'unavailable (OS API/access missing)' 'warning' }
+}
+
+function Add-MotdSessions {
     if ($Demo) {
-        Add-MotdLine '           812           152.4      768.0 MiB    example-worker'
-        Add-MotdLine '           946            18.7      128.0 MiB    disk-check'
+        Add-MotdLine 'SESSIONS  4 registered logins' 'accent'
+        Add-MotdLine 'operator  tty1   console'
+        Add-MotdLine 'operator  pts/1  192.0.2.24 (SSH)'
+        Add-MotdLine 'operator  pts/2  192.0.2.31 (SSH)'
         return
     }
-    $records = New-Object 'System.Collections.Generic.List[object]'
-    $processes = @()
-    $sampled = 0
-    try {
-        $processes = @([Diagnostics.Process]::GetProcesses())
-        foreach ($process in $processes) {
-            if ($sampled -ge [int]$MotdConfig.collection.process_limit) { break }
-            $sampled++
-            try {
-                $cpu = -1.0
-                try { $cpu = $process.TotalProcessorTime.TotalSeconds } catch { }
-                [void]$records.Add(@{ Pid = $process.Id; Name = $process.ProcessName; Cpu = $cpu; Memory = $process.WorkingSet64 })
-            } catch { }
+    $file = 'who'; $arguments = @()
+    if ($MotdWindows) { $file = 'quser' }
+    if (Test-MotdCommand $file) {
+        $read = Read-MotdExternal $file $arguments
+        if ($read.Ok -and $read.Text.Trim()) {
+            $lines = @([regex]::Split($read.Text.Trim(), '\r?\n'))
+            Add-MotdLine 'SESSIONS  local registered records' 'accent'
+            foreach ($line in @($lines | Select-Object -First 8)) { Add-MotdLine $line }
+            return
         }
-        foreach ($record in @($records | Sort-Object { $_.Cpu } -Descending | Select-Object -First ([int]$MotdConfig.display.top_entries))) {
-            $cpuText = if ($record.Cpu -lt 0) { 'unavailable' } else { '{0:N1}' -f $record.Cpu }
-            Add-MotdLine ('           {0,-6} {1,12}  {2,13}    {3}' -f $record.Pid, $cpuText, (Format-MotdBytes $record.Memory), $record.Name)
+    }
+    Add-MotdLine ('SESSIONS  ' + [Environment]::UserName + ' (current)') 'accent'
+    Add-MotdLine 'Other sessions unavailable/unregistered' 'warning'
+}
+
+function Add-MotdConnections {
+    if ($Demo) {
+        Add-MotdLine 'CONNECTIONS  8 TCP / 3 listeners' 'accent'
+        Add-MotdLine ':22 -> 192.0.2.24:51042 Established'
+        Add-MotdLine ':22 -> 192.0.2.31:49720 Established'
+        Add-MotdLine ':443 -> 198.51.100.8:54016 Established'
+        return
+    }
+    $read = Read-MotdObservation {
+        $properties = [Net.NetworkInformation.IPGlobalProperties]::GetIPGlobalProperties()
+        @{ Tcp = @($properties.GetActiveTcpConnections()); Listeners = @($properties.GetActiveTcpListeners()); Udp = @($properties.GetActiveUdpListeners()) }
+    }
+    if ($read.Ok -and $read.Value.Count -gt 0) {
+        $data = $read.Value[0]
+        Add-MotdLine ('CONNECTIONS ' + $data.Tcp.Count + ' TCP / ' + $data.Listeners.Count + ' listen / ' + $data.Udp.Count + ' UDP') 'accent'
+        foreach ($connection in @($data.Tcp | Select-Object -First 5)) {
+            Add-MotdLine (':' + $connection.LocalEndPoint.Port + ' -> ' + $connection.RemoteEndPoint + ' ' + $connection.State)
         }
-        if (-not $records.Count) { Add-MotdLine '           unavailable (no readable process observations)' 'warning' }
-        if ($sampled -lt $processes.Count) { Add-MotdLine ('           Partial sample: ' + $sampled + ' of ' + $processes.Count + ' processes.') 'warning' }
-    } catch { Add-MotdLine '           unavailable (process enumeration failed)' 'warning' }
-    finally { foreach ($process in $processes) { $process.Dispose() } }
+    } else { Add-MotdLine 'CONNECTIONS unavailable (OS API/access)' 'warning' }
+}
+
+function Add-MotdAttention {
+    Add-MotdLine 'ATTENTION' 'accent'
+    foreach ($message in @($MotdConfig['messages'])) { Add-MotdLine $message }
+    if ($DemoAlerts) { Add-MotdLine 'WARN demo disk usage 91%; check storage' 'warning' }
+    if ($MotdNotices.Count -gt 0) { foreach ($notice in $MotdNotices) { Add-MotdLine $notice 'warning' } }
+    elseif (-not $DemoAlerts) { Add-MotdLine 'Scope: selected local observations.' 'muted' }
+    if ($MotdConfig['collection']['journal']) { Add-MotdLine 'Event/journal collection unavailable.' 'warning' }
+}
+
+function Add-MotdHints {
+    Add-MotdLine 'HINTS' 'accent'
+    foreach ($hint in @($MotdConfig['hints'])) { Add-MotdLine ($hint.label + ': ' + $hint.command + ' - ' + $hint.note) }
+}
+
+function Format-MotdCell([string] $Text, [int] $Length) {
+    $text = ConvertTo-MotdText $Text
+    # Fast path covers the ordinary data/ASCII fixture. Unicode handling counts
+    # wide CJK/emoji code points and combining marks; joined emoji sequences remain
+    # terminal-dependent and are not advertised as a complete grapheme engine.
+    if ($text -notmatch '[^\x20-\x7e]') {
+        if ($text.Length -gt $Length) { return $text.Substring(0, $Length - 3) + '...' }
+        return $text.PadRight($Length)
+    }
+    $output = New-Object Text.StringBuilder
+    $cells = 0; $position = 0
+    while ($position -lt $text.Length) {
+        $code = [char]::ConvertToUtf32($text, $position); $units = 1
+        if ($code -gt 65535) { $units = 2 }
+        $category = [Globalization.CharUnicodeInfo]::GetUnicodeCategory($text, $position)
+        $size = 1
+        if ($category -eq [Globalization.UnicodeCategory]::NonSpacingMark -or $category -eq [Globalization.UnicodeCategory]::EnclosingMark -or $code -eq 0x200D) { $size = 0 }
+        elseif (($code -ge 0x1100 -and $code -le 0x115F) -or ($code -ge 0x2E80 -and $code -le 0xA4CF) -or ($code -ge 0xAC00 -and $code -le 0xD7A3) -or ($code -ge 0xF900 -and $code -le 0xFAFF) -or ($code -ge 0xFF01 -and $code -le 0xFF60) -or ($code -ge 0x1F300 -and $code -le 0x1FAFF) -or ($code -ge 0x20000 -and $code -le 0x3FFFD)) { $size = 2 }
+        if ($cells + $size -gt $Length) { break }
+        [void]$output.Append($text.Substring($position, $units)); $cells += $size; $position += $units
+    }
+    return $output.ToString() + (' ' * ($Length - $cells))
+}
+
+function Write-MotdRow([string] $Text, [string] $Tone = 'normal') {
+    $line = $MotdVertical + ' ' + (Format-MotdCell $Text ($MotdWidth - 4)) + ' ' + $MotdVertical
+    if ($MotdColor -and $Tone -ne 'normal') {
+        $code = $MotdAccent
+        switch ($Tone) { 'warning' { $code = '33' } 'good' { $code = '32' } 'muted' { $code = '90' } }
+        $line = $MotdEscape + '[' + $code + 'm' + $line + $MotdEscape + '[0m'
+    }
+    Write-Output $line
 }
 
 function Write-MotdFrame {
-    $inner = $MotdWidth - 4
-    $border = '+' + ('-' * ($MotdWidth - 2)) + '+'
-    Write-Output $border
-    $title = [string]$MotdConfig.display.title
-    if ($Demo) { $title += ' | DEMO - synthetic observations' }
-    $visible = New-Object 'System.Collections.Generic.List[object]'
-    [void]$visible.Add(@{ Text = $title; Tone = 'accent' })
-    # Reserve the last terminal row for the next prompt, as the Bash renderer does.
-    $capacity = $MotdHeight - 4
-    $limited = $MotdLines.Count -gt $capacity
-    $take = if ($limited) { $capacity - 1 } else { $capacity }
-    foreach ($line in @($MotdLines | Select-Object -First $take)) { [void]$visible.Add($line) }
-    if ($limited) { [void]$visible.Add(@{ Text = '... more rows omitted; increase -Rows or select fewer sections.'; Tone = 'warning' }) }
-    foreach ($line in $visible) {
-        $text = ConvertTo-MotdText $line.Text
-        if ($text.Length -gt $inner) {
-            $end = $inner - 3
-            if ([char]::IsHighSurrogate($text[$end - 1])) { $end-- }
-            $text = $text.Substring(0, $end) + '...'
-        }
-        $text = '| ' + $text.PadRight($inner) + ' |'
-        if ($MotdColor -and $line.Tone -ne 'normal') {
-            $color = if ($line.Tone -eq 'warning') { '33' } else { $MotdAccent }
-            $text = [string]$MotdEscape + '[' + $color + 'm' + $text + [string]$MotdEscape + '[0m'
-        }
-        Write-Output $text
+    $horizontal = '-'; $script:MotdVertical = '|'; $topLeft = '+'; $topRight = '+'; $bottomLeft = '+'; $bottomRight = '+'
+    if ($Unicode -and -not $Ascii) {
+        $horizontal = [string][char]0x2500; $script:MotdVertical = [string][char]0x2502
+        $topLeft = [string][char]0x250C; $topRight = [string][char]0x2510; $bottomLeft = [string][char]0x2514; $bottomRight = [string][char]0x2518
     }
-    Write-Output $border
+    Write-Output ($topLeft + ($horizontal * ($MotdWidth - 2)) + $topRight)
+    $title = [string]$MotdConfig['display']['title']
+    if ($Demo) {
+        if ($MotdWidth -lt 60) { $title += ' | DEMO' }
+        else { $title += ' | DEMO - synthetic observations' }
+    }
+    Write-MotdRow $title 'accent'
+    $capacity = $MotdHeight - 4; $allocated = @{}; $used = 0
+    foreach ($id in $MotdSectionOrder) {
+        $minimum = 1
+        if ($id -eq 'resources' -or $id -eq 'system') { $minimum = 2 }
+        if ($id -eq 'processes') { $minimum = 3 }
+        $allocated[$id] = [Math]::Min($minimum, $MotdSections[$id].Lines.Count); $used += $allocated[$id]
+    }
+    $order = @('resources', 'processes', 'services', 'io', 'sessions', 'connections', 'attention', 'hints', 'system')
+    $changed = $true
+    while ($used -lt $capacity -and $changed) {
+        $changed = $false
+        foreach ($id in $order) {
+            if ($allocated.ContainsKey($id) -and $allocated[$id] -lt $MotdSections[$id].Lines.Count -and $used -lt $capacity) {
+                $allocated[$id]++; $used++; $changed = $true
+            }
+        }
+    }
+    foreach ($id in $MotdSectionOrder) {
+        $lines = $MotdSections[$id].Lines
+        for ($i = 0; $i -lt $allocated[$id]; $i++) { Write-MotdRow $lines[$i].Text $lines[$i].Tone }
+    }
+    Write-Output ($bottomLeft + ($horizontal * ($MotdWidth - 2)) + $bottomRight)
 }
 
-# A live baseline has fewer collectors than Bash. Unsupported sections remain
-# visible as unavailable; it never invents zero values or claims full parity.
-# Collection timings are local-call timings, not a hard renderer wall-clock cap.
+# Read only selected local observations. A section kept in a short layout is not
+# removed wholesale to make room for a longer table; extra rows expand detail.
 Invoke-MotdHooks 'before'
-foreach ($section in @($MotdConfig.display.sections)) {
+foreach ($section in $MotdSectionOrder) {
+    $MotdSections[$section] = @{ Lines = (New-MotdList) }
+    $MotdCurrentSection = $section
     switch ($section) {
         'system' { Add-MotdSystem }
         'resources' { Add-MotdResources }
         'services' { Add-MotdServices }
         'processes' { Add-MotdProcesses }
-        'sessions' {
-            if ($Demo) { Add-MotdLine 'SESSIONS   operator (current); full session inventory unavailable' 'accent' }
-            else { Add-MotdLine ('SESSIONS   ' + [Environment]::UserName + ' (current); other sessions unavailable') 'accent' }
-        }
-        'connections' { Add-MotdLine 'CONNECTIONS  unavailable (connection inventory not implemented)' 'warning' }
-        'io' { Add-MotdLine 'I/O        unavailable (per-process rates not implemented)' 'warning' }
-        'attention' {
-            Add-MotdLine 'ATTENTION  Native PowerShell baseline; unsupported observations are unavailable.' 'accent'
-            foreach ($message in @($MotdConfig.messages)) { Add-MotdLine ('           ' + $message) }
-            foreach ($notice in $MotdNotices) { Add-MotdLine ('           ' + $notice) 'warning' }
-            if ($MotdConfig.collection.journal) { Add-MotdLine '           Event log/journal collection unavailable in this backend.' 'warning' }
-        }
-        'hints' {
-            foreach ($hint in @($MotdConfig.hints | Select-Object -First ([int]$MotdConfig.display.top_entries))) {
-                Add-MotdLine ('HINT       ' + $hint.label + ': ' + $hint.command + ' - ' + $hint.note)
-            }
-        }
+        'sessions' { Add-MotdSessions }
+        'connections' { Add-MotdConnections }
+        'io' { Add-MotdIo }
+        # Attention is filled after every selected collector, even if the user
+        # places it before I/O/processes in the displayed section order.
+        'attention' { }
+        'hints' { Add-MotdHints }
     }
+}
+if ($MotdSections.ContainsKey('attention')) {
+    $MotdCurrentSection = 'attention'
+    Add-MotdAttention
 }
 Write-MotdFrame
 Invoke-MotdHooks 'after'

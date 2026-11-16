@@ -80,16 +80,18 @@ public=motd.preset_config('public-console');public['target']='ssh-banner'
 public['target'] = 'text'
 (ROOT/'examples/public-notice.txt').write_text(motd.generate_artifact(public), encoding='utf-8')
 
-# Every shell output carries the same recoverable recipe format. Zsh shares the
-# canonical Bash engine; the native backends deliberately have smaller coverage.
-for shell in ('zsh', 'sh', 'powershell'):
-    config = motd.load_config(ROOT/'presets/workshop.toml')
-    motd.select_shell(config, shell)
-    output = motd.generate_artifact(config)
-    path = ROOT/'examples'/('workshop' + motd.artifact_suffix(config))
-    path.write_text(output, encoding='utf-8'); path.chmod(0o755)
-    records.append({'preset': 'workshop', 'shell': shell, 'path': str(path.relative_to(ROOT)),
-                    'sha256': motd.hashlib.sha256(output.encode()).hexdigest()})
+# Every dashboard preset is copyable in every output route. The generated Unix
+# files select modern or portable collection at invocation time; native
+# PowerShell has the same recoverable recipe format and its own collectors.
+for name in ('workshop', 'home-lab'):
+    for shell in ('zsh', 'sh', 'powershell'):
+        config = motd.load_config(ROOT/'presets'/f'{name}.toml')
+        motd.select_shell(config, shell)
+        output = motd.generate_artifact(config)
+        path = ROOT/'examples'/(name + motd.artifact_suffix(config))
+        path.write_text(output, encoding='utf-8'); path.chmod(0o755)
+        records.append({'preset': name, 'shell': shell, 'path': str(path.relative_to(ROOT)),
+                        'sha256': motd.hashlib.sha256(output.encode()).hexdigest()})
 
 # Capture an actual wizard page, with a deterministic terminal and fixture. The
 # result is a generated preview of the UI, not a mockup or a live host reading.

@@ -72,9 +72,10 @@ Installation scope, destination paths, shell startup file, and state directory a
 
 Section IDs are `system`, `resources`, `services`, `processes`, `sessions`, `connections`, `attention`, `hints`, and `io`. The validator rejects a row budget too small for the selected sections and framing. Enabling a section does not grant access to unavailable system information.
 
-The full collection settings describe the Bash renderer (also used by Zsh).
-Portable sh and PowerShell provide smaller native collectors and label unsupported
-sections. They do not turn Bash's `worker_ms` setting into an equivalent global
+The full collection settings describe the enhanced Linux/Bash renderer (also
+selected by Zsh where available). The portable Unix and PowerShell renderers use
+the same section IDs and their own OS collectors, with unavailable observations
+labelled explicitly. They do not turn Bash's `worker_ms` setting into an equivalent global
 deadline. Collection settings are not a measured wall-clock promise for every
 machine. See [coverage and dependencies](compatibility.md).
 
@@ -113,9 +114,23 @@ Hook time is additional to display collection time. Both ordinary preview and
 them. Native sh needs a GNU-compatible `timeout` for configured hooks; its base
 display does not need that utility. PowerShell hooks launch executable programs
 or explicit interpreters: a bare PowerShell cmdlet is not an external executable.
-Windows PowerShell5.1 can terminate the direct hook process but does not provide
+Windows PowerShell 1–5 can terminate the direct hook process but do not provide
 the same descendant-tree kill operation as current PowerShell/.NET. Avoid treating
 these hook limits as a sandbox or a hard deadline for arbitrary descendant trees.
+
+## Runtime display switches
+
+Unix outputs accept `--width 40 --rows 25`, `--ascii` / `--unicode`,
+`--color` / `--plain`, and `--demo` / `--demo-alerts`. Native PowerShell uses
+`-Width 40 -Rows 25`, `-Ascii` / `-Unicode`, `-Color` / `-Plain`, and
+`-Demo` / `-DemoAlerts`. The terminal can supply dimensions automatically;
+explicit switches make examples and tests reproducible. `NO_COLOR`, including
+an empty value, suppresses colours. Demo modes suppress hooks.
+
+The layout reserves a row for the next shell prompt. Narrow displays shorten
+values; taller displays can allocate more rows to enabled sections. ASCII mode
+uses ASCII framing. Historical byte-oriented Unix paths normalize unsupported
+text rather than pretending they implement complete Unicode terminal-cell widths.
 
 ## Hints and public text
 

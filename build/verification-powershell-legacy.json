@@ -1,0 +1,176 @@
+{
+  "schema_version": 1,
+  "recorded_at_utc": "2026-11-16T12:08:24.967884+00:00",
+  "scope": "Native PowerShell runtime execution, temporary standalone generated scripts, synthetic geometry and controlled hook/error fixtures. No actual host login settings modified.",
+  "generation_mode": "Initial PS6.2.7/PS7.7.0 runs used canonical runtime/helper overrides during integration; PS7.6.10 LTS subsequently tested the integrated motd.py unchanged. See each run for exact evidence.",
+  "python_version": "3.12.14",
+  "os_release": {
+    "PRETTY_NAME": "\"Debian GNU/Linux 13 (trixie)\"",
+    "NAME": "\"Debian GNU/Linux\"",
+    "VERSION_ID": "\"13\"",
+    "VERSION": "\"13 (trixie)\"",
+    "VERSION_CODENAME": "trixie",
+    "DEBIAN_VERSION_FULL": "13.6",
+    "ID": "debian",
+    "HOME_URL": "\"https://www.debian.org/\"",
+    "SUPPORT_URL": "\"https://www.debian.org/support\"",
+    "BUG_REPORT_URL": "\"https://bugs.debian.org/\""
+  },
+  "kernel": "6.18.57",
+  "architecture": "x86_64",
+  "runtime_sha256": "cb8a0b130785eab6c5cb6705d3ce96fd5a8b2c7ed0e7155edb2c0696bf5cf684",
+  "test_source_sha256": "b10449da9e220e74fc57d46c026ebd4983361fe73b13c5e39e2a9f137ae7f445",
+  "generation_helper_sha256": "6cacbf81289b9a43abb6829abe6ab2681748435eb98a189ba1451ecd63ee7015",
+  "runs": [
+    {
+      "engine": "PowerShell 6.2.7",
+      "edition": "Core",
+      "runtime": ".NET Core 2.1",
+      "platform": "Linux x86_64",
+      "tests_run": 21,
+      "passed": 21,
+      "failed": 0,
+      "skipped": 0,
+      "elapsed_seconds": 36.653,
+      "required_environment": {
+        "DOTNET_SYSTEM_GLOBALIZATION_INVARIANT": "1"
+      },
+      "source_release": "https://github.com/PowerShell/PowerShell/releases/tag/v6.2.7",
+      "source_release_api": "https://api.github.com/repos/PowerShell/PowerShell/releases/tags/v6.2.7",
+      "archive_url": "https://github.com/PowerShell/PowerShell/releases/download/v6.2.7/powershell-6.2.7-linux-x64.tar.gz",
+      "archive_sha256": "6073852fb8373fd3037fae00793aecf5ccc1d3c6f4f18ccf0a85a433617abc17",
+      "checksum_verification": "Downloaded archive hash matched the release body published SHA256 before extraction.",
+      "host_changes": "Portable extraction only; no global installation or legacy Windows feature enabled."
+    },
+    {
+      "engine": "PowerShell 7.7.0",
+      "edition": "Core",
+      "platform": "Linux x86_64",
+      "tests_run": 21,
+      "passed": 21,
+      "failed": 0,
+      "skipped": 0,
+      "elapsed_seconds": 28.263,
+      "required_environment": {},
+      "source_release": "https://github.com/PowerShell/PowerShell/releases/tag/v7.7.0"
+    },
+    {
+      "engine": "PowerShell 7.6.10",
+      "edition": "Core",
+      "runtime": ".NET 10.0.15",
+      "platform": "Linux x86_64",
+      "os_description": "Debian GNU/Linux 13 (trixie)",
+      "os_release": {
+        "PRETTY_NAME": "\"Debian GNU/Linux 13 (trixie)\"",
+        "NAME": "\"Debian GNU/Linux\"",
+        "VERSION_ID": "\"13\"",
+        "VERSION": "\"13 (trixie)\"",
+        "VERSION_CODENAME": "trixie",
+        "DEBIAN_VERSION_FULL": "13.6",
+        "ID": "debian",
+        "HOME_URL": "\"https://www.debian.org/\"",
+        "SUPPORT_URL": "\"https://www.debian.org/support\"",
+        "BUG_REPORT_URL": "\"https://bugs.debian.org/\""
+      },
+      "kernel": "6.18.57",
+      "tests_run": 21,
+      "passed": 21,
+      "failed": 0,
+      "skipped": 0,
+      "elapsed_seconds": 29.897,
+      "started_at_utc": "2026-11-16T12:07:54.311738+00:00",
+      "completed_at_utc": "2026-11-16T12:08:24.966995+00:00",
+      "required_environment": {},
+      "generation_mode": "Unmodified integrated motd.py and its embedded runtime; normal unittest discovery, no generator or template overrides.",
+      "test_command": "MOTD_TEST_POWERSHELL=<portable powershell-7.6.10/pwsh> python3 -m unittest discover -s tests -p test_powershell.py -v",
+      "configurator_sha256": "1c9e22e5d5e868c80d8afd63357eb8863fa282d0fe00db93cf2b7930836f76f4",
+      "configurator_unchanged_during_suite": true,
+      "runtime_sha256": "cb8a0b130785eab6c5cb6705d3ce96fd5a8b2c7ed0e7155edb2c0696bf5cf684",
+      "runtime_unchanged_during_suite": true,
+      "test_source_sha256": "b10449da9e220e74fc57d46c026ebd4983361fe73b13c5e39e2a9f137ae7f445",
+      "source_release": "https://github.com/PowerShell/PowerShell/releases/tag/v7.6.10",
+      "source_release_api": "https://api.github.com/repos/PowerShell/PowerShell/releases/440837442",
+      "release_published_at": "2026-11-10T20:16:48Z",
+      "release_channel": "PowerShell 7.6 LTS",
+      "release_selection": "Highest stable 7.6.x tag in official GitHub release metadata at test time.",
+      "archive_url": "https://github.com/PowerShell/PowerShell/releases/download/v7.6.10/powershell-7.6.10-linux-x64.tar.gz",
+      "archive_sha256": "e261cabc91c78a9afe8d1e5f24731ab0d38204735ab2ec94b0af55102652e10d",
+      "checksum_verification": "Downloaded archive SHA256 matched official release asset digest and release-body checksum before extraction.",
+      "host_changes": "Portable extraction only; no global runtime installation, execution-policy change or login integration."
+    }
+  ],
+  "tests": [
+    "test_canonical_runtime_and_checked_recipe",
+    "test_source_is_ascii_even_when_configuration_is_unicode",
+    "test_core_does_not_reintroduce_known_post_v1_grammar",
+    "test_actual_demo_geometry_data_and_resource_bars",
+    "test_configuration_is_data_and_cannot_execute_powershell",
+    "test_demo_live_preview_help_and_version_do_not_run_hooks",
+    "test_native_arguments_and_before_after_order_are_preserved",
+    "test_hook_timeout_stops_script_when_requested",
+    "test_hook_failure_continue_allows_dashboard_and_after_hook",
+    "test_live_io_connections_and_sessions_keep_units_and_scope",
+    "test_live_local_memory_storage_and_process_observations",
+    "test_forced_color_and_explicit_plain_precedence",
+    "test_present_empty_no_color_disables_forced_color",
+    "test_all_requested_sizes_and_charsets_expand_actual_content",
+    "test_v1_command_launcher_works_with_a_script_path_containing_spaces",
+    "test_trap_preserves_failure_and_rejects_partial_observations",
+    "test_unavailable_network_api_does_not_render_zero_connections",
+    "test_unicode_cells_count_wide_and_combining_text",
+    "test_ascii_mode_preserves_column_width_with_unicode_labels",
+    "test_invalid_geometry_is_rejected",
+    "test_observed_control_characters_are_sanitized"
+  ],
+  "geometry_matrix": {
+    "columns": [
+      40,
+      80
+    ],
+    "rows": [
+      25,
+      50
+    ],
+    "character_sets": [
+      "ASCII",
+      "Unicode"
+    ],
+    "data": "explicit synthetic fixture",
+    "assertions": [
+      "Each line has exact requested cell count for fixture glyphs",
+      "Output reserves one terminal row",
+      "All nine selected section headings survive",
+      "Taller layouts include more actual fixture details",
+      "Narrow resources use shorter units and bars"
+    ]
+  },
+  "not_validated": [
+    "Windows PowerShell 1.0, 2.0, 3.0, 4.0 and 5.x execution in these local runs; Windows 5.1 CI is a separate gate",
+    "Any old Windows or Windows Server OS, .NET 2 runtime, OEM console code page or execution-policy deployment",
+    "PowerShell6 on Windows or macOS",
+    "Any PowerShell7 version other than the exact executed releases in this record",
+    "Real RDP/SSH/Telnet/login integration",
+    "Real Windows CIM/WMI provider success and real systemd/launchd provider success in this Linux sandbox",
+    "Complete Unicode grapheme/ZWJ width agreement across terminal emulators",
+    "Hard elapsed-time bounds around WMI, module initialization, .NET native calls or inherited pipe handles",
+    "Legacy hook descendant termination; .NET on old Windows stops the direct child only"
+  ],
+  "compatibility_design": "The runtime deliberately avoids known post-V1 grammar and emits native literal configuration, but a current-parser pass and design review do not verify a historical engine.",
+  "known_feature_limits": [
+    "CPU totals are lifetime seconds, not sampled CPU utilization",
+    "I/O totals are cumulative bytes, not sampled rates",
+    "Live compressed-memory totals and event/journal collection unavailable",
+    "BSD/macOS total physical memory can be read via sysctl but used memory is unavailable"
+  ],
+  "timing_note": "Suite elapsed times are observations under concurrent test load; not a renderer performance benchmark.",
+  "primary_sources": [
+    "https://devblogs.microsoft.com/powershell/traps-vs-trycatch/",
+    "https://devblogs.microsoft.com/scripting/powertip-determine-powershell-version/",
+    "https://learn.microsoft.com/en-us/powershell/scripting/lang-spec/chapter-08?view=powershell-5.1",
+    "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_wmi_cmdlets?view=powershell-5.1",
+    "https://learn.microsoft.com/powershell/scripting/install/powershell-support-lifecycle?view=powershell-7.6",
+    "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_powershell_exe?view=powershell-5.1",
+    "https://github.com/PowerShell/PowerShell/releases/tag/v7.6.10",
+    "https://learn.microsoft.com/en-us/powershell/scripting/install/powershell-support-lifecycle?view=powershell-7.6"
+  ]
+}

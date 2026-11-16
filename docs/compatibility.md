@@ -1,63 +1,103 @@
 # Compatibility and login surfaces
 
-Reference date: **2026-11-16**. This page separates the machine that runs the
-configurator, the interpreter that runs an output, and the mechanism that displays
-it. A generated file is not evidence that every operating system or login route
-has been tested. Consult the current CI run and `build/` records for observed
-results; a skipped interpreter test is not a pass.
+Reference date: **2026-11-16**. Separate the machine that runs the configurator,
+the interpreter that runs a generated file, and the mechanism that displays it.
+A language target is not evidence that every operating system, minor release or
+login route has been tested. Exact local commands, source hashes and skips live in
+[Unix evidence](../build/verification-unix-legacy.json),
+[PowerShell evidence](../build/verification-powershell-legacy.json),
+[release verification](../build/verification-v03.json) and revision-specific CI.
 
-## Choose the output, then its attachment
+## One recipe, adaptive outputs
 
-The configurator uses Linux and Python 3.11 or later. Python's standard-library
-TOML reader first appeared in 3.11. Generate on a suitable machine and copy the
-output to an older destination; the destination does not need Python or the
-repository to display it. The current transaction engine is Linux-specific.
-Generating PowerShell does not make that installer a Windows installer.
-See [Python's `tomllib` documentation][python].
+The configurator uses **Linux and Python 3.11+**. Generate there and copy an output
+to an older destination; Python and the repository are not needed at login. The
+transaction engine is still Linux-specific. Generating a Windows-compatible
+PowerShell script does not make that engine a Windows installer.
+[Python `tomllib` documentation][python]
 
-| Output | Required or intended baseline | Coverage and boundary |
+| Output | Selection and compatibility design | Boundary |
 |---|---|---|
-| Bash dashboard | Linux/procfs, Bash 4.3+, GNU `timeout` | Full workshop renderer. Optional collectors depend on their utilities and permissions. Local checks use Bash5.2.37, plus a Bash4.3.0 syntax/demo/direct-worker smoke on current Linux. This does not certify every intervening release or an old OS. |
-| Zsh output | Zsh launcher, plus the same Linux/Bash dependencies | A standalone `.zsh` entry point delegates to the shared Bash renderer. This is intentional reuse; it is not a native Zsh port of the collectors. Zsh 5.9 is exercised locally. |
-| Portable `sh` output | POSIX-compatible shell; dash is exercised locally | A reduced display for older/minimal environments. It reads a few fixed Linux `/proc` files, using shell builtins, and shows unavailable states elsewhere. Base rendering needs no external collector. This does not cover every historical Bourne-shell dialect. |
-| PowerShell output | Windows PowerShell 5.1 language baseline; PowerShell 7+ | Native `.ps1` output with no Bash dependency. PS7.7/Linux demonstration execution is exercised locally; Windows5.1 requires its separate test. Collector availability varies by OS. A language baseline does not certify an old Windows installation. |
-| `issue` | An agetty-compatible issue consumer | Static public text with agetty literal-backslash escaping. Not a generic format for every getty implementation. |
-| `ssh-banner` | An OpenSSH server configured to read the file | Static public text sent before authentication. Writing the file does not configure or reload the server. |
-| Generic `text` | A consumer of plain UTF-8 text | Static export without agetty escape conversion. Select the destination and verify its interpretation explicitly. Legacy code pages and CRLF conversion are not inferred. |
+| Bash | One file selects enhanced Linux collection on Bash 4.3+, or portable Unix collection on older Bash and non-Linux systems. Bash 1, 2, 3, 4 and 5 are distinct major-family targets. | Bash 1 needs an external `printf`. Optional helper availability and OS interfaces determine metrics. Exact historical versions tested are recorded separately. |
+| Zsh | A small entry point delegates to `/bin/bash` when present, otherwise `/bin/sh`; the same file then selects the Unix renderer. | This is shared collection, not a second native-Zsh collector implementation. It needs a compatible sh/Bash destination, and does not assume every historical Zsh startup file is identical. |
+| Portable sh | All nine section IDs, themes, ASCII/Unicode framing, dynamic row allocation and local Linux/Darwin/BSD/generic-Unix collection paths. | POSIX-like syntax does not imply every historical Bourne dialect, utility option or kernel interface exists. Unavailable data remains unavailable. |
+| PowerShell | Native file with PowerShell 1-era grammar, .NET 2-era fallback APIs, literal configuration, and feature checks for newer facilities. Windows PowerShell 1–5 and PowerShell 6–7 are explicit targets. | **PowerShell 1–4 have not been execution-verified.** Windows 5.1, PS6 and PS7 evidence are separate. No automatic Windows profile installation. |
+| `issue` | Static public text encoded for an agetty-compatible issue consumer. | Not a universal getty escape dialect. |
+| `ssh-banner` | Static public text for an explicitly configured OpenSSH `Banner` file. | Generating/writing the file does not reconfigure or reload the server. |
+| `text` | Static plain UTF-8 export. | Consumer-specific escaping, legacy code pages and newline conversion are not inferred. |
 
-Bash 4.3 is a meaningful boundary: the renderer uses `local -n` namerefs, introduced
-in that release. Bash 3.2 or 4.2 must use the portable output or a separately
-installed compatible Bash; the generator does not silently replace a shell.
-See the [GNU Bash 4.3 release announcement][bash43].
-The [minimum-version smoke record](../build/verification-bash43.json) pins the
-final canonical template, matching generated example and interpreter source used
-for the Bash 4.3.0 syntax, synthetic-renderer and direct-worker checks.
-An actual Bash 3.2.0 run also verified rejection of the full renderer before hooks
-execute, and successful native sh demonstration output; see the
-[older-interpreter boundary record](../build/verification-bash32.json). Both
-historical interpreters were built on current Linux, not a historical OS image.
+Bash 4.3 remains the enhanced renderer's boundary because it introduced the
+namerefs that renderer uses. The generated file now embeds a portable branch
+**before** modern syntax: an older engine executes that branch and exits without
+parsing the later Bash body. It does not install or upgrade a shell.
+[GNU Bash 4.3 announcement][bash43]
 
-The native outputs have deliberately smaller coverage:
+Do not call Bash 1–5 or Zsh major families "LTS releases" in the test matrix.
+PowerShell has its own explicit support lifecycle: **7.6 is the current LTS line**
+as of the reference date. Legacy-language compatibility here does not restore a
+vendor's retired OS or engine support. The exact 7.x patch tested belongs in the
+record, rather than the open-ended label "7 or newer".
+[Microsoft PowerShell lifecycle][ps-lifecycle] · [GNU Bash releases][bash-releases]
+· [Zsh release archive][zsh-releases]
 
-| Capability | Portable sh | PowerShell |
+## Shared sections, explicit metric semantics
+
+All renderers expose `system`, `resources`, `services`, `processes`, `sessions`,
+`connections`, `attention`, `hints`, and `io`. The recipe selects and orders them.
+Collectors use the destination's actual facilities; a matching section name does
+not make measurements from different APIs interchangeable.
+
+| Observation | Portable Unix | Native PowerShell |
 |---|---|---|
-| Identity/resources | Host/kernel, uptime/load and memory from bounded fixed-file `/proc` reads when present | Identity/CPU count; Linux `/proc` memory or Windows CIM memory; system volume |
-| Services/processes | Explicitly not collected | Windows services; process lifetime CPU seconds and working set where available |
-| Detailed I/O, sessions, connections | Explicitly not collected | Unsupported detail is labelled; no full process-I/O-rate or session-inventory parity |
-| Hooks | External commands require a GNU-compatible `timeout`; no timeout utility means failure/skip before execution, following the selected policy | Explicit executables/interpreters; timeout stops the direct process on PS5.1 and attempts its descendant tree on current PS7/.NET |
+| Identity and uptime | Linux procfs; `uname`, `sysctl` and local helpers elsewhere | Environment/.NET and Linux procfs or guarded Windows management APIs |
+| Memory and storage | Linux MemAvailable; Darwin/BSD free/total memory where queryable, labelled distinctly; `df -Pk` | Linux procfs, Windows CIM/WMI, system-volume drive data; BSD/macOS total memory can be available while used memory is unavailable |
+| Services | systemd, OpenRC and selected BSD rc queries when present; enabled scripts are not described as running | Windows services, guarded systemd queries and basic launchd inventory |
+| Processes | Visible `ps` sample for CPU percentage and RSS; capped Linux procfs I/O reads | Lifetime CPU seconds and working-set bytes; Windows/Linux I/O counters where accessible |
+| I/O | Cumulative device/process bytes where available, not a sampled rate | Cumulative process bytes, not a sampled rate; Windows transfer counts have different scope from Linux storage-accounted bytes |
+| Sessions/connections | Local `who`, procfs/socket utilities where supported | `who`/`quser` or explicitly limited current-user view; local .NET TCP/UDP APIs |
+| Pressure/compression/journal | Linux pressure where available; unsupported facilities state unavailable | Linux memory pressure where available; live compression and event/journal detail unavailable |
+| Hooks | Literal argv, timeout and failure policy; missing compatible hook timeout means skip/failure before executing it | Literal argv through process APIs; legacy engines can terminate the direct child, newer .NET can attempt a process-tree kill |
 
-PowerShell does not claim the Bash worker's whole-render deadline. A Windows CIM
-operation's timeout does not include all module initialization. A hook timeout
-is not a sandbox or a universal guarantee against descendant processes. Native
-sh/PowerShell layout also does not claim a complete Unicode terminal-cell-width
-implementation. These are versioned capability boundaries, not hidden equivalents
-of the full Bash view.
+The portable renderer uses bounded helper captures and per-helper timeouts or a
+direct-child watchdog where supported. It does not inherit the enhanced Bash
+worker's whole-render deadline. PowerShell likewise has no hard total deadline
+around WMI/provider initialization or native .NET calls. A hook timeout is not a
+sandbox or universal descendant-process containment.
 
-Portable shell syntax does not imply portable metrics. `/proc`, service managers,
-`ps` options and available utilities differ across Linux, BSD, macOS and embedded
-systems. BusyBox also permits individual applets and features to be excluded at
-build time. A BusyBox version number alone cannot establish all dependencies.
-See the [BusyBox manual][busybox].
+At **40/80 columns and 25/50 rows**, sections get an explicit row budget and retain
+space for the next shell prompt. Wider values and additional detail are emitted
+by the runtime. Plain mode and a present `NO_COLOR` disable colours. Portable
+historical shells normalize content to printable ASCII and can use known
+one-cell Unicode borders; they do not claim a full Unicode-width engine. Font,
+code-page and terminal-emulator support remain separate from script syntax.
+See the [actual terminal PNG gallery](../examples/gallery/README.md).
+
+Portable syntax does not guarantee portable metrics. Linux procfs, BSD sysctl,
+service managers, `ps` options and available utilities differ. BusyBox permits
+individual applets/features to be excluded at build time, so its version number
+alone is not sufficient evidence. [BusyBox manual][busybox]
+
+## PowerShell launch on older engines
+
+A normal interactive invocation works without relying on the newer executable
+`-File` launch switch:
+
+```powershell
+& 'C:\path\workshop.ps1' -Demo -Plain
+```
+
+From an existing Windows command prompt, the legacy-compatible form is:
+
+```text
+powershell.exe -NoProfile -Command "& 'C:\path\workshop.ps1' -Demo -Plain"
+```
+
+PowerShell 2+ can also use `-File`. Effective execution policy still applies; no
+policy bypass, feature enablement or implicit dependency installation is added.
+The generated source is ASCII even when a recipe contains Unicode: non-ASCII
+strings use data-only UTF-8 decoding, avoiding assumptions about an old engine's
+file encoding. This does not guarantee that an old terminal font can display
+those characters.
 
 ## Shell startup files
 
@@ -156,3 +196,7 @@ machine if the destination cannot run Python 3.11.
 [rdp]: https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-rdsod/5637838a-efff-4d5d-b42a-7645addbbdb9
 [windows-notice]: https://learn.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/interactive-logon-message-text-for-users-attempting-to-log-on
 [wmf]: https://learn.microsoft.com/en-us/powershell/scripting/windows-powershell/wmf-overview
+
+[ps-lifecycle]: https://learn.microsoft.com/powershell/scripting/install/powershell-support-lifecycle?view=powershell-7.6
+[bash-releases]: https://ftp.gnu.org/gnu/bash/
+[zsh-releases]: https://www.zsh.org/pub/old/

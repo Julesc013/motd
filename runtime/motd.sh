@@ -1,18 +1,24 @@
 #!/bin/sh
-# Portable MOTD baseline. POSIX shell syntax; no Bash, Python or service manager.
-# This deliberately small renderer does not reproduce the Linux Bash collectors.
-# Linux /proc files provide cheap local observations when available. Missing
-# counters stay unavailable; no external command or network lookup fills them in.
-# GNU-compatible timeout is required only for explicitly configured hooks.
+# Portable Unix renderer, embedded before the modern Bash renderer.
+# Old Bourne/POSIX syntax: no arrays, [[ ]], local, namerefs, process
+# substitution, printf -v or Bash-only slicing. Bash 1 needs external printf.
+# Collectors only read local data. No network, installation or privileged work.
 
 TITLE='SYSTEM STATUS'
 SITE_LABEL=''
 THEME=mono
 MAX_WIDTH=80
 ROWS=25
+TOP_N=3
+PROCESS_LIMIT=128
+SHOW_SWAP=1
+SHOW_COMPRESSION=1
+SHOW_PRESSURE=1
 SECTIONS='system resources attention hints'
 motd_messages() { :; }
 motd_hints() { :; }
+motd_required_services() { :; }
+motd_service_allowed() { return 0; }
 motd_before_hooks() { :; }
 motd_after_hooks() { :; }
 
@@ -23,6 +29,9 @@ MOTD_DEMO_ALERTS=0
 MOTD_HOOKS_ENABLED=1
 MOTD_PLAIN=0
 MOTD_FORCE_COLOR=0
+MOTD_ASCII=1
+motd_explicit_width=0
+motd_explicit_rows=0
 while [ "$#" -gt 0 ]; do
     case "$1" in
         --demo) MOTD_DEMO=1; MOTD_HOOKS_ENABLED=0 ;;
@@ -30,164 +39,459 @@ while [ "$#" -gt 0 ]; do
         --no-hooks) MOTD_HOOKS_ENABLED=0 ;;
         --plain) MOTD_PLAIN=1 ;;
         --color) MOTD_FORCE_COLOR=1 ;;
-        --ascii) : ;; # The baseline already uses ASCII framing.
+        --ascii) MOTD_ASCII=1 ;;
+        --unicode) MOTD_ASCII=0 ;;
         --width|--rows)
-            motd_option=$1
-            shift
-            case "${1-}" in
-                ''|*[!0-9]*) printf '%s\n' 'Width/rows require an integer.' >&2; exit 2 ;;
-            esac
-            # Check length first: never feed an unbounded integer into old shells.
-            if [ "${#1}" -gt 3 ]; then
-                printf '%s\n' 'Width/rows are outside the supported range.' >&2
-                exit 2
-            fi
+            motd_option=$1; shift
+            case "${1-}" in ''|*[!0-9]*) printf '%s\n' 'Width/rows require an integer.' >&2; exit 2 ;; esac
+            if [ "${#1}" -gt 3 ]; then printf '%s\n' 'Width/rows are outside the supported range.' >&2; exit 2; fi
             motd_number=$1
-            # Old shells may read leading-zero arithmetic as octal.
-            while [ "${motd_number#0}" != "$motd_number" ] && [ "${#motd_number}" -gt 1 ]; do
-                motd_number=${motd_number#0}
-            done
+            while [ "${motd_number#0}" != "$motd_number" ] && [ "${#motd_number}" -gt 1 ]; do motd_number=${motd_number#0}; done
             if [ "$motd_option" = --width ]; then
                 if [ "$motd_number" -lt 40 ] || [ "$motd_number" -gt 240 ]; then exit 2; fi
                 MAX_WIDTH=$motd_number
+                motd_explicit_width=1
             else
                 if [ "$motd_number" -lt 20 ] || [ "$motd_number" -gt 60 ]; then exit 2; fi
                 ROWS=$motd_number
+                motd_explicit_rows=1
             fi ;;
-        --version) printf '%s\n' 'MOTD portable sh baseline'; exit 0 ;;
+        --version) printf '%s\n' 'MOTD portable Unix renderer'; exit 0 ;;
         --list-sections) printf '%s\n' 'system resources services processes sessions connections attention hints io'; exit 0 ;;
         --help|-h)
-            printf '%s\n' 'Portable MOTD: --demo --demo-alerts --plain --color --ascii --no-hooks --width N --rows N' \
-                'Basic identity, Linux memory/load/uptime where available, messages and hints.' \
-                'Advanced service, process, session, connection and I/O collectors are unavailable.'
+            printf '%s\n' 'MOTD: --demo --demo-alerts --plain --color --ascii --unicode --no-hooks --width N --rows N' \
+                'Portable Unix: identity, memory, storage, services, processes, sessions, connections, notices and hints.' \
+                'Missing OS facilities and inaccessible observations say unavailable.'
             exit 0 ;;
         *) printf '%s\n' "Unknown portable MOTD option: $1" >&2; exit 2 ;;
     esac
     shift
 done
+motd_before_hooks || exit "$?"
+# Old Bash releases predate current multibyte libraries. C locale gives exact
+# byte semantics for printable-ASCII content, decimal parsers and shell ranges.
+LC_ALL=C
+export LC_ALL
 
-# No arbitrary helper programs run during data collection. Configuration text is
-# quoted by the generator; the display helper also replaces terminal controls.
-# Width clipping is by shell characters, not a Unicode grapheme-width engine.
-motd_remaining=$((ROWS - 1))
-motd_line() {
-    if [ "$motd_remaining" -le 0 ]; then return; fi
-    if [ "$motd_remaining" -eq 1 ]; then
-        printf '%s\n' '[More content omitted]'
-        motd_remaining=0
-        return
+# Successful helper output is capped in a private capture file. GNU timeout or
+# gtimeout is preferred. A POSIX watchdog otherwise bounds the direct child;
+# it is not a process sandbox. Failed queries never become successful zeros.
+motd_tmp=''; motd_timeout=''; motd_awk=''; motd_helpers=0
+if [ "$MOTD_DEMO" -eq 0 ] || { [ -t 1 ] && { [ "$motd_explicit_width" -eq 0 ] || [ "$motd_explicit_rows" -eq 0 ]; }; }; then
+    if command -v awk >/dev/null 2>&1; then motd_awk=awk; fi
+    if command -v timeout >/dev/null 2>&1; then motd_timeout=timeout
+    elif command -v gtimeout >/dev/null 2>&1; then motd_timeout=gtimeout; fi
+    if command -v mktemp >/dev/null 2>&1 && command -v rm >/dev/null 2>&1 && command -v cat >/dev/null 2>&1; then
+        motd_tmp=$(umask 077; mktemp -d "${TMPDIR:-/tmp}/motd.XXXXXXXX" 2>/dev/null) || motd_tmp=''
+        if [ -n "$motd_tmp" ] && [ -d "$motd_tmp" ]; then motd_helpers=1; fi
     fi
-    motd_rest=$1
-    motd_clean=''
-    motd_count=0
-    while [ -n "$motd_rest" ] && [ "$motd_count" -lt "$MAX_WIDTH" ]; do
-        motd_character=${motd_rest%"${motd_rest#?}"}
-        motd_rest=${motd_rest#?}
-        case "$motd_character" in [[:cntrl:]]) motd_character='?' ;; esac
-        motd_clean=$motd_clean$motd_character
-        motd_count=$((motd_count + 1))
-    done
-    printf '%s\n' "$motd_clean"
-    motd_remaining=$((motd_remaining - 1))
+fi
+motd_cleanup() { if [ -n "$motd_tmp" ] && [ -d "$motd_tmp" ]; then rm -rf "$motd_tmp"; fi; }
+trap 'motd_cleanup' 0
+trap 'exit 130' 2
+trap 'exit 143' 15
+motd_run() {
+    MOTD_CAPTURE=''; MOTD_STATUS=127
+    if [ "$motd_helpers" -ne 1 ] || ! command -v "$1" >/dev/null 2>&1; then return 127; fi
+    if [ -n "$motd_timeout" ]; then
+        (ulimit -f 512 2>/dev/null || :; "$motd_timeout" -k 0.1 0.35 "$@" > "$motd_tmp/capture" 2>/dev/null)
+        MOTD_STATUS=$?
+    elif command -v sleep >/dev/null 2>&1; then
+        (ulimit -f 512 2>/dev/null || :; exec "$@") > "$motd_tmp/capture" 2>/dev/null &
+        motd_child=$!
+        (sleep 1; kill -TERM "$motd_child" 2>/dev/null; sleep 1; kill -KILL "$motd_child" 2>/dev/null) >/dev/null 2>&1 &
+        motd_watch=$!
+        wait "$motd_child" 2>/dev/null; MOTD_STATUS=$?
+        kill "$motd_watch" 2>/dev/null || :
+        wait "$motd_watch" 2>/dev/null || :
+    else return 127; fi
+    if [ "$MOTD_STATUS" -eq 0 ]; then MOTD_CAPTURE=$(cat "$motd_tmp/capture" 2>/dev/null); return 0; fi
+    return "$MOTD_STATUS"
 }
 
-motd_heading() {
-    # Colour is an optional enhancement. NO_COLOR and dumb/redirected terminals
-    # remain plain; no terminal escape sequence is sourced from configuration.
-    if [ "$MOTD_PLAIN" -eq 0 ] && [ "$THEME" != mono ] && { [ -t 1 ] || [ "$MOTD_FORCE_COLOR" -eq 1 ]; } && [ -z "${NO_COLOR+x}" ] && [ "${TERM-dumb}" != dumb ]; then
-        case "$THEME" in
-            cyan) printf '\033[1;36m' ;;
-            green) printf '\033[1;32m' ;;
-            amber) printf '\033[1;33m' ;;
-        esac
-        motd_line "$1"
-        printf '\033[0m'
-    else
-        motd_line "$1"
+# Actual terminal geometry wins over inherited environment values. Geometry
+# discovery is optional and bounded, and explicit preview dimensions win over
+# both. Invalid environment text never reaches arithmetic or command parsing.
+motd_terminal_columns=${COLUMNS-}
+motd_terminal_rows=${LINES-}
+if [ -t 1 ] && { [ "$motd_explicit_width" -eq 0 ] || [ "$motd_explicit_rows" -eq 0 ]; }; then
+    if motd_run stty size; then
+        read -r motd_terminal_rows motd_terminal_columns <<MOTD_GEOMETRY_END
+$MOTD_CAPTURE
+MOTD_GEOMETRY_END
     fi
-}
+    case "$motd_terminal_columns" in ''|*[!0-9]*) motd_terminal_columns='' ;; esac
+    case "$motd_terminal_rows" in ''|*[!0-9]*) motd_terminal_rows='' ;; esac
+    if [ "${#motd_terminal_columns}" -gt 3 ]; then motd_terminal_columns=''; fi
+    if [ "${#motd_terminal_rows}" -gt 3 ]; then motd_terminal_rows=''; fi
+    while [ "${motd_terminal_columns#0}" != "$motd_terminal_columns" ] && [ "${#motd_terminal_columns}" -gt 1 ]; do motd_terminal_columns=${motd_terminal_columns#0}; done
+    while [ "${motd_terminal_rows#0}" != "$motd_terminal_rows" ] && [ "${#motd_terminal_rows}" -gt 1 ]; do motd_terminal_rows=${motd_terminal_rows#0}; done
+    if [ "$motd_explicit_width" -eq 0 ] && [ -n "$motd_terminal_columns" ]; then
+        if [ "$motd_terminal_columns" -ge 40 ] && [ "$motd_terminal_columns" -lt "$MAX_WIDTH" ]; then MAX_WIDTH=$motd_terminal_columns; fi
+    fi
+    if [ "$motd_explicit_rows" -eq 0 ] && [ -n "$motd_terminal_rows" ]; then
+        if [ "$motd_terminal_rows" -ge 20 ] && [ "$motd_terminal_rows" -lt "$ROWS" ]; then ROWS=$motd_terminal_rows; fi
+    fi
+fi
 
-motd_host=unavailable
-motd_os=unavailable
-motd_release=unavailable
-motd_uptime=unavailable
-motd_load=unavailable
-motd_total=unavailable
-motd_available=unavailable
-motd_free=unavailable
+motd_host=unavailable; motd_os=unavailable; motd_release=unavailable
+motd_uptime=unavailable; motd_load=unavailable
+motd_total=unavailable; motd_available=unavailable; motd_free=unavailable
+motd_swap_total=unavailable; motd_swap_free=unavailable
+motd_disk='Storage: unavailable'; motd_pressure='Pressure: unavailable'
+motd_compression='Compression: unavailable'
+motd_service_rows='unavailable: no supported service query'
+motd_service_summary='Service state: unavailable'
+motd_service_manager=unavailable
+motd_cpu_rows=unavailable; motd_rss_rows=unavailable
+motd_io_rows='unavailable: per-process I/O needs Linux procfs'
+motd_session_rows=unavailable; motd_session_summary='Sessions: unavailable'
+motd_connections='Connections: unavailable'; motd_connection_rows=''
+motd_disk_io='Device I/O: unavailable'
+motd_attention='Observations are local and may be partial.'
+
 if [ "$MOTD_DEMO" -eq 1 ]; then
-    motd_host=demo-host
-    motd_os=Linux
-    motd_release=demo-kernel
-    motd_uptime=86400
-    motd_load='0.25 0.18 0.12'
-    motd_total=16777216
-    motd_available=12582912
-    motd_free=8388608
+    motd_host=demo-host; motd_os=Linux; motd_release=demo-kernel
+    motd_uptime=86400; motd_load='0.25 0.18 0.12'
+    motd_total=16777216; motd_available=12582912; motd_free=8388608
+    motd_swap_total=4194304; motd_swap_free=4194304
+    motd_disk='Root: 42% used; 286 GiB available'
+    motd_pressure='Pressure CPU/mem/I/O: 0.1/0.0/0.2%'
+    motd_compression='zram: 640 MiB data / 218 MiB RAM'
+    motd_service_summary='Services: 8 running; 0 failed'
+    motd_service_rows='sshd: running
+cron: running
+docker: running
+nginx: running'
+    motd_cpu_rows='compiler 32.4% (pid 2184)
+python 8.6% (pid 1902)
+sshd 0.4% (pid 822)'
+    motd_rss_rows='database 842112 KiB (pid 1401)
+compiler 214016 KiB (pid 2184)
+python 98304 KiB (pid 1902)'
+    motd_io_rows='database 1090519040 B (pid 1401)
+compiler 20971520 B (pid 2184)
+python 4194304 B (pid 1902)'
+    motd_session_summary='Sessions: 3 logged-in terminals'
+    motd_session_rows='jules  pts/0  10:21  (192.0.2.10)
+alex   pts/1  10:34  (192.0.2.20)
+jules  tty1   09:08  (local)'
+    motd_connections='TCP: 12 established; 5 listening'
+    motd_connection_rows='ssh :22      2 established
+https :443  10 established'
+    motd_disk_io='Device I/O: 42 GiB read / 18 GiB written'
+    motd_attention='DEMO fixture; no live machine data.'
+    if [ "$MOTD_DEMO_ALERTS" -eq 1 ]; then
+        motd_service_summary='Services: 7 running; 1 failed'
+        motd_service_rows='backup: failed
+sshd: running
+cron: running
+docker: running'
+        motd_disk='Root: 94% used; 29 GiB available'; motd_swap_free=262144
+        motd_pressure='Pressure CPU/mem/I/O: 2.1/8.3/12.4%'
+        motd_attention='DEMO WARNING: disk 94%; backup failed.'
+    fi
 else
-    # All reads are of fixed local procfs files. The scan has a hard line-count
-    # bound; kernel/filesystem stalls are still outside a shell's timing control.
-    if [ -r /proc/sys/kernel/hostname ]; then IFS= read -r motd_host < /proc/sys/kernel/hostname || :; fi
-    if [ -r /proc/sys/kernel/ostype ]; then IFS= read -r motd_os < /proc/sys/kernel/ostype || :; fi
-    if [ -r /proc/sys/kernel/osrelease ]; then IFS= read -r motd_release < /proc/sys/kernel/osrelease || :; fi
+    # Fixed Linux procfs reads need no external command and have line caps.
+    if [ -r /proc/sys/kernel/hostname ]; then read -r motd_host < /proc/sys/kernel/hostname || :; fi
+    if [ -r /proc/sys/kernel/ostype ]; then read -r motd_os < /proc/sys/kernel/ostype || :; fi
+    if [ -r /proc/sys/kernel/osrelease ]; then read -r motd_release < /proc/sys/kernel/osrelease || :; fi
+    if [ "$motd_os" = unavailable ] && motd_run uname -s; then motd_os=$MOTD_CAPTURE; fi
+    if [ "$motd_host" = unavailable ] && motd_run uname -n; then motd_host=$MOTD_CAPTURE; fi
+    if [ "$motd_release" = unavailable ] && motd_run uname -r; then motd_release=$MOTD_CAPTURE; fi
     if [ -r /proc/uptime ]; then
-        read -r motd_uptime motd_unused < /proc/uptime || :
-        motd_uptime=${motd_uptime%%.*}
+        read -r motd_uptime motd_unused < /proc/uptime || :; motd_uptime=${motd_uptime%%.*}
         case "$motd_uptime" in ''|*[!0-9]*) motd_uptime=unavailable ;; esac
     fi
     if [ -r /proc/loadavg ]; then
         read -r motd_load1 motd_load5 motd_load15 motd_unused < /proc/loadavg || :
-        if [ -n "$motd_load1" ] && [ -n "$motd_load5" ] && [ -n "$motd_load15" ]; then
-            motd_load="$motd_load1 $motd_load5 $motd_load15"
-        fi
+        motd_load="$motd_load1 $motd_load5 $motd_load15"
     fi
     if [ -r /proc/meminfo ]; then
         motd_mem_lines=0
         while read -r motd_key motd_value motd_unit; do
-            motd_mem_lines=$((motd_mem_lines + 1))
-            if [ "$motd_mem_lines" -gt 128 ]; then break; fi
+            motd_mem_lines=$((motd_mem_lines + 1)); if [ "$motd_mem_lines" -gt 128 ]; then break; fi
             case "$motd_value" in ''|*[!0-9]*) continue ;; esac
             case "$motd_key" in
-                MemTotal:) motd_total=$motd_value ;;
-                MemAvailable:) motd_available=$motd_value ;;
-                MemFree:) motd_free=$motd_value ;;
+                MemTotal:) motd_total=$motd_value ;; MemAvailable:) motd_available=$motd_value ;;
+                MemFree:) motd_free=$motd_value ;; SwapTotal:) motd_swap_total=$motd_value ;;
+                SwapFree:) motd_swap_free=$motd_value ;;
             esac
         done < /proc/meminfo
     fi
+    if [ -n "$motd_awk" ]; then
+        case "$motd_os" in
+            Darwin)
+                if motd_run sysctl -n hw.memsize; then
+                    motd_total=$(printf '%s\n' "$MOTD_CAPTURE" | awk '/^[0-9]+$/ {printf "%.0f",$1/1024}')
+                    motd_total=${motd_total:-unavailable}
+                fi
+                if motd_run vm_stat; then
+                    # Free is not equivalent to Linux MemAvailable.
+                    motd_free=$(printf '%s\n' "$MOTD_CAPTURE" | awk '/page size of/ {for(i=1;i<=NF;i++)if($i=="of")p=$(i+1)} /^Pages free:/ {gsub(/\./,"",$3);f=$3} END {if(p>0&&f!="")printf "%.0f",p*f/1024}')
+                    motd_free=${motd_free:-unavailable}
+                fi ;;
+            FreeBSD|OpenBSD|NetBSD|DragonFly)
+                if motd_run sysctl -n hw.physmem; then
+                    motd_total=$(printf '%s\n' "$MOTD_CAPTURE" | awk '/^[0-9]+$/ {printf "%.0f",$1/1024}')
+                    motd_total=${motd_total:-unavailable}
+                fi
+                if [ "$motd_os" = FreeBSD ] || [ "$motd_os" = DragonFly ]; then
+                    if motd_run sysctl -n vm.stats.vm.v_free_count hw.pagesize; then
+                        motd_free=$(printf '%s\n' "$MOTD_CAPTURE" | awk 'NR==1{n=$1} NR==2{if(n~/^[0-9]+$/&&$1~/^[0-9]+$/)printf "%.0f",n*$1/1024}')
+                        motd_free=${motd_free:-unavailable}
+                    fi
+                fi ;;
+        esac
+        case "$motd_os" in
+            Darwin|FreeBSD|OpenBSD|NetBSD|DragonFly)
+                if motd_run sysctl -n vm.loadavg; then motd_load=$(printf '%s\n' "$MOTD_CAPTURE" | awk '{gsub(/[{}]/,"");print $1" "$2" "$3}'); fi
+                if motd_run sysctl -n kern.boottime; then
+                    motd_boot=$(printf '%s\n' "$MOTD_CAPTURE" | awk '{gsub(/[,{}]/," ");for(i=1;i<=NF;i++)if($i=="sec"&&$(i+1)=="="){print $(i+2);exit}}')
+                    if motd_run date +%s; then
+                        motd_uptime=$(printf '%s %s\n' "$MOTD_CAPTURE" "$motd_boot" | awk '$1~/^[0-9]+$/&&$2~/^[0-9]+$/&&$1>=$2 {printf "%.0f",$1-$2}')
+                        motd_uptime=${motd_uptime:-unavailable}
+                    fi
+                fi ;;
+        esac
+        if motd_run df -Pk /; then
+            motd_disk=$(printf '%s\n' "$MOTD_CAPTURE" | awk 'NR==2&&$4~/^[0-9]+$/ {printf "Root: %s used; %.1f GiB available",$5,$4/1048576}')
+            motd_disk=${motd_disk:-Storage: unavailable}
+        fi
+        if [ -r /proc/pressure/cpu ] && [ -r /proc/pressure/memory ] && [ -r /proc/pressure/io ]; then
+            motd_pressure=$(awk '/^some /{for(i=2;i<=NF;i++)if($i~/^avg10=/){sub(/^avg10=/,"",$i);v[++n]=$i;break}} END{if(n==3)printf "Pressure CPU/mem/I/O: %s/%s/%s%%",v[1],v[2],v[3]}' /proc/pressure/cpu /proc/pressure/memory /proc/pressure/io 2>/dev/null)
+            motd_pressure=${motd_pressure:-Pressure: unavailable}
+        fi
+        if [ -r /sys/block/zram0/mm_stat ]; then
+            motd_compression=$(awk 'NR==1&&$1~/^[0-9]+$/&&$3~/^[0-9]+$/ {printf "zram0: %.0f MiB data / %.0f MiB RAM",$1/1048576,$3/1048576;exit}' /sys/block/zram0/mm_stat 2>/dev/null)
+            motd_compression=${motd_compression:-Compression: unavailable}
+        fi
+        # CPU is the percentage reported by ps, not an instantaneous sample.
+        # Only a capped visible process sample is ranked; all counters may be
+        # incomplete because of access controls or disappearing processes.
+        if motd_run ps -A -o pid= -o pcpu= -o rss= -o comm=; then
+            motd_ps=$MOTD_CAPTURE
+            motd_cpu_rows=$(printf '%s\n' "$motd_ps" | awk -v n="$TOP_N" -v cap="$PROCESS_LIMIT" 'NR<=cap&&$1~/^[0-9]+$/&&$2~/^[0-9.]+$/{for(i=1;i<=n;i++)if($2+0>v[i]||s[i]==""){for(j=n;j>i;j--){v[j]=v[j-1];s[j]=s[j-1]}v[i]=$2;s[i]=$4" "$2"% (pid "$1")";break}} END{for(i=1;i<=n;i++)if(s[i]!="")print s[i]}')
+            motd_rss_rows=$(printf '%s\n' "$motd_ps" | awk -v n="$TOP_N" -v cap="$PROCESS_LIMIT" 'NR<=cap&&$1~/^[0-9]+$/&&$3~/^[0-9]+$/{for(i=1;i<=n;i++)if($3+0>v[i]||s[i]==""){for(j=n;j>i;j--){v[j]=v[j-1];s[j]=s[j-1]}v[i]=$3;s[i]=$4" "$3" KiB (pid "$1")";break}} END{for(i=1;i<=n;i++)if(s[i]!="")print s[i]}')
+            motd_cpu_rows=${motd_cpu_rows:-unavailable}; motd_rss_rows=${motd_rss_rows:-unavailable}
+        fi
+        if [ "$motd_os" = Linux ] && [ "$motd_helpers" -eq 1 ]; then
+            : > "$motd_tmp/io"
+            motd_scanned=0; motd_readable=0
+            for motd_io_path in /proc/[0-9]*/io; do
+                motd_scanned=$((motd_scanned + 1)); if [ "$motd_scanned" -gt "$PROCESS_LIMIT" ]; then break; fi
+                if [ ! -r "$motd_io_path" ]; then continue; fi
+                motd_pid=${motd_io_path#/proc/}; motd_pid=${motd_pid%/io}
+                motd_read=''; motd_written=''; motd_io_lines=0
+                while read -r motd_key motd_value; do
+                    motd_io_lines=$((motd_io_lines + 1)); if [ "$motd_io_lines" -gt 16 ]; then break; fi
+                    case "$motd_value" in ''|*[!0-9]*) continue ;; esac
+                    case "$motd_key" in read_bytes:) motd_read=$motd_value ;; write_bytes:) motd_written=$motd_value ;; esac
+                done < "$motd_io_path" 2>/dev/null
+                if [ -z "$motd_read" ] || [ -z "$motd_written" ]; then continue; fi
+                motd_readable=$((motd_readable + 1)); motd_name="pid-$motd_pid"
+                if [ -r "/proc/$motd_pid/comm" ]; then read -r motd_name < "/proc/$motd_pid/comm" || :; fi
+                printf '%s %s %s %s\n' "$motd_pid" "$motd_read" "$motd_written" "$motd_name" >> "$motd_tmp/io"
+            done
+            motd_io_rows=$(awk -v n="$TOP_N" '{x=$2+$3;for(i=1;i<=n;i++)if(x>v[i]||s[i]==""){for(j=n;j>i;j--){v[j]=v[j-1];s[j]=s[j-1]}v[i]=x;s[i]=sprintf("%s %.0f B (pid %s)",$4,x,$1);break}} END{for(i=1;i<=n;i++)if(s[i]!="")print s[i]}' "$motd_tmp/io")
+            motd_io_rows=${motd_io_rows:-unavailable: no readable process I/O}
+            motd_disk_io="Process I/O: $motd_readable readable; scan cap $PROCESS_LIMIT"
+        fi
+        if motd_run who; then
+            motd_session_summary=$(printf '%s\n' "$MOTD_CAPTURE" | awk 'NF{n++} END{printf "Sessions: %d logged-in terminals",n}')
+            motd_session_rows=$(printf '%s\n' "$MOTD_CAPTURE" | awk -v n="$TOP_N" 'NF&&++i<=n{print}')
+            motd_session_rows=${motd_session_rows:-No logged-in terminals reported.}
+        fi
+        if motd_run ss -Htan; then
+            motd_connections=$(printf '%s\n' "$MOTD_CAPTURE" | awk '$1=="ESTAB"{e++}$1=="LISTEN"{l++}END{printf "TCP: %d established; %d listening",e,l}')
+            motd_connection_rows=$(printf '%s\n' "$MOTD_CAPTURE" | awk -v n="$TOP_N" 'NF&&++i<=n{print $1" "$4" > "$5}')
+        elif motd_run netstat -an; then
+            motd_connections=$(printf '%s\n' "$MOTD_CAPTURE" | awk '/^tcp/{if($NF=="ESTABLISHED")e++;if($NF=="LISTEN")l++}END{printf "TCP: %d established; %d listening",e,l}')
+            motd_connection_rows=$(printf '%s\n' "$MOTD_CAPTURE" | awk -v n="$TOP_N" '/^tcp/&&++i<=n{print $4" > "$5" "$NF}')
+        fi
+        if motd_run systemctl list-units --all --type=service --no-legend --no-pager --plain; then
+            motd_service_manager=systemd
+            motd_service_summary=$(printf '%s\n' "$MOTD_CAPTURE" | awk '$1~/\.service$/{if($3=="active")a++;if($3=="failed")f++}END{printf "Services: %d active; %d failed",a,f}')
+            motd_service_rows=$(printf '%s\n' "$MOTD_CAPTURE" | awk '$1~/\.service$/&&$3=="failed"{print $1": "$3"/"$4} $1~/\.service$/&&$3!="failed"{other=other $1": "$3"/"$4"\n"} END{printf "%s",other}')
+            motd_service_rows=${motd_service_rows:-No loaded services reported.}
+        elif [ "$motd_os" = Darwin ] && motd_run launchctl list; then
+            motd_service_manager=launchd
+            motd_service_summary=$(printf '%s\n' "$MOTD_CAPTURE" | awk 'NR>1&&NF>=3{if($1~/^[0-9]+$/)r++;else i++;if($2~/^[0-9]+$/&&$2!=0)e++}END{printf "Launchd: %d running; %d idle; %d nonzero exit",r,i,e}')
+            motd_service_rows=$(printf '%s\n' "$MOTD_CAPTURE" | awk -v n="$TOP_N" 'NR>1&&NF>=3&&++i<=n{print $3": "($1=="-"?"idle":"running")" (exit "$2")"}')
+        elif motd_run rc-status --all; then
+            motd_service_summary='OpenRC: reported local runlevel state'
+            motd_service_rows=$(printf '%s\n' "$MOTD_CAPTURE" | awk -v n="$TOP_N" '/\[/{if(++i<=n)print}')
+            motd_service_rows=${motd_service_rows:-No service status rows reported.}
+        else
+            case "$motd_os" in FreeBSD|DragonFly)
+                if motd_run service -e; then
+                    motd_service_summary='BSD rc: enabled scripts; state unqueried'
+                    motd_service_rows=$(printf '%s\n' "$MOTD_CAPTURE" | awk -v n="$TOP_N" 'NF&&++i<=n{print $0": enabled"}')
+                    motd_service_rows=${motd_service_rows:-No enabled rc scripts reported.}
+                fi ;; esac
+        fi
+    fi
 fi
-motd_host=${motd_host:-unavailable}
-motd_os=${motd_os:-unavailable}
-motd_release=${motd_release:-unavailable}
 
-motd_before_hooks || exit "$?"
-motd_heading "$TITLE"
-if [ -n "$SITE_LABEL" ]; then motd_line "$SITE_LABEL"; fi
-motd_line 'Portable sh baseline'
+# Exclusions are literal glob patterns compiled by the configurator, never eval.
+# Required patterns are checked against the available inventory. Missing data
+# is not called a failure and an enabled rc script is not called running.
+motd_filtered_services=''
+while read -r motd_service_row; do
+    motd_service_name=${motd_service_row%%:*}
+    if motd_service_allowed "$motd_service_name"; then
+        motd_filtered_services="$motd_filtered_services$motd_service_row
+"
+    fi
+done <<MOTD_FILTER_END
+$motd_service_rows
+MOTD_FILTER_END
+motd_service_rows=$motd_filtered_services
+if [ "$motd_service_manager" = systemd ] && [ -n "$motd_awk" ]; then
+    motd_service_summary=$(printf '%s\n' "$motd_service_rows" | awk '/: active\//{a++}/: failed\//{f++}END{printf "Services: %d active; %d failed",a,f}')
+fi
+motd_required_patterns=$(motd_required_services)
+motd_required_rows=''
+while read -r motd_required_pattern; do
+    if [ -z "$motd_required_pattern" ]; then continue; fi
+    motd_required_seen=0
+    while read -r motd_service_row; do
+        motd_service_name=${motd_service_row%%:*}
+        case "$motd_service_name" in $motd_required_pattern|$motd_required_pattern.service)
+            motd_required_seen=1
+            motd_required_rows="$motd_required_rows$motd_service_row
+"
+            case "$motd_service_row" in *': failed/'*|*': inactive/'*) motd_attention="Required service: $motd_service_row" ;; esac ;;
+        esac
+    done <<MOTD_REQUIRED_INVENTORY_END
+$motd_service_rows
+MOTD_REQUIRED_INVENTORY_END
+    if [ "$motd_required_seen" -eq 0 ]; then
+        motd_required_rows="$motd_required_rows$motd_required_pattern: unavailable (not reported)
+"
+    fi
+done <<MOTD_REQUIRED_PATTERNS_END
+$motd_required_patterns
+MOTD_REQUIRED_PATTERNS_END
+motd_service_rows="$motd_required_rows$motd_service_rows"
+
+# Allocate rows before rendering so the last sections retain representation.
+# A section has a heading + minimum one row. Extra rows first enable all three
+# process metrics and storage, then expand the lists. One row stays for a prompt.
+motd_inner=$((MAX_WIDTH - 4)); motd_sections=0
+for motd_section in $SECTIONS; do motd_sections=$((motd_sections + 1)); done
+motd_extra=$((ROWS - 4 - 2 * motd_sections)); if [ "$motd_extra" -lt 0 ]; then motd_extra=0; fi
+motd_process_extra=0; motd_resource_extra=0
+case " $SECTIONS " in *' processes '*)
+    if [ "$motd_extra" -gt 1 ]; then motd_process_extra=2; motd_extra=$((motd_extra - 2))
+    elif [ "$motd_extra" -gt 0 ]; then motd_process_extra=1; motd_extra=$((motd_extra - 1)); fi ;; esac
+case " $SECTIONS " in *' resources '*) if [ "$motd_extra" -gt 0 ]; then motd_resource_extra=1; motd_extra=$((motd_extra - 1)); fi ;; esac
+motd_share=0
+if [ "$motd_sections" -gt 0 ]; then motd_share=$((motd_extra / motd_sections)); motd_extra=$((motd_extra % motd_sections)); fi
+motd_budget=$((ROWS - 1)); motd_section_budget=0; motd_color=''; motd_reset=''
+if [ "$MOTD_PLAIN" -eq 0 ] && [ "$THEME" != mono ] && { [ -t 1 ] || [ "$MOTD_FORCE_COLOR" -eq 1 ]; } && [ -z "${NO_COLOR+x}" ] && [ "${TERM-dumb}" != dumb ]; then
+    case "$THEME" in cyan) motd_color=$(printf '\033[1;36m') ;; green) motd_color=$(printf '\033[1;32m') ;; amber) motd_color=$(printf '\033[1;33m') ;; esac
+    motd_reset=$(printf '\033[0m')
+fi
+if [ "$MOTD_ASCII" -eq 1 ]; then motd_v='|'; motd_h='-'; motd_tl='+'; motd_tr='+'; motd_ml='+'; motd_mr='+'; motd_bl='+'; motd_br='+'
+else motd_v='│'; motd_h='─'; motd_tl='┌'; motd_tr='┐'; motd_ml='├'; motd_mr='┤'; motd_bl='└'; motd_br='┘'; fi
+
+motd_clean_text() {
+    # Historical shells count bytes, not terminal cells. Printable-ASCII content
+    # plus known one-cell Unicode borders gives reproducible columns and removes
+    # terminal controls. Modern runtime retains its richer text support.
+    motd_rest=$1; motd_clean=''; motd_count=0
+    while [ -n "$motd_rest" ] && [ "$motd_count" -lt "$2" ]; do
+        motd_character=${motd_rest%"${motd_rest#?}"}; motd_rest=${motd_rest#?}
+        case "$motd_character" in [\ -~]) : ;; *) motd_character='?' ;; esac
+        motd_clean=$motd_clean$motd_character; motd_count=$((motd_count + 1))
+    done
+    if [ -n "$motd_rest" ] && [ "$2" -gt 0 ]; then motd_clean=${motd_clean%?}'~'; fi
+}
+motd_border() {
+    if [ "$motd_budget" -le 0 ]; then return; fi
+    motd_clean_text "$3" "$motd_inner"
+    # Use the counted characters: old Bash ${#var} in arithmetic can apply
+    # historical word-splitting semantics to values containing spaces.
+    motd_rule=" $motd_clean "; motd_fill=$((MAX_WIDTH - 4 - motd_count))
+    if [ -z "$3" ]; then motd_rule=''; motd_fill=$((MAX_WIDTH - 2)); fi
+    while [ "$motd_fill" -gt 0 ]; do motd_rule=$motd_rule$motd_h; motd_fill=$((motd_fill - 1)); done
+    printf '%s%s%s%s%s\n' "$motd_color" "$1" "$motd_rule" "$2" "$motd_reset"
+    motd_budget=$((motd_budget - 1))
+}
+motd_line() {
+    if [ "$motd_section_budget" -le 0 ] || [ "$motd_budget" -le 1 ]; then return; fi
+    motd_clean_text "$1" "$motd_inner"
+    printf '%s%s%s %-*s %s%s%s\n' "$motd_color" "$motd_v" "$motd_reset" "$motd_inner" "$motd_clean" "$motd_color" "$motd_v" "$motd_reset"
+    motd_section_budget=$((motd_section_budget - 1)); motd_budget=$((motd_budget - 1))
+}
+motd_rows() {
+    # The here-document keeps row-budget mutations in this shell.
+    while read -r motd_row; do
+        if [ "$motd_section_budget" -le 0 ]; then break; fi
+        if [ -n "$motd_row" ]; then motd_line "$motd_row"; fi
+    done <<MOTD_ROWS_END
+$1
+MOTD_ROWS_END
+}
+motd_first() { motd_first_row=${1%%'
+'*}; }
+
+motd_border "$motd_tl" "$motd_tr" "$TITLE"
+motd_section_budget=1
+if [ -n "$SITE_LABEL" ]; then motd_line "$SITE_LABEL | Portable Unix"
+else motd_line 'Portable Unix | local observations'; fi
 for motd_section in $SECTIONS; do
+    motd_section_budget=$((1 + motd_share))
+    if [ "$motd_extra" -gt 0 ]; then motd_section_budget=$((motd_section_budget + 1)); motd_extra=$((motd_extra - 1)); fi
     case "$motd_section" in
         system)
-            motd_heading 'SYSTEM'
-            motd_line "Host: $motd_host | OS: $motd_os $motd_release"
-            motd_line "Uptime: $motd_uptime s | Load (1/5/15 min): $motd_load" ;;
+            motd_border "$motd_ml" "$motd_mr" 'SYSTEM'
+            motd_line "Host: $motd_host | $motd_os $motd_release"
+            motd_line "Up: $motd_uptime s | Load: $motd_load" ;;
         resources)
-            motd_heading 'RESOURCES'
-            if [ "$motd_available" != unavailable ]; then
-                motd_line "Memory available: $motd_available KiB / $motd_total KiB total"
-            elif [ "$motd_free" != unavailable ]; then
-                motd_line "Memory free: $motd_free KiB / $motd_total KiB total (available: unavailable)"
-            else
-                motd_line 'Memory: unavailable'
-            fi
-            motd_line 'Storage, swap detail and pressure: unavailable in portable baseline' ;;
+            motd_section_budget=$((motd_section_budget + motd_resource_extra))
+            motd_border "$motd_ml" "$motd_mr" 'RESOURCES'
+            if [ "$motd_available" != unavailable ]; then motd_line "Memory available: $motd_available KiB"
+            elif [ "$motd_free" != unavailable ]; then motd_line "Memory free: $motd_free KiB (not available)"
+            else motd_line 'Memory: unavailable'; fi
+            motd_line "$motd_disk"
+            motd_line "Total RAM: $motd_total KiB"
+            if [ "$SHOW_SWAP" -eq 1 ]; then motd_line "Swap free: $motd_swap_free / $motd_swap_total KiB"; fi
+            if [ "$SHOW_PRESSURE" -eq 1 ]; then motd_line "$motd_pressure"; fi
+            if [ "$SHOW_COMPRESSION" -eq 1 ]; then motd_line "$motd_compression"; fi ;;
+        services)
+            motd_border "$motd_ml" "$motd_mr" 'SERVICES'; motd_line "$motd_service_summary"
+            while read -r motd_service_row; do
+                if [ "$motd_section_budget" -le 0 ]; then break; fi
+                motd_service_name=${motd_service_row%%:*}
+                if motd_service_allowed "$motd_service_name"; then motd_line "$motd_service_row"; fi
+            done <<MOTD_SERVICES_END
+$motd_service_rows
+MOTD_SERVICES_END
+            ;;
+        processes)
+            motd_section_budget=$((motd_section_budget + motd_process_extra))
+            motd_border "$motd_ml" "$motd_mr" 'PROCESSES (visible sample)'
+            motd_first "$motd_cpu_rows"; motd_line "CPU: $motd_first_row"
+            motd_first "$motd_rss_rows"; motd_line "RSS: $motd_first_row"
+            motd_first "$motd_io_rows"; motd_line "I/O bytes: $motd_first_row"
+            motd_line 'CPU = ps%; I/O = cumulative read+write'
+            motd_rows "$motd_cpu_rows"; motd_rows "$motd_rss_rows" ;;
+        sessions)
+            motd_border "$motd_ml" "$motd_mr" 'SESSIONS'; motd_line "$motd_session_summary"; motd_rows "$motd_session_rows" ;;
+        connections)
+            motd_border "$motd_ml" "$motd_mr" 'CONNECTIONS'; motd_line "$motd_connections"; motd_rows "$motd_connection_rows" ;;
         attention)
-            motd_heading 'NOTICES'
-            if [ "$MOTD_DEMO_ALERTS" -eq 1 ]; then motd_line 'DEMO: Example warning; no live fault is implied.'; fi
-            motd_messages ;;
+            motd_border "$motd_ml" "$motd_mr" 'ATTENTION'
+            case "$motd_attention" in 'DEMO WARNING:'*|'Required service:'*) motd_line "$motd_attention" ;; esac
+            motd_messages
+            motd_line "$motd_attention" ;;
         hints)
-            motd_heading 'HINTS'
-            motd_hints ;;
-        services|processes|sessions|connections|io)
-            motd_line "$motd_section: not collected by the portable sh backend" ;;
+            motd_border "$motd_ml" "$motd_mr" 'HINTS'; motd_hints; motd_line 'Inspect: ps | df -Pk / | who' ;;
+        io)
+            motd_border "$motd_ml" "$motd_mr" 'I/O (cumulative; visible sample)'; motd_line "$motd_disk_io"; motd_rows "$motd_io_rows" ;;
     esac
 done
+motd_border "$motd_bl" "$motd_br" ''
 motd_after_hooks || exit "$?"

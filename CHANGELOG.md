@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.3.0 - 2026-11-16
+
+- Generated Bash files now dispatch to enhanced Linux collection or an embedded
+  portable Unix renderer before historical engines parse modern Bash syntax.
+  Zsh entry points fall back to `/bin/sh` when `/bin/bash` is absent.
+- Portable Unix output now implements the shared nine-section model, adaptive
+  geometry, themes, framed ASCII/Unicode output, local collector adapters and
+  explicit missing-data states. Historical Bash builds are executed in tests;
+  source/build qualifications are retained in the verification record.
+- Native PowerShell uses PowerShell 1-era grammar and data-only literal recipe
+  encoding, with guarded WMI/CIM/.NET capability paths and more detailed native
+  collectors. PS1–4 are targeted, not execution-verified. Actual PS6, PS7 LTS,
+  current PS7 and Windows5.1 are distinct verification environments.
+- Workshop and home-lab examples are generated for Bash, Zsh, sh and PowerShell.
+- Actual-PTY PNG gallery: 512 dashboard cases plus 12 static notices, covering
+  four terminal sizes, four themes, ASCII/Unicode and colour/plain output.
+  Retained recipes/transcripts, source/engine/pixel hashes, lossless optimization,
+  deduplication, an HTML filter and original-pixel size comparisons make the
+  screenshots reproducible and inspectable.
+- Add macOS native-host CI and retained-gallery integrity verification. The
+  installer still targets Linux; other login-surface integrations remain explicit
+  contracts rather than inferred support for every OS and transport.
+
 ## 0.2.0 - 2026-11-16
 
 - Page-by-page terminal wizard with synthetic previews, grouped settings,
