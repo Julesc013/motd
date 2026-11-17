@@ -124,12 +124,16 @@ class WideResourceTests(unittest.TestCase):
                     with self.subTest(shell=shell, columns=columns, design=design):
                         self.assertEqual(len(bars), 3, text)
                         self.assertTrue(all(len(bar) == columns - 4 for bar in bars))
-                        # The filled part depicts the quantity actually named:
-                        # Bash used memory versus portable available memory.
-                        expected = .25 if shell == 'bash' else .75
+                        # The filled part depicts the quantity actually named.
+                        # A Bash launcher selects the portable backend on macOS
+                        # and older Bash, so its filename cannot identify the
+                        # collector. Dispatch has its own compatibility tests;
+                        # this assertion verifies the displayed metric contract.
+                        portable = 'RAM available ' in text
+                        expected = .75 if portable else .25
                         self.assertLessEqual(abs(bars[0].count('#') / len(bars[0]) - expected), 1 / len(bars[0]))
-                        self.assertIn('8.0Gi/32.0Gi' if shell == 'bash' else '12582912/16777216 KiB', text)
-                        self.assertIn('220Gi/600Gi used' if shell == 'bash' else 'Root: 42% used', text)
+                        self.assertIn('12582912/16777216 KiB' if portable else 'RAM 8.0Gi/32.0Gi', text)
+                        self.assertIn('Root: 42% used' if portable else '220Gi/600Gi used', text)
 
     @unittest.skipUnless(os.name == 'posix', 'Unix bar contracts need Unix shells')
     def test_wide_unix_bars_fit_all_designs_and_small_viewports(self):
