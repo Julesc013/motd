@@ -93,7 +93,7 @@ workflow and publication status are recorded separately in that same index.
   controls/multiline headings. The Bash item registry alone is not this contract.
 - [x] Exercise the documented novice save/build/reopen path in a temporary directory.
 - [ ] Measure cold preview, cached selection and resize latency with exact host/backend details.
-- [ ] Reconcile the interrupted publication against remote refs and local staged
+- [x] Reconcile the interrupted publication against remote refs and local staged
   artifacts; publish exact current evidence and refresh changed-source galleries.
 - [ ] Measure current-source live/render performance against the historical
   <100 ms aspiration and 400 ms controlled-stall target on named hosts. Retain
@@ -102,7 +102,7 @@ workflow and publication status are recorded separately in that same index.
 - [ ] Execute actual PowerShell 1.0/3.0/4.0/5.0 harnesses when those hosts are
   available; prepared CI/manual scripts do not count as completed execution.
 - [x] Retain the actual PS2/Server2022 evidence with its original source scope.
-- [ ] Repeat the PS2 exact-engine harness on the final source; a prior branch
+- [x] Repeat the PS2 exact-engine harness on the final source; a prior branch
   result does not verify later edits.
 - [ ] Add representative disposable real SSH/PAM/getty and shell/profile
   deployment checks; record exact integration and permission scope.

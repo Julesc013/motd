@@ -43,6 +43,32 @@ explicitly skipped because it requires root. The new lifecycle tests exercise
 all ten output routes, saved recipes, archival suffixes, rollback and the Fish
 install/upgrade/repair/uninstall cycle in temporary directories.
 
+### Final native checks
+
+Both workflows passed at implementation commit
+[`0f16e88`](https://github.com/Julesc013/motd/commit/0f16e88d1406f0b6e87a9ea7e263887c2eb7d057):
+[Verify](https://github.com/Julesc013/motd/actions/runs/44042319329) passed all five
+jobs, and [native PowerShell](https://github.com/Julesc013/motd/actions/runs/44042319335)
+passed all four. The retained [Verify record](../build/review-20261117/native-ci-0f16e88/verify-summary.json)
+and [native record](../build/review-20261117/native-ci-0f16e88/evidence.json) include
+complete logs, exact versions, skips and the preceding failure/correction lineage.
+
+| Native environment | Final observed evidence |
+|---|---|
+| Windows PowerShell 2.0 / Server 2022 | **81/81 harness cases**, zero skips, CLR 2.0.50727.9188. The probe and XML confirm the actual engine. All ten artifact hashes match the final generator using Windows CRLF output. |
+| Windows PowerShell 5.1.26100.33648 | 25/25 core tests; the separate presentation/adapter/export job passed 41 of 49 tests, with eight explicit environment-specific skips. |
+| PowerShell 7.6.9 / Windows | 25/25 core tests; the separate presentation/adapter/export job passed 41 of 49 tests, with eight explicit environment-specific skips. |
+| macOS 26.7.2 | Bash 3.2.57, Zsh 5.9 and PowerShell 7.6.9: 29/29 core/native tests; the separate presentation job passed 43 of 49 tests, with six explicit environment-specific skips. |
+| Python 3.8.18 / Ubuntu 22.04 | 60 of 62 selected tests passed; the stdlib `tomllib` differential reference and root-only ownership restoration were explicitly skipped. |
+| Linux / Python 3.11.18 | 247 of 258 tests passed, 11 explicit skips; regenerated examples matched and all 712 retained gallery cases passed transcript/cell/pixel verification. |
+
+The initial native run caught a test assumption: a Bash launcher on macOS uses
+the portable collector's available-memory fixture, not the enhanced Linux
+collector's used-memory fixture. The test-only correction preserved the runtime
+and generated artifacts. The failed run remains retained beside the successful
+run; its macOS runner used PowerShell 7.6.10, whereas the final runner used 7.6.9.
+No interactive Windows console resize/input claim follows from these tests.
+
 ## One recipe, adaptive outputs
 
 The configurator requires **Python 3.8+**. Generation, recipe recovery and
@@ -67,7 +93,7 @@ export](install.md) for the two file-writing contracts.
 | Zsh | A small entry point delegates to `/bin/bash` when present, otherwise `/bin/sh`; the same file then selects the Unix renderer. | This is shared collection, not a second native-Zsh collector implementation. It needs a compatible sh/Bash destination, and does not assume every historical Zsh startup file is identical. |
 | Fish | A single file launches its embedded portable Unix payload through `/bin/sh`, forwarding arguments as data. | Requires Fish and `/bin/sh`; collectors remain shared. Large embedded payloads are explicitly bounded. Native startup semantics are tested separately from rendering. |
 | Portable sh | All nine section IDs, themes, ASCII/Unicode framing, dynamic row allocation and local Linux/Darwin/BSD/generic-Unix collection paths. | POSIX-like syntax does not imply every historical Bourne dialect, utility option or kernel interface exists. Unavailable data remains unavailable. |
-| PowerShell | Native file with PowerShell 1-era grammar, .NET 2-era fallback APIs, literal configuration, and feature checks for newer facilities. Windows PowerShell 1–5 and PowerShell 6–7 are explicit targets. | **PowerShell 1, 3, 4 and 5.0 remain unexecuted targets.** Actual PS2.0 passed 41 cases on Server2022 at the retained v0.4-stage commit `4cc3228`; current-review native evidence is linked above. Windows 5.1, PS6 and PS7 evidence are separate. No automatic Windows profile installation. |
+| PowerShell | Native file with PowerShell 1-era grammar, .NET 2-era fallback APIs, literal configuration, and feature checks for newer facilities. Windows PowerShell 1–5 and PowerShell 6–7 are explicit targets. | **PowerShell 1, 3, 4 and 5.0 remain unexecuted targets.** Actual PS2.0 passed 81 cases on Server 2022 for the current source; the earlier 41-case record remains historical. Windows 5.1, PS6 and PS7 evidence are separate. No automatic Windows profile installation. |
 | CMD launcher | One `.cmd` file contains the same native PowerShell core as visible text and launches an installed `powershell.exe` or `pwsh.exe`. | Requires a PowerShell engine with `ScriptBlock.Create`; it is not an independent CMD metrics implementation. Treat the wrapper as PS2+ pending older-engine proof. Native filename and argument tests run on Windows. |
 | `issue` | Static public text encoded for an agetty-compatible issue consumer. | Not a universal getty escape dialect. |
 | `ssh-banner` | Static public text for an explicitly configured OpenSSH `Banner` file. | Generating/writing the file does not reconfigure or reload the server. |

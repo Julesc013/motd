@@ -1,0 +1,303 @@
+{
+  "schema_version": 1,
+  "recorded_at_utc": "2026-11-17T07:58:56.627778+00:00",
+  "repository": "Julesc013/motd",
+  "commit": "0f16e88d1406f0b6e87a9ea7e263887c2eb7d057",
+  "tree": "8a65d8d40526256de6323adbd4f307ca99f9478d",
+  "workflow": ".github/workflows/ci.yml",
+  "run_id": 44042319329,
+  "run_url": "https://github.com/Julesc013/motd/actions/runs/44042319329",
+  "event": "push",
+  "run_attempt": 1,
+  "status": "completed",
+  "conclusion": "success",
+  "all_five_jobs_passed": true,
+  "jobs": [
+    {
+      "id": 133899591924,
+      "name": "python-38",
+      "html_url": "https://github.com/Julesc013/motd/actions/runs/44042319329/job/133899591924",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-17T07:54:33Z",
+      "completed_at": "2026-11-17T07:54:52Z",
+      "runner_name": "GitHub Actions 1000140252",
+      "labels": [
+        "ubuntu-22.04"
+      ],
+      "observed_versions": {
+        "python": "3.8.18",
+        "powershell": null,
+        "powershell_edition": null,
+        "powershell_os": null
+      },
+      "test_suites": [
+        {
+          "run": 6,
+          "passed": 5,
+          "skipped": 1,
+          "seconds": 0.107
+        },
+        {
+          "run": 13,
+          "passed": 13,
+          "skipped": 0,
+          "seconds": 0.14
+        },
+        {
+          "run": 7,
+          "passed": 7,
+          "skipped": 0,
+          "seconds": 0.055
+        },
+        {
+          "run": 9,
+          "passed": 9,
+          "skipped": 0,
+          "seconds": 0.009
+        },
+        {
+          "run": 27,
+          "passed": 26,
+          "skipped": 1,
+          "seconds": 0.501
+        }
+      ],
+      "totals": {
+        "run": 62,
+        "passed": 60,
+        "skipped": 2
+      },
+      "explicit_skips": [
+        "test_toml_one_zero_values_match_standard_library (test_python_compatibility.BundledTomlTests) ... skipped 'Differential reference needs Python 3.11+ stdlib tomllib'",
+        "test_existing_numeric_ownership_is_preserved_and_restored (test_transactions.TransactionTests) ... skipped 'numeric ownership restoration requires root'"
+      ],
+      "log_file": "verify-job-133899591924.log",
+      "log_sha256": "096621e503065aaa1d5bdb84122920a4fbe54dd3f6a4d24227339672e1b2bed5",
+      "log_bytes": 29963
+    },
+    {
+      "id": 133899592243,
+      "name": "powershell-windows (powershell)",
+      "html_url": "https://github.com/Julesc013/motd/actions/runs/44042319329/job/133899592243",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-17T07:54:32Z",
+      "completed_at": "2026-11-17T07:55:17Z",
+      "runner_name": "GitHub Actions 1000140257",
+      "labels": [
+        "windows-latest"
+      ],
+      "observed_versions": {
+        "python": "3.11.9",
+        "powershell": "5.1.26100.33648",
+        "powershell_edition": "Desktop",
+        "powershell_os": null
+      },
+      "test_suites": [
+        {
+          "run": 25,
+          "passed": 25,
+          "skipped": 0,
+          "seconds": 25.735
+        }
+      ],
+      "totals": {
+        "run": 25,
+        "passed": 25,
+        "skipped": 0
+      },
+      "explicit_skips": [],
+      "log_file": "verify-job-133899592243.log",
+      "log_sha256": "83e5b8ac85585dc4659de5d0e818dd01caaa19bc38608e20822a4193c36e3fe6",
+      "log_bytes": 22269
+    },
+    {
+      "id": 133899592291,
+      "name": "linux",
+      "html_url": "https://github.com/Julesc013/motd/actions/runs/44042319329/job/133899592291",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-17T07:54:32Z",
+      "completed_at": "2026-11-17T07:58:15Z",
+      "runner_name": "GitHub Actions 1000140253",
+      "labels": [
+        "ubuntu-latest"
+      ],
+      "observed_versions": {
+        "python": "3.11.18",
+        "powershell": "7.6.10",
+        "powershell_edition": null,
+        "powershell_os": null
+      },
+      "test_suites": [
+        {
+          "run": 258,
+          "passed": 247,
+          "skipped": 11,
+          "seconds": 161.707
+        }
+      ],
+      "totals": {
+        "run": 258,
+        "passed": 247,
+        "skipped": 11
+      },
+      "explicit_skips": [
+        "test_single_file_import_and_recipe_round_trip_in_real_python38 (test_python_compatibility.Python38ExecutionTests.test_single_file_import_and_recipe_round_trip_in_real_python38) ... skipped 'Set MOTD_TEST_PYTHON38 for actual Python 3.8 execution'",
+        "test_bash32_automatically_renders_with_portable_backend (test_shell_compatibility.ShellCompatibilityTests.test_bash32_automatically_renders_with_portable_backend) ... skipped 'Set MOTD_TEST_BASH32 to an actual Bash 3.2 binary for the historical boundary test'",
+        "test_optional_historical_bash_binaries_render_instead_of_rejecting (test_shell_compatibility.ShellCompatibilityTests.test_optional_historical_bash_binaries_render_instead_of_rejecting) ... skipped 'Set MOTD_TEST_BASH1/2/32/43 to real historical Bash executables'",
+        "Check the actual old shell, not a modern shell with a fake version. ... skipped 'Set MOTD_TEST_BASH1/2 or MOTD_TEST_ZSH2 for real historical startup tests'",
+        "test_optional_historical_zsh_launchers_and_no_bash_fallback (test_shell_compatibility.ShellCompatibilityTests.test_optional_historical_zsh_launchers_and_no_bash_fallback) ... skipped 'Set MOTD_TEST_ZSH2/3/4 to actual historical Zsh executables'",
+        "test_existing_numeric_ownership_is_preserved_and_restored (test_transactions.TransactionTests.test_existing_numeric_ownership_is_preserved_and_restored) ... skipped 'numeric ownership restoration requires root'",
+        "test_batch_text_prints_metacharacters_literally_without_powershell (test_windows_adapters.NativeWindowsAdapterTests.test_batch_text_prints_metacharacters_literally_without_powershell) ... skipped 'Requires native Windows cmd.exe'",
+        "test_cmd_demo_suppresses_configured_hooks (test_windows_adapters.NativeWindowsAdapterTests.test_cmd_demo_suppresses_configured_hooks) ... skipped 'Requires native Windows cmd.exe'",
+        "test_cmd_filename_metacharacters_are_data (test_windows_adapters.NativeWindowsAdapterTests.test_cmd_filename_metacharacters_are_data) ... skipped 'Requires native Windows cmd.exe'",
+        "test_cmd_launcher_runs_embedded_renderer_at_requested_geometry (test_windows_adapters.NativeWindowsAdapterTests.test_cmd_launcher_runs_embedded_renderer_at_requested_geometry) ... skipped 'Requires native Windows cmd.exe'",
+        "test_default_windows_export_uses_create_only_manifest (test_windows_adapters.NativeWindowsAdapterTests.test_default_windows_export_uses_create_only_manifest) ... skipped 'Requires native Windows cmd.exe'"
+      ],
+      "log_file": "verify-job-133899592291.log",
+      "log_sha256": "2fb4cf98f6bdbf52d3791a290636dd47c5cdc0317887b9914c9e9dbdd8970d77",
+      "log_bytes": 91853
+    },
+    {
+      "id": 133899592293,
+      "name": "powershell-windows (pwsh)",
+      "html_url": "https://github.com/Julesc013/motd/actions/runs/44042319329/job/133899592293",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-17T07:54:32Z",
+      "completed_at": "2026-11-17T07:55:15Z",
+      "runner_name": "GitHub Actions 1000140256",
+      "labels": [
+        "windows-latest"
+      ],
+      "observed_versions": {
+        "python": "3.11.9",
+        "powershell": "7.6.9",
+        "powershell_edition": "Core",
+        "powershell_os": "Microsoft Windows 10.0.26100"
+      },
+      "test_suites": [
+        {
+          "run": 25,
+          "passed": 25,
+          "skipped": 0,
+          "seconds": 24.842
+        }
+      ],
+      "totals": {
+        "run": 25,
+        "passed": 25,
+        "skipped": 0
+      },
+      "explicit_skips": [],
+      "log_file": "verify-job-133899592293.log",
+      "log_sha256": "583be5ab4244e998f730102cfd6aa8aa82d896a9178520a28a2664e953d1d9b4",
+      "log_bytes": 22460
+    },
+    {
+      "id": 133899592306,
+      "name": "macos",
+      "html_url": "https://github.com/Julesc013/motd/actions/runs/44042319329/job/133899592306",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-11-17T07:54:34Z",
+      "completed_at": "2026-11-17T07:55:21Z",
+      "runner_name": "GitHub Actions 1000140254",
+      "labels": [
+        "macos-latest"
+      ],
+      "observed_versions": {
+        "python": "3.11.9",
+        "powershell": "7.6.9",
+        "powershell_edition": "Core",
+        "powershell_os": "macOS 26.7.2",
+        "macos": "26.7.2",
+        "bash": "3.2.57(1)-release (arm64-apple-darwin25)",
+        "zsh": "5.9 (arm64-apple-darwin25.0)"
+      },
+      "test_suites": [
+        {
+          "run": 4,
+          "passed": 4,
+          "skipped": 0,
+          "seconds": 1.18
+        },
+        {
+          "run": 25,
+          "passed": 25,
+          "skipped": 0,
+          "seconds": 26.741
+        }
+      ],
+      "totals": {
+        "run": 29,
+        "passed": 29,
+        "skipped": 0
+      },
+      "explicit_skips": [],
+      "log_file": "verify-job-133899592306.log",
+      "log_sha256": "725653220524f536f3624be7e2097d5396c5d2a6bb8d99c154d9adb4d4d3b0a9",
+      "log_bytes": 28156
+    }
+  ],
+  "linux_regeneration_and_gallery_steps": {
+    "Run python3 tools/build_examples.py": "success",
+    "Run git diff --exit-code -- examples presets": "success",
+    "Verify complete retained terminal capture evidence": "success",
+    "Verify complete design sampler evidence": "success",
+    "Verify retained inline and wide bar evidence": "success"
+  },
+  "gallery_verification": {
+    "examples/gallery": {
+      "verified_logical_cases": 524,
+      "verified_unique_pngs": 196,
+      "verified_comparisons": 8,
+      "all_decoded_pixels_verified": true
+    },
+    "examples/designs": {
+      "verified_logical_cases": 140,
+      "verified_unique_pngs": 138,
+      "verified_comparisons": 4,
+      "all_decoded_pixels_verified": true
+    },
+    "examples/bars": {
+      "verified_logical_cases": 48,
+      "verified_unique_pngs": 48,
+      "verified_comparisons": 0,
+      "all_decoded_pixels_verified": true
+    }
+  },
+  "total_verified_logical_gallery_cases": 712,
+  "scope": "Observed completed GitHub Actions jobs for this exact commit. Counts identify executed and explicitly skipped tests. Raw run/job responses and complete decoded job logs are retained beside this file.",
+  "summary_script": "/workspace/scratch/e6a94ceb1ad8/work/summarize_verify_ci.py",
+  "summary_script_sha256": "9e73e4836df5582c6161b72122f71226942addcc5950e25394ba105638524dd5",
+  "exact_commit_checks": [
+    {
+      "name": "python-38",
+      "job_head_sha": "0f16e88d1406f0b6e87a9ea7e263887c2eb7d057",
+      "checkout_sha_found_in_log": true
+    },
+    {
+      "name": "powershell-windows (powershell)",
+      "job_head_sha": "0f16e88d1406f0b6e87a9ea7e263887c2eb7d057",
+      "checkout_sha_found_in_log": true
+    },
+    {
+      "name": "linux",
+      "job_head_sha": "0f16e88d1406f0b6e87a9ea7e263887c2eb7d057",
+      "checkout_sha_found_in_log": true
+    },
+    {
+      "name": "powershell-windows (pwsh)",
+      "job_head_sha": "0f16e88d1406f0b6e87a9ea7e263887c2eb7d057",
+      "checkout_sha_found_in_log": true
+    },
+    {
+      "name": "macos",
+      "job_head_sha": "0f16e88d1406f0b6e87a9ea7e263887c2eb7d057",
+      "checkout_sha_found_in_log": true
+    }
+  ]
+}

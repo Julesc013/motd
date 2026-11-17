@@ -14,6 +14,14 @@ runtime-download provenance and the environment-specific replay script are
 preserved there. Counts describe their named checks; they must not be added
 together as independent test coverage or applied to another source revision.
 
+The final implementation at `0f16e88` passed both native workflows (nine jobs).
+The [native PowerShell record](review-20261117/native-ci-0f16e88/evidence.json)
+includes actual PS2.0 probe/XML and ten generated-artifact hash comparisons;
+the [Verify record](review-20261117/native-ci-0f16e88/verify-summary.json) includes
+the Linux, Python 3.8, macOS and Windows jobs. Their raw files are retained in the
+same directory. The sibling `native-ci-9cefbdd` directory preserves the initial
+macOS test-assumption failure and successful jobs from the preceding run.
+
 The records below are historical stages and retain their original scope.
 
 The version0.4 records are `verification-v04.json` and its retained log,

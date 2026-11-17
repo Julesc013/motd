@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "recorded_at_utc": "2026-11-17T07:33:07.848265+00:00",
-  "status": "local-verification-passed-native-ci-pending",
+  "recorded_at_utc": "2026-11-17T08:00:39.252073+00:00",
+  "status": "local-and-native-verification-passed",
   "source_sha256": {
     "motd.py": "eda912a538325d00f798dc969f8da4389f5c34ad5d4d13f2caba99087622a130",
     "runtime/designs.sh": "6faaea0c5521f143faa58294f5a60ba3966b0d933543d80535183a3908ebd3b3",
@@ -29,7 +29,7 @@
     "tests/test_powershell.py": "a8f847b00ec0a15195bb8c028a4c78d79e39ef9171f082ecd1778c88107f5fee",
     "tests/test_python_compatibility.py": "de47a3d867776d2c2212ddffa0fdf267be5a2126f69df36d785bdeded2bbf4d6",
     "tests/test_runtime.py": "7208f2af79659adac1f97df65b3d37be9b84d2ecdd516f270fe6a505b07423e3",
-    "tests/test_runtime_review.py": "28957b3c249a90f48d8b5d4e8830886d87c2a1eb466beea0a4172ac52c43315e",
+    "tests/test_runtime_review.py": "2996cdf6fc5c6d9c3f234c38bc466f7d6c5e57f64e9091360973a023dc257d0f",
     "tests/test_shell_compatibility.py": "232875f8d3ed134ed3778efff64d884942cf67ae788750fe8fd7eaf5ebd60f24",
     "tests/test_transactions.py": "f260a911d50972c3de1d59d85e4c2d15c6a27d3b3af86e082c3b149716ef6871",
     "tests/test_unix_collectors.py": "1ec27a1c2c813e6cc28b617bab2c3ea975d5fb207089b8611a9b076689c2c21d",
@@ -72,7 +72,10 @@
         "test_cmd_filename_metacharacters_are_data (test_windows_adapters.NativeWindowsAdapterTests.test_cmd_filename_metacharacters_are_data) ... skipped 'Requires native Windows cmd.exe'",
         "test_cmd_launcher_runs_embedded_renderer_at_requested_geometry (test_windows_adapters.NativeWindowsAdapterTests.test_cmd_launcher_runs_embedded_renderer_at_requested_geometry) ... skipped 'Requires native Windows cmd.exe'",
         "test_default_windows_export_uses_create_only_manifest (test_windows_adapters.NativeWindowsAdapterTests.test_default_windows_export_uses_create_only_manifest) ... skipped 'Requires native Windows cmd.exe'"
-      ]
+      ],
+      "equivalent_implementation_revision": "9cefbdd775372a8ee3cfb5ce64fbfcbbbd7aef27",
+      "runtime_review_test_sha256_at_execution": "28957b3c249a90f48d8b5d4e8830886d87c2a1eb466beea0a4172ac52c43315e",
+      "scope_note": "This local run predates the test-only macOS metric-expectation correction. Generator and runtimes are unchanged. The corrected test and full Linux suite subsequently passed at the native CI revision identified below."
     },
     "python38_lifecycle": {
       "record": "build/review-20261117/python38-lifecycle-frozen.json",
@@ -165,11 +168,77 @@
       "verified_frames": 5,
       "source_transcript_cells_and_decoded_pixels_verified": true,
       "choice_acceptance_hint_verified": true
+    },
+    "synthetic_render_benchmark": {
+      "record": "build/review-20261117/synthetic-render-benchmark-20261117.json",
+      "runner": "build/review-20261117/run-synthetic-render-benchmark-20261117.py",
+      "samples_per_route": 20,
+      "discarded_warmups_per_route": 1,
+      "unit": "milliseconds",
+      "routes": {
+        "bash": {
+          "median": 45.769405,
+          "p95_nearest_rank": 51.071565,
+          "min": 41.550019,
+          "max": 55.409411
+        },
+        "sh": {
+          "median": 10.13034,
+          "p95_nearest_rank": 12.807629,
+          "min": 8.684326,
+          "max": 12.881821
+        },
+        "powershell": {
+          "median": 625.1159244999999,
+          "p95_nearest_rank": 673.634483,
+          "min": 562.804076,
+          "max": 681.897717
+        }
+      },
+      "scope": "Fresh processes after an OS-cache warmup; synthetic rendering, interpreter startup and captured output. No live collection, CLI preview, interactive wizard redraw, terminal painting or login transport. One Linux host, nonexclusive scheduling."
     }
   },
   "native_ci": {
-    "status": "pending",
-    "branch": "feat/readability-and-portability-review"
+    "status": "passed",
+    "branch": "feat/readability-and-portability-review",
+    "head_sha": "0f16e88d1406f0b6e87a9ea7e263887c2eb7d057",
+    "tree_sha": "8a65d8d40526256de6323adbd4f307ca99f9478d",
+    "jobs_passed": 9,
+    "jobs_failed": 0,
+    "verify": {
+      "run_id": 44042319329,
+      "url": "https://github.com/Julesc013/motd/actions/runs/44042319329",
+      "record": "build/review-20261117/native-ci-0f16e88/verify-summary.json",
+      "jobs_passed": 5
+    },
+    "native_powershell": {
+      "run_id": 44042319335,
+      "url": "https://github.com/Julesc013/motd/actions/runs/44042319335",
+      "record": "build/review-20261117/native-ci-0f16e88/evidence.json",
+      "jobs_passed": 4
+    },
+    "actual_powershell_2": {
+      "version": "2.0",
+      "cases": 81,
+      "passed": 81,
+      "failed": 0,
+      "skipped": 0,
+      "generated_artifact_hashes_matched": 10,
+      "record": "build/review-20261117/native-ci-0f16e88/powershell-2-verification.json"
+    },
+    "previous_attempt": {
+      "head_sha": "9cefbdd775372a8ee3cfb5ce64fbfcbbbd7aef27",
+      "verify_run_id": 44041772342,
+      "verify_conclusion": "success",
+      "native_run_id": 44041771990,
+      "native_conclusion": "failure",
+      "record": "build/review-20261117/native-ci-9cefbdd/evidence.json",
+      "cause": "Four macOS subcases in one new test expected used-memory25% based on the Bash entry point, while the correctly selected portable collector labeled available-memory75%.",
+      "correction_files": [
+        "tests/test_runtime_review.py"
+      ],
+      "runtime_changed": false
+    }
   },
   "boundaries": [
     "PowerShell1.0/3.0/4.0/5.0 not execution-verified",
@@ -193,6 +262,11 @@
     "method": "GitHub Git Data API",
     "remote_parent": "4cc32280509d02e1d12475060e30f830265f62d0",
     "local_publication_checkpoint": "78d58b7ebb061c840eac35adf66c5c4212e47a79",
-    "note": "Local checkpoint commit IDs preserve reconstruction lineage. The connector creates a GitHub commit from the exact verified tree; native workflow head SHA identifies that published revision."
+    "note": "Local checkpoint IDs preserve reconstruction lineage. GitHub publication matched the exact local tree. Native CI passed at verified_implementation_commit after a test-only correction; the subsequent evidence/documentation delivery preserves all runtime, generator, test, workflow, recipe and preview bytes.",
+    "initial_commit": "9cefbdd775372a8ee3cfb5ce64fbfcbbbd7aef27",
+    "initial_tree": "a2abb596491e62abc518325bb725dc80ca809d52",
+    "verified_implementation_commit": "0f16e88d1406f0b6e87a9ea7e263887c2eb7d057",
+    "verified_implementation_tree": "8a65d8d40526256de6323adbd4f307ca99f9478d",
+    "branch": "feat/readability-and-portability-review"
   }
 }

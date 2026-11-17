@@ -1,0 +1,103 @@
+<motd-powershell-evidence schema-version="1" started-at-utc="2026-11-17T07:50:59.2354423Z" status="passed" expected-major="2" expected-minor="0" actual-version="2.0" clr-version="2.0.50727.9188" os-version="Microsoft Windows NT 10.0.20348.0" process-bitness="64" automation-assembly="System.Management.Automation, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" scriptblock-create-available="True" cases="81" failed="0" completed-at-utc="2026-11-17T07:51:15.1830872Z">
+  <artifact file="briefing-inline.ps1" sha256="7ddf56c253504b7c8b6f15a8a1af03a5088f5b1d39ba8272c3be1db62eb964c7">
+    <case columns="40" rows="25" unicode="False" kind="synthetic-alerts" passed="True" rendered-rows="24" />
+    <case columns="40" rows="25" unicode="True" kind="synthetic-alerts" passed="True" rendered-rows="24" />
+    <case columns="40" rows="50" unicode="False" kind="synthetic-alerts" passed="True" rendered-rows="37" />
+    <case columns="40" rows="50" unicode="True" kind="synthetic-alerts" passed="True" rendered-rows="37" />
+    <case columns="80" rows="25" unicode="False" kind="synthetic-alerts" passed="True" rendered-rows="24" />
+    <case columns="80" rows="25" unicode="True" kind="synthetic-alerts" passed="True" rendered-rows="24" />
+    <case columns="80" rows="50" unicode="False" kind="synthetic-alerts" passed="True" rendered-rows="37" />
+    <case columns="80" rows="50" unicode="True" kind="synthetic-alerts" passed="True" rendered-rows="37" />
+  </artifact>
+  <artifact file="briefing-wide.ps1" sha256="4a438b5442a98159648754e8b87164d1d7d1d84012b3f5d76c28b7dd82edb846">
+    <case columns="40" rows="25" unicode="False" kind="synthetic-alerts" passed="True" rendered-rows="24" />
+    <case columns="40" rows="25" unicode="True" kind="synthetic-alerts" passed="True" rendered-rows="24" />
+    <case columns="40" rows="50" unicode="False" kind="synthetic-alerts" passed="True" rendered-rows="38" />
+    <case columns="40" rows="50" unicode="True" kind="synthetic-alerts" passed="True" rendered-rows="38" />
+    <case columns="80" rows="25" unicode="False" kind="synthetic-alerts" passed="True" rendered-rows="24" />
+    <case columns="80" rows="25" unicode="True" kind="synthetic-alerts" passed="True" rendered-rows="24" />
+    <case columns="80" rows="50" unicode="False" kind="synthetic-alerts" passed="True" rendered-rows="38" />
+    <case columns="80" rows="50" unicode="True" kind="synthetic-alerts" passed="True" rendered-rows="38" />
+  </artifact>
+  <artifact file="cards-inline.ps1" sha256="cf869d1565172e2824d2866ad65f75ebb5660fbe2be983576fa6818caf13ddb9">
+    <case columns="40" rows="25" unicode="False" kind="synthetic-alerts" passed="True" rendered-rows="24" />
+    <case columns="40" rows="25" unicode="True" kind="synthetic-alerts" passed="True" rendered-rows="24" />
+    <case columns="40" rows="50" unicode="False" kind="synthetic-alerts" passed="True" rendered-rows="49" />
+    <case columns="40" rows="50" unicode="True" kind="synthetic-alerts" passed="True" rendered-rows="49" />
+    <case columns="80" rows="25" unicode="False" kind="synthetic-alerts" passed="True" rendered-rows="24" />
+    <case columns="80" rows="25" unicode="True" kind="synthetic-alerts" passed="True" rendered-rows="24" />
+    <case columns="80" rows="50" unicode="False" kind="synthetic-alerts" passed="True" rendered-rows="49" />
+    <case columns="80" rows="50" unicode="True" kind="synthetic-alerts" passed="True" rendered-rows="49" />
+  </artifact>
+  <artifact file="cards-wide.ps1" sha256="4113bf6760e78978b4750a060a24309d8d2c9fe8544d14bb06954bb21f066ac3">
+    <case columns="40" rows="25" unicode="False" kind="synthetic-alerts" passed="True" rendered-rows="24" />
+    <case columns="40" rows="25" unicode="True" kind="synthetic-alerts" passed="True" rendered-rows="24" />
+    <case columns="40" rows="50" unicode="False" kind="synthetic-alerts" passed="True" rendered-rows="49" />
+    <case columns="40" rows="50" unicode="True" kind="synthetic-alerts" passed="True" rendered-rows="49" />
+    <case columns="80" rows="25" unicode="False" kind="synthetic-alerts" passed="True" rendered-rows="24" />
+    <case columns="80" rows="25" unicode="True" kind="synthetic-alerts" passed="True" rendered-rows="24" />
+    <case columns="80" rows="50" unicode="False" kind="synthetic-alerts" passed="True" rendered-rows="49" />
+    <case columns="80" rows="50" unicode="True" kind="synthetic-alerts" passed="True" rendered-rows="49" />
+  </artifact>
+  <artifact file="classic-inline.ps1" sha256="604899824978f39c32cc17df75d8860dec57a14f9e7f90d520b54de1444bfe85">
+    <case columns="40" rows="25" unicode="False" kind="synthetic-alerts" passed="True" rendered-rows="24" />
+    <case columns="40" rows="25" unicode="True" kind="synthetic-alerts" passed="True" rendered-rows="24" />
+    <case columns="40" rows="50" unicode="False" kind="synthetic-alerts" passed="True" rendered-rows="42" />
+    <case columns="40" rows="50" unicode="True" kind="synthetic-alerts" passed="True" rendered-rows="42" />
+    <case columns="80" rows="25" unicode="False" kind="synthetic-alerts" passed="True" rendered-rows="24" />
+    <case columns="80" rows="25" unicode="True" kind="synthetic-alerts" passed="True" rendered-rows="24" />
+    <case columns="80" rows="50" unicode="False" kind="synthetic-alerts" passed="True" rendered-rows="42" />
+    <case columns="80" rows="50" unicode="True" kind="synthetic-alerts" passed="True" rendered-rows="42" />
+  </artifact>
+  <artifact file="classic-wide.ps1" sha256="8571393425afdc90ebfd30ef482d09d44bc17b0b28f61cc371374324aca7d299">
+    <case columns="40" rows="25" unicode="False" kind="synthetic-alerts" passed="True" rendered-rows="24" />
+    <case columns="40" rows="25" unicode="True" kind="synthetic-alerts" passed="True" rendered-rows="24" />
+    <case columns="40" rows="50" unicode="False" kind="synthetic-alerts" passed="True" rendered-rows="41" />
+    <case columns="40" rows="50" unicode="True" kind="synthetic-alerts" passed="True" rendered-rows="41" />
+    <case columns="80" rows="25" unicode="False" kind="synthetic-alerts" passed="True" rendered-rows="24" />
+    <case columns="80" rows="25" unicode="True" kind="synthetic-alerts" passed="True" rendered-rows="24" />
+    <case columns="80" rows="50" unicode="False" kind="synthetic-alerts" passed="True" rendered-rows="41" />
+    <case columns="80" rows="50" unicode="True" kind="synthetic-alerts" passed="True" rendered-rows="41" />
+  </artifact>
+  <artifact file="dashboard-inline.ps1" sha256="f2ab2350b62d82a4c90376b38d6fdc6175bafa1dd8c6b739e67d73d1f1b02c03">
+    <case columns="40" rows="25" unicode="False" kind="synthetic-alerts" passed="True" rendered-rows="24" />
+    <case columns="40" rows="25" unicode="True" kind="synthetic-alerts" passed="True" rendered-rows="24" />
+    <case columns="40" rows="50" unicode="False" kind="synthetic-alerts" passed="True" rendered-rows="49" />
+    <case columns="40" rows="50" unicode="True" kind="synthetic-alerts" passed="True" rendered-rows="49" />
+    <case columns="80" rows="25" unicode="False" kind="synthetic-alerts" passed="True" rendered-rows="24" />
+    <case columns="80" rows="25" unicode="True" kind="synthetic-alerts" passed="True" rendered-rows="24" />
+    <case columns="80" rows="50" unicode="False" kind="synthetic-alerts" passed="True" rendered-rows="35" />
+    <case columns="80" rows="50" unicode="True" kind="synthetic-alerts" passed="True" rendered-rows="35" />
+  </artifact>
+  <artifact file="dashboard-wide.ps1" sha256="86419d4e8fbcd05e582555739b5c4ad56280de1ef71e2382629c9cdc78ae02e5">
+    <case columns="40" rows="25" unicode="False" kind="synthetic-alerts" passed="True" rendered-rows="24" />
+    <case columns="40" rows="25" unicode="True" kind="synthetic-alerts" passed="True" rendered-rows="24" />
+    <case columns="40" rows="50" unicode="False" kind="synthetic-alerts" passed="True" rendered-rows="49" />
+    <case columns="40" rows="50" unicode="True" kind="synthetic-alerts" passed="True" rendered-rows="49" />
+    <case columns="80" rows="25" unicode="False" kind="synthetic-alerts" passed="True" rendered-rows="24" />
+    <case columns="80" rows="25" unicode="True" kind="synthetic-alerts" passed="True" rendered-rows="24" />
+    <case columns="80" rows="50" unicode="False" kind="synthetic-alerts" passed="True" rendered-rows="36" />
+    <case columns="80" rows="50" unicode="True" kind="synthetic-alerts" passed="True" rendered-rows="36" />
+  </artifact>
+  <artifact file="ledger-inline.ps1" sha256="4e6c07cfffabf027c92c4d9ddfd7a0edc2b935a8ee7936b97eef84900d907c0f">
+    <case columns="40" rows="25" unicode="False" kind="synthetic-alerts" passed="True" rendered-rows="24" />
+    <case columns="40" rows="25" unicode="True" kind="synthetic-alerts" passed="True" rendered-rows="24" />
+    <case columns="40" rows="50" unicode="False" kind="synthetic-alerts" passed="True" rendered-rows="39" />
+    <case columns="40" rows="50" unicode="True" kind="synthetic-alerts" passed="True" rendered-rows="39" />
+    <case columns="80" rows="25" unicode="False" kind="synthetic-alerts" passed="True" rendered-rows="24" />
+    <case columns="80" rows="25" unicode="True" kind="synthetic-alerts" passed="True" rendered-rows="24" />
+    <case columns="80" rows="50" unicode="False" kind="synthetic-alerts" passed="True" rendered-rows="39" />
+    <case columns="80" rows="50" unicode="True" kind="synthetic-alerts" passed="True" rendered-rows="39" />
+  </artifact>
+  <artifact file="ledger-wide.ps1" sha256="2905f01fefd03c6cb63a54dec63d8373c1f91f99b44ce8f63bbf056ddd69a903">
+    <case columns="40" rows="25" unicode="False" kind="synthetic-alerts" passed="True" rendered-rows="24" />
+    <case columns="40" rows="25" unicode="True" kind="synthetic-alerts" passed="True" rendered-rows="24" />
+    <case columns="40" rows="50" unicode="False" kind="synthetic-alerts" passed="True" rendered-rows="40" />
+    <case columns="40" rows="50" unicode="True" kind="synthetic-alerts" passed="True" rendered-rows="40" />
+    <case columns="80" rows="25" unicode="False" kind="synthetic-alerts" passed="True" rendered-rows="24" />
+    <case columns="80" rows="25" unicode="True" kind="synthetic-alerts" passed="True" rendered-rows="24" />
+    <case columns="80" rows="50" unicode="False" kind="synthetic-alerts" passed="True" rendered-rows="40" />
+    <case columns="80" rows="50" unicode="True" kind="synthetic-alerts" passed="True" rendered-rows="40" />
+  </artifact>
+  <case kind="live-local-no-hooks" passed="True" rendered-rows="41" />
+</motd-powershell-evidence>

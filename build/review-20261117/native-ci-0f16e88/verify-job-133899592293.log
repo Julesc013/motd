@@ -1,0 +1,231 @@
+﻿2026-11-17T07:54:33.4850756Z Current runner version: '2.338.2'
+2026-11-17T07:54:33.4877035Z ##[group]Runner Image Provisioner
+2026-11-17T07:54:33.4878022Z Hosted Compute Agent
+2026-11-17T07:54:33.4879101Z Version: 20261103.629
+2026-11-17T07:54:33.4879798Z Commit: 15dbd9ccb5dbf34fae002b6ed1a2670f52df37bc
+2026-11-17T07:54:33.4880656Z Build Date: 2026-11-03T17:26:59Z
+2026-11-17T07:54:33.4881392Z Worker ID: {a6293e0e-8de8-4559-b9af-c7bcd5e8645e}
+2026-11-17T07:54:33.4882146Z Region: eastus2
+2026-11-17T07:54:33.4882761Z Cloud: Azure
+2026-11-17T07:54:33.4883325Z ##[endgroup]
+2026-11-17T07:54:33.4884923Z ##[group]Operating System
+2026-11-17T07:54:33.4885685Z Microsoft Windows Server 2025
+2026-11-17T07:54:33.4886332Z 10.0.26100
+2026-11-17T07:54:33.4886908Z Datacenter
+2026-11-17T07:54:33.4887455Z ##[endgroup]
+2026-11-17T07:54:33.4888105Z ##[group]Runner Image
+2026-11-17T07:54:33.4888792Z Image: windows-2025-vs2026
+2026-11-17T07:54:33.4889432Z Version: 20261103.298.1
+2026-11-17T07:54:33.4891170Z Included Software: https://github.com/actions/runner-images/blob/win25-vs2026/20261103.298/images/windows/Windows2025-VS2026-Readme.md
+2026-11-17T07:54:33.4893184Z Image Release: https://github.com/actions/runner-images/releases/tag/win25-vs2026%2F20261103.298
+2026-11-17T07:54:33.4894491Z ##[endgroup]
+2026-11-17T07:54:33.4895939Z ##[group]GITHUB_TOKEN Permissions
+2026-11-17T07:54:33.4898122Z Contents: read
+2026-11-17T07:54:33.4899130Z Metadata: read
+2026-11-17T07:54:33.4899765Z ##[endgroup]
+2026-11-17T07:54:33.4902552Z Secret source: Actions
+2026-11-17T07:54:33.4903730Z Cache mode: write
+2026-11-17T07:54:33.4904561Z Prepare workflow directory
+2026-11-17T07:54:33.5254522Z Prepare all required actions
+2026-11-17T07:54:33.5296306Z Getting action download info
+2026-11-17T07:54:33.6803884Z Download action repository 'actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803' (SHA:d23441a48e516b6c34aea4fa41551a30e30af803)
+2026-11-17T07:54:33.7881353Z Download action repository 'actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1' (SHA:ece7cb06caefa5fff74198d8649806c4678c61a1)
+2026-11-17T07:54:34.0117620Z Complete job name: powershell-windows (pwsh)
+2026-11-17T07:54:34.1323004Z ##[group]Run actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+2026-11-17T07:54:34.1324052Z with:
+2026-11-17T07:54:34.1324369Z   repository: Julesc013/motd
+2026-11-17T07:54:34.1327706Z   token: ***
+2026-11-17T07:54:34.1328018Z   ssh-strict: true
+2026-11-17T07:54:34.1328324Z   ssh-user: git
+2026-11-17T07:54:34.1328636Z   persist-credentials: true
+2026-11-17T07:54:34.1328981Z   clean: true
+2026-11-17T07:54:34.1329295Z   sparse-checkout-cone-mode: true
+2026-11-17T07:54:34.1329669Z   fetch-depth: 1
+2026-11-17T07:54:34.1329985Z   fetch-tags: false
+2026-11-17T07:54:34.1330296Z   show-progress: true
+2026-11-17T07:54:34.1330619Z   lfs: false
+2026-11-17T07:54:34.1330904Z   submodules: false
+2026-11-17T07:54:34.1331220Z   set-safe-directory: true
+2026-11-17T07:54:34.1331585Z   allow-unsafe-pr-checkout: false
+2026-11-17T07:54:34.1332147Z env:
+2026-11-17T07:54:34.1332460Z   POWERSHELL_TELEMETRY_OPTOUT: 1
+2026-11-17T07:54:34.1332836Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-17T07:54:34.1333217Z ##[endgroup]
+2026-11-17T07:54:34.2536030Z Syncing repository: Julesc013/motd
+2026-11-17T07:54:34.2537411Z ##[group]Getting Git version info
+2026-11-17T07:54:34.2537843Z Working directory is 'D:\a\motd\motd'
+2026-11-17T07:54:34.3313970Z [command]"C:\Program Files\Git\bin\git.exe" version
+2026-11-17T07:54:34.6730329Z git version 2.56.0.windows.4
+2026-11-17T07:54:34.6777426Z ##[endgroup]
+2026-11-17T07:54:34.6795207Z Temporarily overriding HOME='D:\a\_temp\f7c348fa-4e9f-481e-a037-5fc435532f7c' before making global git config changes
+2026-11-17T07:54:34.6796861Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-17T07:54:34.6805236Z [command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\motd\motd
+2026-11-17T07:54:34.7435732Z Deleting the contents of 'D:\a\motd\motd'
+2026-11-17T07:54:34.7441788Z ##[group]Determining repository object format
+2026-11-17T07:54:34.7443730Z ##[endgroup]
+2026-11-17T07:54:34.7444614Z ##[group]Initializing the repository
+2026-11-17T07:54:34.7451969Z [command]"C:\Program Files\Git\bin\git.exe" init D:\a\motd\motd
+2026-11-17T07:54:34.8371761Z Initialized empty Git repository in D:/a/motd/motd/.git/
+2026-11-17T07:54:34.8374621Z [command]"C:\Program Files\Git\bin\git.exe" remote add origin https://github.com/Julesc013/motd
+2026-11-17T07:54:34.9079762Z ##[endgroup]
+2026-11-17T07:54:34.9080894Z ##[group]Disabling automatic garbage collection
+2026-11-17T07:54:34.9087137Z [command]"C:\Program Files\Git\bin\git.exe" config --local gc.auto 0
+2026-11-17T07:54:34.9414075Z ##[endgroup]
+2026-11-17T07:54:34.9415186Z ##[group]Setting up auth
+2026-11-17T07:54:34.9415990Z Removing SSH command configuration
+2026-11-17T07:54:34.9417346Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-11-17T07:54:34.9759259Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-11-17T07:54:36.4412555Z Removing HTTP extra header
+2026-11-17T07:54:36.4422598Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-17T07:54:36.4777212Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-11-17T07:54:36.9650063Z Removing includeIf entries pointing to credentials config files
+2026-11-17T07:54:36.9659217Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-17T07:54:36.9974635Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-11-17T07:54:37.4745458Z [command]"C:\Program Files\Git\bin\git.exe" config --file D:\a\_temp\git-credentials-8d87b773-4c35-43f6-8993-8a37c5c06c7d.config http.https://github.com/.extraheader "AUTHORIZATION: basic ***"
+2026-11-17T07:54:37.5075515Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:D:/a/motd/motd/.git.path D:\a\_temp\git-credentials-8d87b773-4c35-43f6-8993-8a37c5c06c7d.config
+2026-11-17T07:54:37.5408855Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:D:/a/motd/motd/.git/worktrees/*.path D:\a\_temp\git-credentials-8d87b773-4c35-43f6-8993-8a37c5c06c7d.config
+2026-11-17T07:54:37.5772280Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-8d87b773-4c35-43f6-8993-8a37c5c06c7d.config
+2026-11-17T07:54:37.6084415Z [command]"C:\Program Files\Git\bin\git.exe" config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-8d87b773-4c35-43f6-8993-8a37c5c06c7d.config
+2026-11-17T07:54:37.6395327Z ##[endgroup]
+2026-11-17T07:54:37.6395801Z ##[group]Fetching the repository
+2026-11-17T07:54:37.6406602Z [command]"C:\Program Files\Git\bin\git.exe" -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +0f16e88d1406f0b6e87a9ea7e263887c2eb7d057:refs/remotes/origin/feat/readability-and-portability-review
+2026-11-17T07:54:42.5748042Z From https://github.com/Julesc013/motd
+2026-11-17T07:54:42.5748611Z  * [new ref]         0f16e88d1406f0b6e87a9ea7e263887c2eb7d057 -> origin/feat/readability-and-portability-review
+2026-11-17T07:54:42.5794631Z [command]"C:\Program Files\Git\bin\git.exe" branch --list --remote origin/feat/readability-and-portability-review
+2026-11-17T07:54:42.6190285Z   origin/feat/readability-and-portability-review
+2026-11-17T07:54:42.6235869Z [command]"C:\Program Files\Git\bin\git.exe" rev-parse refs/remotes/origin/feat/readability-and-portability-review
+2026-11-17T07:54:42.6610015Z 0f16e88d1406f0b6e87a9ea7e263887c2eb7d057
+2026-11-17T07:54:42.6639310Z ##[endgroup]
+2026-11-17T07:54:42.6639662Z ##[group]Determining the checkout info
+2026-11-17T07:54:42.6641282Z ##[endgroup]
+2026-11-17T07:54:42.6648944Z [command]"C:\Program Files\Git\bin\git.exe" sparse-checkout disable
+2026-11-17T07:54:42.7043006Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset-all extensions.worktreeConfig
+2026-11-17T07:54:42.7362349Z ##[group]Checking out the ref
+2026-11-17T07:54:42.7374860Z [command]"C:\Program Files\Git\bin\git.exe" checkout --progress --force -B feat/readability-and-portability-review refs/remotes/origin/feat/readability-and-portability-review
+2026-11-17T07:54:43.6728363Z Switched to a new branch 'feat/readability-and-portability-review'
+2026-11-17T07:54:43.6838835Z branch 'feat/readability-and-portability-review' set up to track 'origin/feat/readability-and-portability-review'.
+2026-11-17T07:54:43.6915060Z ##[endgroup]
+2026-11-17T07:54:43.9722697Z [command]"C:\Program Files\Git\bin\git.exe" log -1 --format=%H
+2026-11-17T07:54:44.0024156Z 0f16e88d1406f0b6e87a9ea7e263887c2eb7d057
+2026-11-17T07:54:44.0421854Z ##[group]Run actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+2026-11-17T07:54:44.0422239Z with:
+2026-11-17T07:54:44.0422395Z   python-version: 3.11
+2026-11-17T07:54:44.0422569Z   check-latest: false
+2026-11-17T07:54:44.0424619Z   token: ***
+2026-11-17T07:54:44.0424775Z   update-environment: true
+2026-11-17T07:54:44.0424965Z   allow-prereleases: false
+2026-11-17T07:54:44.0425130Z   freethreaded: false
+2026-11-17T07:54:44.0425290Z env:
+2026-11-17T07:54:44.0425429Z   POWERSHELL_TELEMETRY_OPTOUT: 1
+2026-11-17T07:54:44.0425611Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-17T07:54:44.0425778Z ##[endgroup]
+2026-11-17T07:54:44.1737800Z ##[group]Installed versions
+2026-11-17T07:54:44.2028975Z Successfully set up CPython (3.11.9)
+2026-11-17T07:54:44.2029620Z ##[endgroup]
+2026-11-17T07:54:44.2346609Z ##[group]Run $env:MOTD_TEST_POWERSHELL = @(Get-Command 'pwsh' -CommandType Application)[0].Source
+2026-11-17T07:54:44.2347286Z [36;1m$env:MOTD_TEST_POWERSHELL = @(Get-Command 'pwsh' -CommandType Application)[0].Source[0m
+2026-11-17T07:54:44.2347756Z [36;1m& $env:MOTD_TEST_POWERSHELL -NoProfile -Command '$PSVersionTable | Format-List'[0m
+2026-11-17T07:54:44.2348152Z [36;1mpython -m unittest discover -s tests -p test_powershell.py -v[0m
+2026-11-17T07:54:44.2348429Z [36;1mexit $LASTEXITCODE[0m
+2026-11-17T07:54:44.5137885Z shell: C:\Program Files\PowerShell\7\pwsh.EXE -command ". '{0}'"
+2026-11-17T07:54:44.5138221Z env:
+2026-11-17T07:54:44.5138395Z   POWERSHELL_TELEMETRY_OPTOUT: 1
+2026-11-17T07:54:44.5138606Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-17T07:54:44.5138893Z   pythonLocation: C:\hostedtoolcache\windows\Python\3.11.9\x64
+2026-11-17T07:54:44.5139332Z   PKG_CONFIG_PATH: C:\hostedtoolcache\windows\Python\3.11.9\x64/lib/pkgconfig
+2026-11-17T07:54:44.5139750Z   Python_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.11.9\x64
+2026-11-17T07:54:44.5140056Z   Python2_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.11.9\x64
+2026-11-17T07:54:44.5140462Z   Python3_ROOT_DIR: C:\hostedtoolcache\windows\Python\3.11.9\x64
+2026-11-17T07:54:44.5141257Z ##[endgroup]
+2026-11-17T07:54:45.1467671Z 
+2026-11-17T07:54:45.1535861Z [32;1mName  : [0mPSVersion
+2026-11-17T07:54:45.1536305Z [32;1mValue : [0m7.6.9
+2026-11-17T07:54:45.1536478Z 
+2026-11-17T07:54:45.1539504Z [32;1mName  : [0mPSEdition
+2026-11-17T07:54:45.1539872Z [32;1mValue : [0mCore
+2026-11-17T07:54:45.1540050Z 
+2026-11-17T07:54:45.1541614Z [32;1mName  : [0mGitCommitId
+2026-11-17T07:54:45.1541958Z [32;1mValue : [0m7.6.9
+2026-11-17T07:54:45.1542139Z 
+2026-11-17T07:54:45.1544231Z [32;1mName  : [0mOS
+2026-11-17T07:54:45.1544614Z [32;1mValue : [0mMicrosoft Windows 10.0.26100
+2026-11-17T07:54:45.1544994Z 
+2026-11-17T07:54:45.1547021Z [32;1mName  : [0mPlatform
+2026-11-17T07:54:45.1547874Z [32;1mValue : [0mWin32NT
+2026-11-17T07:54:45.1548077Z 
+2026-11-17T07:54:45.1550411Z [32;1mName  : [0mPSCompatibleVersions
+2026-11-17T07:54:45.1550928Z [32;1mValue : [0m{1.0, 2.0, 3.0, 4.0…}
+2026-11-17T07:54:45.1551360Z 
+2026-11-17T07:54:45.1553003Z [32;1mName  : [0mPSRemotingProtocolVersion
+2026-11-17T07:54:45.1553404Z [32;1mValue : [0m2.4
+2026-11-17T07:54:45.1553576Z 
+2026-11-17T07:54:45.1555496Z [32;1mName  : [0mSerializationVersion
+2026-11-17T07:54:45.1555861Z [32;1mValue : [0m1.1.0.1
+2026-11-17T07:54:45.1556022Z 
+2026-11-17T07:54:45.1557753Z [32;1mName  : [0mWSManStackVersion
+2026-11-17T07:54:45.1558110Z [32;1mValue : [0m3.0
+2026-11-17T07:54:45.1558250Z 
+2026-11-17T07:54:47.6663458Z test_actual_demo_geometry_data_and_resource_bars (test_powershell.PowerShellExecutionTests.test_actual_demo_geometry_data_and_resource_bars) ... ok
+2026-11-17T07:54:52.3938957Z test_all_requested_sizes_and_charsets_expand_actual_content (test_powershell.PowerShellExecutionTests.test_all_requested_sizes_and_charsets_expand_actual_content) ... ok
+2026-11-17T07:54:52.9578809Z test_ascii_mode_preserves_column_width_with_unicode_labels (test_powershell.PowerShellExecutionTests.test_ascii_mode_preserves_column_width_with_unicode_labels) ... ok
+2026-11-17T07:54:53.5345724Z test_configuration_is_data_and_cannot_execute_powershell (test_powershell.PowerShellExecutionTests.test_configuration_is_data_and_cannot_execute_powershell) ... ok
+2026-11-17T07:54:55.3449947Z test_demo_live_preview_help_and_version_do_not_run_hooks (test_powershell.PowerShellExecutionTests.test_demo_live_preview_help_and_version_do_not_run_hooks) ... ok
+2026-11-17T07:54:56.4912370Z test_forced_color_and_explicit_plain_precedence (test_powershell.PowerShellExecutionTests.test_forced_color_and_explicit_plain_precedence) ... ok
+2026-11-17T07:54:57.1474481Z test_hook_failure_continue_allows_dashboard_and_after_hook (test_powershell.PowerShellExecutionTests.test_hook_failure_continue_allows_dashboard_and_after_hook) ... ok
+2026-11-17T07:54:58.0254287Z test_hook_timeout_stops_script_when_requested (test_powershell.PowerShellExecutionTests.test_hook_timeout_stops_script_when_requested) ... ok
+2026-11-17T07:54:58.4356462Z test_invalid_geometry_is_rejected (test_powershell.PowerShellExecutionTests.test_invalid_geometry_is_rejected) ... ok
+2026-11-17T07:54:59.2569031Z test_live_io_connections_and_sessions_keep_units_and_scope (test_powershell.PowerShellExecutionTests.test_live_io_connections_and_sessions_keep_units_and_scope) ... ok
+2026-11-17T07:55:00.3383980Z test_live_local_memory_storage_and_process_observations (test_powershell.PowerShellExecutionTests.test_live_local_memory_storage_and_process_observations) ... ok
+2026-11-17T07:55:00.9884497Z test_native_arguments_and_before_after_order_are_preserved (test_powershell.PowerShellExecutionTests.test_native_arguments_and_before_after_order_are_preserved) ... ok
+2026-11-17T07:55:01.5504249Z test_observed_control_characters_are_sanitized (test_powershell.PowerShellExecutionTests.test_observed_control_characters_are_sanitized) ... ok
+2026-11-17T07:55:02.1366391Z test_present_empty_no_color_disables_forced_color (test_powershell.PowerShellExecutionTests.test_present_empty_no_color_disables_forced_color) ... ok
+2026-11-17T07:55:04.4935923Z test_saved_charset_and_color_are_defaults_overridden_by_runtime_switches (test_powershell.PowerShellExecutionTests.test_saved_charset_and_color_are_defaults_overridden_by_runtime_switches) ... ok
+2026-11-17T07:55:08.1236002Z test_small_preview_budgets_fit_without_overdrawing_controls (test_powershell.PowerShellExecutionTests.test_small_preview_budgets_fit_without_overdrawing_controls) ... ok
+2026-11-17T07:55:08.6868053Z test_trap_preserves_failure_and_rejects_partial_observations (test_powershell.PowerShellExecutionTests.test_trap_preserves_failure_and_rejects_partial_observations) ... ok
+2026-11-17T07:55:09.2219754Z test_unavailable_network_api_does_not_render_zero_connections (test_powershell.PowerShellExecutionTests.test_unavailable_network_api_does_not_render_zero_connections) ... ok
+2026-11-17T07:55:09.7715997Z test_unavailable_service_provider_does_not_report_required_services_missing (test_powershell.PowerShellExecutionTests.test_unavailable_service_provider_does_not_report_required_services_missing) ... ok
+2026-11-17T07:55:10.3411759Z test_unicode_cells_count_wide_and_combining_text (test_powershell.PowerShellExecutionTests.test_unicode_cells_count_wide_and_combining_text) ... ok
+2026-11-17T07:55:11.3671305Z test_unix_service_providers_share_required_and_excluded_filters (test_powershell.PowerShellExecutionTests.test_unix_service_providers_share_required_and_excluded_filters) ... ok
+2026-11-17T07:55:11.8873004Z test_v1_command_launcher_works_with_a_script_path_containing_spaces (test_powershell.PowerShellExecutionTests.test_v1_command_launcher_works_with_a_script_path_containing_spaces) ... ok
+2026-11-17T07:55:11.8896390Z test_canonical_runtime_and_checked_recipe (test_powershell.PowerShellGenerationTests.test_canonical_runtime_and_checked_recipe) ... ok
+2026-11-17T07:55:11.8941430Z test_core_does_not_reintroduce_known_post_v1_grammar (test_powershell.PowerShellGenerationTests.test_core_does_not_reintroduce_known_post_v1_grammar) ... ok
+2026-11-17T07:55:11.8958426Z test_source_is_ascii_even_when_configuration_is_unicode (test_powershell.PowerShellGenerationTests.test_source_is_ascii_even_when_configuration_is_unicode) ... ok
+2026-11-17T07:55:11.8959248Z 
+2026-11-17T07:55:11.8959999Z ----------------------------------------------------------------------
+2026-11-17T07:55:11.8960755Z Ran 25 tests in 24.842s
+2026-11-17T07:55:11.8960865Z 
+2026-11-17T07:55:11.8960968Z OK
+2026-11-17T07:55:11.9533479Z Post job cleanup.
+2026-11-17T07:55:12.1094336Z Post job cleanup.
+2026-11-17T07:55:12.2422637Z [command]"C:\Program Files\Git\bin\git.exe" version
+2026-11-17T07:55:12.2713789Z git version 2.56.0.windows.4
+2026-11-17T07:55:12.2784971Z Temporarily overriding HOME='D:\a\_temp\27e2f191-7fa3-4630-88dd-3e12ec161c83' before making global git config changes
+2026-11-17T07:55:12.2785932Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-17T07:55:12.2795841Z [command]"C:\Program Files\Git\bin\git.exe" config --global --add safe.directory D:\a\motd\motd
+2026-11-17T07:55:12.3169969Z Removing SSH command configuration
+2026-11-17T07:55:12.3185120Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp core\.sshCommand
+2026-11-17T07:55:12.3550876Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :\""
+2026-11-17T07:55:12.8438183Z Removing HTTP extra header
+2026-11-17T07:55:12.8447405Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-17T07:55:12.8743296Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "sh -c \"git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :\""
+2026-11-17T07:55:13.3971081Z Removing includeIf entries pointing to credentials config files
+2026-11-17T07:55:13.3986433Z [command]"C:\Program Files\Git\bin\git.exe" config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-17T07:55:13.4319806Z includeif.gitdir:D:/a/motd/motd/.git.path
+2026-11-17T07:55:13.4320284Z includeif.gitdir:D:/a/motd/motd/.git/worktrees/*.path
+2026-11-17T07:55:13.4320678Z includeif.gitdir:/github/workspace/.git.path
+2026-11-17T07:55:13.4321101Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-17T07:55:13.4361626Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/motd/motd/.git.path
+2026-11-17T07:55:13.4653770Z D:\a\_temp\git-credentials-8d87b773-4c35-43f6-8993-8a37c5c06c7d.config
+2026-11-17T07:55:13.4699044Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/motd/motd/.git.path D:\a\_temp\git-credentials-8d87b773-4c35-43f6-8993-8a37c5c06c7d.config
+2026-11-17T07:55:13.5024688Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:D:/a/motd/motd/.git/worktrees/*.path
+2026-11-17T07:55:13.5306393Z D:\a\_temp\git-credentials-8d87b773-4c35-43f6-8993-8a37c5c06c7d.config
+2026-11-17T07:55:13.5345400Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:D:/a/motd/motd/.git/worktrees/*.path D:\a\_temp\git-credentials-8d87b773-4c35-43f6-8993-8a37c5c06c7d.config
+2026-11-17T07:55:13.5675587Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-11-17T07:55:13.5963007Z /github/runner_temp/git-credentials-8d87b773-4c35-43f6-8993-8a37c5c06c7d.config
+2026-11-17T07:55:13.6006994Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-8d87b773-4c35-43f6-8993-8a37c5c06c7d.config
+2026-11-17T07:55:13.6342919Z [command]"C:\Program Files\Git\bin\git.exe" config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-17T07:55:13.6621735Z /github/runner_temp/git-credentials-8d87b773-4c35-43f6-8993-8a37c5c06c7d.config
+2026-11-17T07:55:13.6659622Z [command]"C:\Program Files\Git\bin\git.exe" config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-8d87b773-4c35-43f6-8993-8a37c5c06c7d.config
+2026-11-17T07:55:13.6981678Z [command]"C:\Program Files\Git\bin\git.exe" submodule foreach --recursive "git config --local --show-origin --name-only --get-regexp remote.origin.url"
+2026-11-17T07:55:14.1471858Z Removing credentials config 'D:\a\_temp\git-credentials-8d87b773-4c35-43f6-8993-8a37c5c06c7d.config'
+2026-11-17T07:55:14.1654030Z Cleaning up orphan processes

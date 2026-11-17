@@ -1,0 +1,571 @@
+{
+  "recorded_at_utc": "2026-11-17T07:58:25.764123+00:00",
+  "repo": "Julesc013/motd",
+  "run_id": 44042319335,
+  "head_sha": "0f16e88d1406f0b6e87a9ea7e263887c2eb7d057",
+  "tree_sha": "8a65d8d40526256de6323adbd4f307ca99f9478d",
+  "run_attempt": 1,
+  "run_created_at": "2026-11-17T07:54:30Z",
+  "run_updated_at": "2026-11-17T07:56:16Z",
+  "run_status": "completed",
+  "run_conclusion": "success",
+  "run_url": "https://github.com/Julesc013/motd/actions/runs/44042319335",
+  "jobs": [
+    {
+      "id": 133899591795,
+      "name": "actual-powershell-2",
+      "head_sha": "0f16e88d1406f0b6e87a9ea7e263887c2eb7d057",
+      "conclusion": "success",
+      "started_at": "2026-11-17T07:54:32Z",
+      "completed_at": "2026-11-17T07:55:16Z",
+      "url": "https://github.com/Julesc013/motd/actions/runs/44042319335/job/133899591795",
+      "versions": {
+        "PSVersion": "2.0",
+        "CLRVersion": "2.0.50727.9188",
+        "OS": "Microsoft Windows NT 10.0.20348.0"
+      },
+      "runner_image": {
+        "name": "windows-2022",
+        "version": "20261112.366.7"
+      },
+      "test_suites": [],
+      "skip_reasons": [],
+      "log_file": "job-133899591795-powershell-2.log",
+      "log_sha256": "12a394fc3f76e168f836d77315ef8d47a55b6f6cf26aa9ac93174b054fdc9e75",
+      "summary": {
+        "executed_cases": 81,
+        "passed": 81,
+        "skipped": 0,
+        "failed": 0,
+        "kind": "legacy harness cases"
+      }
+    },
+    {
+      "id": 133899592037,
+      "name": "native-designs (windows-latest, powershell)",
+      "head_sha": "0f16e88d1406f0b6e87a9ea7e263887c2eb7d057",
+      "conclusion": "success",
+      "started_at": "2026-11-17T07:54:32Z",
+      "completed_at": "2026-11-17T07:56:15Z",
+      "url": "https://github.com/Julesc013/motd/actions/runs/44042319335/job/133899592037",
+      "versions": {
+        "PSVersion": "5.1.26100.33648",
+        "PSEdition": "Desktop"
+      },
+      "runner_image": {
+        "name": "windows-2025-vs2026",
+        "version": "20261103.298.1"
+      },
+      "test_suites": [
+        {
+          "file": "test_designs_powershell.py",
+          "reported_tests": 14,
+          "passed": 14,
+          "skipped": 0,
+          "failed": 0,
+          "elapsed_seconds": 66.722,
+          "result": "OK"
+        },
+        {
+          "file": "test_runtime_review.py",
+          "reported_tests": 8,
+          "passed": 2,
+          "skipped": 6,
+          "failed": 0,
+          "elapsed_seconds": 7.135,
+          "result": "OK (skipped=6)"
+        },
+        {
+          "file": "test_legacy_powershell.py",
+          "reported_tests": 2,
+          "passed": 2,
+          "skipped": 0,
+          "failed": 0,
+          "elapsed_seconds": 5.651,
+          "result": "OK"
+        },
+        {
+          "file": "test_windows_adapters.py",
+          "reported_tests": 10,
+          "passed": 10,
+          "skipped": 0,
+          "failed": 0,
+          "elapsed_seconds": 2.261,
+          "result": "OK"
+        },
+        {
+          "file": "test_portable_export.py",
+          "reported_tests": 9,
+          "passed": 8,
+          "skipped": 1,
+          "failed": 0,
+          "elapsed_seconds": 0.059,
+          "result": "OK (skipped=1)"
+        },
+        {
+          "file": "test_python_compatibility.py",
+          "reported_tests": 6,
+          "passed": 5,
+          "skipped": 1,
+          "failed": 0,
+          "elapsed_seconds": 0.096,
+          "result": "OK (skipped=1)"
+        }
+      ],
+      "skip_reasons": [
+        {
+          "test": "test_runtime_review.PortableServiceReviewTests.test_colon_service_names_remain_distinct_with_requirements_and_exclusions",
+          "reason": "'Portable service runtime needs a Unix shell'"
+        },
+        {
+          "test": "test_runtime_review.PortableServiceReviewTests.test_required_services_are_promoted_once_when_patterns_overlap",
+          "reason": "'Portable service runtime needs a Unix shell'"
+        },
+        {
+          "test": "test_runtime_review.WideResourceTests.test_fraction_formatter_does_not_invent_bars_for_missing_or_invalid_values",
+          "reason": "'The fraction formatter is a POSIX shell function'"
+        },
+        {
+          "test": "test_runtime_review.WideResourceTests.test_wide_unix_bars_fit_all_designs_and_small_viewports",
+          "reason": "'Unix bar contracts need Unix shells'"
+        },
+        {
+          "test": "test_runtime_review.WideResourceTests.test_wide_unix_bars_honor_swap_visibility_and_cli_override",
+          "reason": "'Unix bar contracts need Unix shells'"
+        },
+        {
+          "test": "test_runtime_review.WideResourceTests.test_wide_unix_bars_use_full_panel_width_and_numeric_observations",
+          "reason": "'Unix bar contracts need Unix shells'"
+        },
+        {
+          "test": "test_portable_export.PortableExportTests.test_verification_refuses_a_filename_replaced_while_reading_its_old_descriptor",
+          "reason": "'Open-file rename race uses POSIX file sharing'"
+        },
+        {
+          "test": "test_python_compatibility.Python38ExecutionTests.test_single_file_import_and_recipe_round_trip_in_real_python38",
+          "reason": "'Set MOTD_TEST_PYTHON38 for actual Python 3.8 execution'"
+        }
+      ],
+      "log_file": "job-133899592037-windows-powershell.log",
+      "log_sha256": "b33d7d7cc55ed474013368ff0c0693309b15e3c334f3856b3f4ae03f0fa44170",
+      "summary": {
+        "reported_tests": 49,
+        "passed": 41,
+        "skipped": 8,
+        "failed": 0
+      }
+    },
+    {
+      "id": 133899592107,
+      "name": "native-designs (windows-latest, pwsh)",
+      "head_sha": "0f16e88d1406f0b6e87a9ea7e263887c2eb7d057",
+      "conclusion": "success",
+      "started_at": "2026-11-17T07:54:33Z",
+      "completed_at": "2026-11-17T07:56:02Z",
+      "url": "https://github.com/Julesc013/motd/actions/runs/44042319335/job/133899592107",
+      "versions": {
+        "PSVersion": "7.6.9",
+        "PSEdition": "Core",
+        "OS": "Microsoft Windows 10.0.26100",
+        "Platform": "Win32NT"
+      },
+      "runner_image": {
+        "name": "windows-2025-vs2026",
+        "version": "20261103.298.1"
+      },
+      "test_suites": [
+        {
+          "file": "test_designs_powershell.py",
+          "reported_tests": 14,
+          "passed": 14,
+          "skipped": 0,
+          "failed": 0,
+          "elapsed_seconds": 54.652,
+          "result": "OK"
+        },
+        {
+          "file": "test_runtime_review.py",
+          "reported_tests": 8,
+          "passed": 2,
+          "skipped": 6,
+          "failed": 0,
+          "elapsed_seconds": 6.609,
+          "result": "OK (skipped=6)"
+        },
+        {
+          "file": "test_legacy_powershell.py",
+          "reported_tests": 2,
+          "passed": 2,
+          "skipped": 0,
+          "failed": 0,
+          "elapsed_seconds": 5.902,
+          "result": "OK"
+        },
+        {
+          "file": "test_windows_adapters.py",
+          "reported_tests": 10,
+          "passed": 10,
+          "skipped": 0,
+          "failed": 0,
+          "elapsed_seconds": 4.024,
+          "result": "OK"
+        },
+        {
+          "file": "test_portable_export.py",
+          "reported_tests": 9,
+          "passed": 8,
+          "skipped": 1,
+          "failed": 0,
+          "elapsed_seconds": 0.048,
+          "result": "OK (skipped=1)"
+        },
+        {
+          "file": "test_python_compatibility.py",
+          "reported_tests": 6,
+          "passed": 5,
+          "skipped": 1,
+          "failed": 0,
+          "elapsed_seconds": 0.072,
+          "result": "OK (skipped=1)"
+        }
+      ],
+      "skip_reasons": [
+        {
+          "test": "test_runtime_review.PortableServiceReviewTests.test_colon_service_names_remain_distinct_with_requirements_and_exclusions",
+          "reason": "'Portable service runtime needs a Unix shell'"
+        },
+        {
+          "test": "test_runtime_review.PortableServiceReviewTests.test_required_services_are_promoted_once_when_patterns_overlap",
+          "reason": "'Portable service runtime needs a Unix shell'"
+        },
+        {
+          "test": "test_runtime_review.WideResourceTests.test_fraction_formatter_does_not_invent_bars_for_missing_or_invalid_values",
+          "reason": "'The fraction formatter is a POSIX shell function'"
+        },
+        {
+          "test": "test_runtime_review.WideResourceTests.test_wide_unix_bars_fit_all_designs_and_small_viewports",
+          "reason": "'Unix bar contracts need Unix shells'"
+        },
+        {
+          "test": "test_runtime_review.WideResourceTests.test_wide_unix_bars_honor_swap_visibility_and_cli_override",
+          "reason": "'Unix bar contracts need Unix shells'"
+        },
+        {
+          "test": "test_runtime_review.WideResourceTests.test_wide_unix_bars_use_full_panel_width_and_numeric_observations",
+          "reason": "'Unix bar contracts need Unix shells'"
+        },
+        {
+          "test": "test_portable_export.PortableExportTests.test_verification_refuses_a_filename_replaced_while_reading_its_old_descriptor",
+          "reason": "'Open-file rename race uses POSIX file sharing'"
+        },
+        {
+          "test": "test_python_compatibility.Python38ExecutionTests.test_single_file_import_and_recipe_round_trip_in_real_python38",
+          "reason": "'Set MOTD_TEST_PYTHON38 for actual Python 3.8 execution'"
+        }
+      ],
+      "log_file": "job-133899592107-windows-pwsh.log",
+      "log_sha256": "bc3c6ca7cc79215a30b31adb772b42b31c8831c6a9dcde9fd586c740aa5d4a5d",
+      "summary": {
+        "reported_tests": 49,
+        "passed": 41,
+        "skipped": 8,
+        "failed": 0
+      }
+    },
+    {
+      "id": 133899592173,
+      "name": "native-designs (macos-latest, pwsh)",
+      "head_sha": "0f16e88d1406f0b6e87a9ea7e263887c2eb7d057",
+      "conclusion": "success",
+      "started_at": "2026-11-17T07:54:34Z",
+      "completed_at": "2026-11-17T07:56:13Z",
+      "url": "https://github.com/Julesc013/motd/actions/runs/44042319335/job/133899592173",
+      "versions": {
+        "PSVersion": "7.6.9",
+        "PSEdition": "Core",
+        "OS": "macOS 26.7.2",
+        "Platform": "Unix"
+      },
+      "runner_image": {
+        "name": "macos-26-arm64",
+        "version": "20261102.0473.1"
+      },
+      "test_suites": [
+        {
+          "file": "test_designs_powershell.py",
+          "reported_tests": 14,
+          "passed": 14,
+          "skipped": 0,
+          "failed": 0,
+          "elapsed_seconds": 67.427,
+          "result": "OK"
+        },
+        {
+          "file": "test_runtime_review.py",
+          "reported_tests": 8,
+          "passed": 8,
+          "skipped": 0,
+          "failed": 0,
+          "elapsed_seconds": 10.827,
+          "result": "OK"
+        },
+        {
+          "file": "test_legacy_powershell.py",
+          "reported_tests": 2,
+          "passed": 2,
+          "skipped": 0,
+          "failed": 0,
+          "elapsed_seconds": 4.647,
+          "result": "OK"
+        },
+        {
+          "file": "test_windows_adapters.py",
+          "reported_tests": 10,
+          "passed": 5,
+          "skipped": 5,
+          "failed": 0,
+          "elapsed_seconds": 0.029,
+          "result": "OK (skipped=5)"
+        },
+        {
+          "file": "test_portable_export.py",
+          "reported_tests": 9,
+          "passed": 9,
+          "skipped": 0,
+          "failed": 0,
+          "elapsed_seconds": 0.01,
+          "result": "OK"
+        },
+        {
+          "file": "test_python_compatibility.py",
+          "reported_tests": 6,
+          "passed": 5,
+          "skipped": 1,
+          "failed": 0,
+          "elapsed_seconds": 0.068,
+          "result": "OK (skipped=1)"
+        }
+      ],
+      "skip_reasons": [
+        {
+          "test": "test_windows_adapters.NativeWindowsAdapterTests.test_batch_text_prints_metacharacters_literally_without_powershell",
+          "reason": "'Requires native Windows cmd.exe'"
+        },
+        {
+          "test": "test_windows_adapters.NativeWindowsAdapterTests.test_cmd_demo_suppresses_configured_hooks",
+          "reason": "'Requires native Windows cmd.exe'"
+        },
+        {
+          "test": "test_windows_adapters.NativeWindowsAdapterTests.test_cmd_filename_metacharacters_are_data",
+          "reason": "'Requires native Windows cmd.exe'"
+        },
+        {
+          "test": "test_windows_adapters.NativeWindowsAdapterTests.test_cmd_launcher_runs_embedded_renderer_at_requested_geometry",
+          "reason": "'Requires native Windows cmd.exe'"
+        },
+        {
+          "test": "test_windows_adapters.NativeWindowsAdapterTests.test_default_windows_export_uses_create_only_manifest",
+          "reason": "'Requires native Windows cmd.exe'"
+        },
+        {
+          "test": "test_python_compatibility.Python38ExecutionTests.test_single_file_import_and_recipe_round_trip_in_real_python38",
+          "reason": "'Set MOTD_TEST_PYTHON38 for actual Python 3.8 execution'"
+        }
+      ],
+      "log_file": "job-133899592173-macos-pwsh.log",
+      "log_sha256": "c17101a5e4dd256b8db2a0765c001f7537d142f338ec9d285578f6472358b192",
+      "summary": {
+        "reported_tests": 49,
+        "passed": 43,
+        "skipped": 6,
+        "failed": 0
+      }
+    }
+  ],
+  "actual_powershell_2": {
+    "recorded_at_utc": "2026-11-17T07:57:01.881623+00:00",
+    "head_sha": "0f16e88d1406f0b6e87a9ea7e263887c2eb7d057",
+    "run_id": 44042319335,
+    "job_id": 133899591795,
+    "artifact_id": 14309732137,
+    "verified": true,
+    "actual_version": "2.0",
+    "clr_version": "2.0.50727.9188",
+    "process_bitness": 64,
+    "os": "Microsoft Windows NT 10.0.20348.0",
+    "started_at": "2026-11-17T07:55:04.4699164Z",
+    "completed_at": "2026-11-17T07:55:12.6572913Z",
+    "executed_cases": 81,
+    "passed_cases": 81,
+    "failed_cases": 0,
+    "skipped_cases": 0,
+    "case_kinds": {
+      "synthetic-alerts": 80,
+      "live-local-no-hooks": 1
+    },
+    "source_sha256": {
+      "motd.py": "eda912a538325d00f798dc969f8da4389f5c34ad5d4d13f2caba99087622a130",
+      "runtime/motd.ps1": "d34364f4a29c6adc287f793232611ec06a6046817b02e92a23bcaf59d97f9c46",
+      "tools/test_legacy_powershell.ps1": "f67642f425b4f06f40511803c00e6ac165c58aaacccdfa3fc979e8f2a8ecc710",
+      ".github/workflows/powershell-compatibility.yml": "bfd50e9ec363c024e5d292552d0ab999b7b80664e65ffec25a3cae93acb37eb5"
+    },
+    "generation": "workshop preset; shell=powershell; each of5 designs and2 bar layouts; sections=list(motd.SECTION_IDS); UTF-8 Windows CRLF write_text output",
+    "artifacts": [
+      {
+        "file": "briefing-inline.ps1",
+        "sha256": "7ddf56c253504b7c8b6f15a8a1af03a5088f5b1d39ba8272c3be1db62eb964c7",
+        "bytes": 58314,
+        "matches_generated_windows_bytes": true,
+        "executed_cases": 8
+      },
+      {
+        "file": "briefing-wide.ps1",
+        "sha256": "4a438b5442a98159648754e8b87164d1d7d1d84012b3f5d76c28b7dd82edb846",
+        "bytes": 58312,
+        "matches_generated_windows_bytes": true,
+        "executed_cases": 8
+      },
+      {
+        "file": "cards-inline.ps1",
+        "sha256": "cf869d1565172e2824d2866ad65f75ebb5660fbe2be983576fa6818caf13ddb9",
+        "bytes": 58307,
+        "matches_generated_windows_bytes": true,
+        "executed_cases": 8
+      },
+      {
+        "file": "cards-wide.ps1",
+        "sha256": "4113bf6760e78978b4750a060a24309d8d2c9fe8544d14bb06954bb21f066ac3",
+        "bytes": 58305,
+        "matches_generated_windows_bytes": true,
+        "executed_cases": 8
+      },
+      {
+        "file": "classic-inline.ps1",
+        "sha256": "604899824978f39c32cc17df75d8860dec57a14f9e7f90d520b54de1444bfe85",
+        "bytes": 58313,
+        "matches_generated_windows_bytes": true,
+        "executed_cases": 8
+      },
+      {
+        "file": "classic-wide.ps1",
+        "sha256": "8571393425afdc90ebfd30ef482d09d44bc17b0b28f61cc371374324aca7d299",
+        "bytes": 58307,
+        "matches_generated_windows_bytes": true,
+        "executed_cases": 8
+      },
+      {
+        "file": "dashboard-inline.ps1",
+        "sha256": "f2ab2350b62d82a4c90376b38d6fdc6175bafa1dd8c6b739e67d73d1f1b02c03",
+        "bytes": 58319,
+        "matches_generated_windows_bytes": true,
+        "executed_cases": 8
+      },
+      {
+        "file": "dashboard-wide.ps1",
+        "sha256": "86419d4e8fbcd05e582555739b5c4ad56280de1ef71e2382629c9cdc78ae02e5",
+        "bytes": 58313,
+        "matches_generated_windows_bytes": true,
+        "executed_cases": 8
+      },
+      {
+        "file": "ledger-inline.ps1",
+        "sha256": "4e6c07cfffabf027c92c4d9ddfd7a0edc2b935a8ee7936b97eef84900d907c0f",
+        "bytes": 58312,
+        "matches_generated_windows_bytes": true,
+        "executed_cases": 8
+      },
+      {
+        "file": "ledger-wide.ps1",
+        "sha256": "2905f01fefd03c6cb63a54dec63d8373c1f91f99b44ce8f63bbf056ddd69a903",
+        "bytes": 58306,
+        "matches_generated_windows_bytes": true,
+        "executed_cases": 8
+      }
+    ],
+    "archive_sha256": "bf6dcb71629d8c527a2f5988e3ea5fe143bed45e1bd6134284f014d564114585"
+  },
+  "lineage": {
+    "previous_head": "9cefbdd775372a8ee3cfb5ce64fbfcbbbd7aef27",
+    "previous_run_id": 44041771990,
+    "previous_run_conclusion": "failure",
+    "failed_job_id": 133897796812,
+    "failure": "Four macOS subcases in one Unix fixture test assumed the entry shell selected the enhanced Linux backend. Portable backend named available-memory fraction75%, test expected used-memory25%.",
+    "correction_commit": "0f16e88d1406f0b6e87a9ea7e263887c2eb7d057",
+    "correction_files": [
+      "tests/test_runtime_review.py"
+    ],
+    "runtime_changed": false,
+    "correction": "Assertions select the explicitly named available/used metric and require the associated numeric values and fraction.",
+    "corrected_test_result": "All8 runtime-review tests passed on macOS, including the formerly failing subcases.",
+    "previous_evidence_file": "../native-ci-9cefbdd/evidence.json",
+    "previous_evidence_sha256": "add51eb9f2b4c0382a0d8b66def14d7d3cfbd08e38f2f7d307c92398d557e553"
+  },
+  "files": [
+    {
+      "file": "actual-powershell-2-evidence.zip",
+      "bytes": 1765,
+      "sha256": "bf6dcb71629d8c527a2f5988e3ea5fe143bed45e1bd6134284f014d564114585"
+    },
+    {
+      "file": "artifacts.json",
+      "bytes": 852,
+      "sha256": "fd40ae26757921048a3fdfbd008582b0ae16e20f263d51512b8cf708171e64ea"
+    },
+    {
+      "file": "correction-commit.json",
+      "bytes": 6299,
+      "sha256": "278d787fc5933ff588a8f459e8d03172bc966b902fb07e066f7e58ca46bd1c57"
+    },
+    {
+      "file": "job-133899591795-powershell-2.log",
+      "bytes": 28005,
+      "sha256": "12a394fc3f76e168f836d77315ef8d47a55b6f6cf26aa9ac93174b054fdc9e75"
+    },
+    {
+      "file": "job-133899592037-windows-powershell.log",
+      "bytes": 29440,
+      "sha256": "b33d7d7cc55ed474013368ff0c0693309b15e3c334f3856b3f4ae03f0fa44170"
+    },
+    {
+      "file": "job-133899592107-windows-pwsh.log",
+      "bytes": 29632,
+      "sha256": "bc3c6ca7cc79215a30b31adb772b42b31c8831c6a9dcde9fd586c740aa5d4a5d"
+    },
+    {
+      "file": "job-133899592173-macos-pwsh.log",
+      "bytes": 30179,
+      "sha256": "c17101a5e4dd256b8db2a0765c001f7537d142f338ec9d285578f6472358b192"
+    },
+    {
+      "file": "jobs-latest.json",
+      "bytes": 9769,
+      "sha256": "c3c4f83c7b5bc4fbb9050f2211f1b1105b04285390810296235491dd50a6b4a9"
+    },
+    {
+      "file": "powershell-2-evidence.xml",
+      "bytes": 10628,
+      "sha256": "a605b4804ef1835308de5d04a21cc3a5207ffc99d79b179d6fb71e5cf623456d"
+    },
+    {
+      "file": "powershell-2-probe.json",
+      "bytes": 1116,
+      "sha256": "1fe29ec0febd328c69c8810cb6bf7ddb003ac9a80245d7169411975d9740ce45"
+    },
+    {
+      "file": "powershell-2-verification.json",
+      "bytes": 3586,
+      "sha256": "d17e8bdc4b62b8a2884718236fb08e01765438424fec810d8dceb6c497ed2afd"
+    },
+    {
+      "file": "run-final.json",
+      "bytes": 12333,
+      "sha256": "0058d7e215cf9e6e4e286ad3dbbb24921c9ff9ef69d7376724e39d338710b86a"
+    },
+    {
+      "file": "run-initial.json",
+      "bytes": 13659,
+      "sha256": "c1d5ffa9f3d59e3207de6612a150960c3f8f98a2f8dc5ee2d73e5274fd8c777f"
+    }
+  ],
+  "inventory_scope": "Only files owned by this native PowerShell evidence review; independent verify-* files are intentionally excluded."
+}

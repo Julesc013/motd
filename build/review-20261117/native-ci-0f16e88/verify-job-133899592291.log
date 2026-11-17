@@ -1,0 +1,798 @@
+﻿2026-11-17T07:54:33.3927255Z Current runner version: '2.338.2'
+2026-11-17T07:54:33.3949598Z ##[group]Runner Image Provisioner
+2026-11-17T07:54:33.3950644Z Hosted Compute Agent
+2026-11-17T07:54:33.3951330Z Version: 20261103.629
+2026-11-17T07:54:33.3952096Z Commit: 15dbd9ccb5dbf34fae002b6ed1a2670f52df37bc
+2026-11-17T07:54:33.3952706Z Build Date: 2026-11-03T17:26:59Z
+2026-11-17T07:54:33.3953262Z Worker ID: {aacc2ac6-6417-4dd0-aabc-abdb349dc2ad}
+2026-11-17T07:54:33.3953975Z Region: eastus2
+2026-11-17T07:54:33.3954432Z Cloud: Azure
+2026-11-17T07:54:33.3954925Z ##[endgroup]
+2026-11-17T07:54:33.3956120Z ##[group]Operating System
+2026-11-17T07:54:33.3956650Z Ubuntu
+2026-11-17T07:54:33.3957162Z 26.04.1
+2026-11-17T07:54:33.3957590Z LTS
+2026-11-17T07:54:33.3958406Z ##[endgroup]
+2026-11-17T07:54:33.3958878Z ##[group]Runner Image
+2026-11-17T07:54:33.3959623Z Image: ubuntu-26.04
+2026-11-17T07:54:33.3960170Z Version: 20261111.196.1
+2026-11-17T07:54:33.3961182Z Included Software: https://github.com/actions/runner-images/blob/ubuntu26/20261111.196/images/ubuntu/Ubuntu2604-Readme.md
+2026-11-17T07:54:33.3962483Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu26%2F20261111.196
+2026-11-17T07:54:33.3963429Z ##[endgroup]
+2026-11-17T07:54:33.3964401Z ##[group]GITHUB_TOKEN Permissions
+2026-11-17T07:54:33.3966285Z Contents: read
+2026-11-17T07:54:33.3966866Z Metadata: read
+2026-11-17T07:54:33.3967363Z ##[endgroup]
+2026-11-17T07:54:33.3969702Z Secret source: Actions
+2026-11-17T07:54:33.3970539Z Cache mode: write
+2026-11-17T07:54:33.3971310Z Prepare workflow directory
+2026-11-17T07:54:33.4285232Z Prepare all required actions
+2026-11-17T07:54:33.4324122Z Getting action download info
+2026-11-17T07:54:33.5787616Z Download action repository 'actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803' (SHA:d23441a48e516b6c34aea4fa41551a30e30af803)
+2026-11-17T07:54:33.7275129Z Download action repository 'actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1' (SHA:ece7cb06caefa5fff74198d8649806c4678c61a1)
+2026-11-17T07:54:33.9418861Z Complete job name: linux
+2026-11-17T07:54:34.0187219Z ##[group]Run actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+2026-11-17T07:54:34.0188050Z with:
+2026-11-17T07:54:34.0188408Z   repository: Julesc013/motd
+2026-11-17T07:54:34.0191522Z   token: ***
+2026-11-17T07:54:34.0191888Z   ssh-strict: true
+2026-11-17T07:54:34.0192244Z   ssh-user: git
+2026-11-17T07:54:34.0192605Z   persist-credentials: true
+2026-11-17T07:54:34.0192990Z   clean: true
+2026-11-17T07:54:34.0193348Z   sparse-checkout-cone-mode: true
+2026-11-17T07:54:34.0193757Z   fetch-depth: 1
+2026-11-17T07:54:34.0194098Z   fetch-tags: false
+2026-11-17T07:54:34.0194452Z   show-progress: true
+2026-11-17T07:54:34.0194810Z   lfs: false
+2026-11-17T07:54:34.0195155Z   submodules: false
+2026-11-17T07:54:34.0195502Z   set-safe-directory: true
+2026-11-17T07:54:34.0195910Z   allow-unsafe-pr-checkout: false
+2026-11-17T07:54:34.0196462Z env:
+2026-11-17T07:54:34.0196807Z   POWERSHELL_TELEMETRY_OPTOUT: 1
+2026-11-17T07:54:34.0197238Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-17T07:54:34.0197688Z ##[endgroup]
+2026-11-17T07:54:34.2288623Z Syncing repository: Julesc013/motd
+2026-11-17T07:54:34.2290549Z ##[group]Getting Git version info
+2026-11-17T07:54:34.2291100Z Working directory is '/home/runner/work/motd/motd'
+2026-11-17T07:54:34.2291865Z [command]/usr/bin/git version
+2026-11-17T07:54:34.2309282Z git version 2.56.1
+2026-11-17T07:54:34.2327668Z ##[endgroup]
+2026-11-17T07:54:34.2342644Z Temporarily overriding HOME='/home/runner/work/_temp/ca85b5cd-0423-41e6-8fab-6f25309fc0bd' before making global git config changes
+2026-11-17T07:54:34.2344368Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-17T07:54:34.2346701Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/motd/motd
+2026-11-17T07:54:34.2403366Z Deleting the contents of '/home/runner/work/motd/motd'
+2026-11-17T07:54:34.2407959Z ##[group]Determining repository object format
+2026-11-17T07:54:34.2410120Z ##[endgroup]
+2026-11-17T07:54:34.2411079Z ##[group]Initializing the repository
+2026-11-17T07:54:34.2414657Z [command]/usr/bin/git init /home/runner/work/motd/motd
+2026-11-17T07:54:34.2519703Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-11-17T07:54:34.2520892Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-11-17T07:54:34.2521682Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-11-17T07:54:34.2522636Z hint: call:
+2026-11-17T07:54:34.2523007Z hint:
+2026-11-17T07:54:34.2523517Z hint: 	git config --global init.defaultBranch <name>
+2026-11-17T07:54:34.2524315Z hint:
+2026-11-17T07:54:34.2525017Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-11-17T07:54:34.2526156Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-11-17T07:54:34.2527053Z hint:
+2026-11-17T07:54:34.2527567Z hint: 	git branch -m <name>
+2026-11-17T07:54:34.2528129Z hint:
+2026-11-17T07:54:34.2528950Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-11-17T07:54:34.2530295Z Initialized empty Git repository in /home/runner/work/motd/motd/.git/
+2026-11-17T07:54:34.2540502Z [command]/usr/bin/git remote add origin https://github.com/Julesc013/motd
+2026-11-17T07:54:34.2585645Z ##[endgroup]
+2026-11-17T07:54:34.2586589Z ##[group]Disabling automatic garbage collection
+2026-11-17T07:54:34.2589819Z [command]/usr/bin/git config --local gc.auto 0
+2026-11-17T07:54:34.2622618Z ##[endgroup]
+2026-11-17T07:54:34.2624211Z ##[group]Setting up auth
+2026-11-17T07:54:34.2625265Z Removing SSH command configuration
+2026-11-17T07:54:34.2628818Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-17T07:54:34.2660295Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-17T07:54:34.3043665Z Removing HTTP extra header
+2026-11-17T07:54:34.3053683Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-17T07:54:34.3086702Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-17T07:54:34.3324018Z Removing includeIf entries pointing to credentials config files
+2026-11-17T07:54:34.3330042Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-17T07:54:34.3360425Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-17T07:54:34.3603004Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-bb0bf593-c8ae-4d51-87e8-62a1f6b65979.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-11-17T07:54:34.3637514Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/motd/motd/.git.path /home/runner/work/_temp/git-credentials-bb0bf593-c8ae-4d51-87e8-62a1f6b65979.config
+2026-11-17T07:54:34.3669712Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/motd/motd/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-bb0bf593-c8ae-4d51-87e8-62a1f6b65979.config
+2026-11-17T07:54:34.3708610Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-bb0bf593-c8ae-4d51-87e8-62a1f6b65979.config
+2026-11-17T07:54:34.3738353Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-bb0bf593-c8ae-4d51-87e8-62a1f6b65979.config
+2026-11-17T07:54:34.3764120Z ##[endgroup]
+2026-11-17T07:54:34.3764727Z ##[group]Fetching the repository
+2026-11-17T07:54:34.3771586Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +0f16e88d1406f0b6e87a9ea7e263887c2eb7d057:refs/remotes/origin/feat/readability-and-portability-review
+2026-11-17T07:54:39.8070194Z From https://github.com/Julesc013/motd
+2026-11-17T07:54:39.8071777Z  * [new ref]         0f16e88d1406f0b6e87a9ea7e263887c2eb7d057 -> origin/feat/readability-and-portability-review
+2026-11-17T07:54:39.8073748Z [command]/usr/bin/git branch --list --remote origin/feat/readability-and-portability-review
+2026-11-17T07:54:39.8084949Z   origin/feat/readability-and-portability-review
+2026-11-17T07:54:39.8093736Z [command]/usr/bin/git rev-parse refs/remotes/origin/feat/readability-and-portability-review
+2026-11-17T07:54:39.8116934Z 0f16e88d1406f0b6e87a9ea7e263887c2eb7d057
+2026-11-17T07:54:39.8128192Z ##[endgroup]
+2026-11-17T07:54:39.8129301Z ##[group]Determining the checkout info
+2026-11-17T07:54:39.8131150Z ##[endgroup]
+2026-11-17T07:54:39.8140675Z [command]/usr/bin/git sparse-checkout disable
+2026-11-17T07:54:39.8180301Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-11-17T07:54:39.8208622Z ##[group]Checking out the ref
+2026-11-17T07:54:39.8213352Z [command]/usr/bin/git checkout --progress --force -B feat/readability-and-portability-review refs/remotes/origin/feat/readability-and-portability-review
+2026-11-17T07:54:40.0412842Z Switched to a new branch 'feat/readability-and-portability-review'
+2026-11-17T07:54:40.0416044Z branch 'feat/readability-and-portability-review' set up to track 'origin/feat/readability-and-portability-review'.
+2026-11-17T07:54:40.0432596Z ##[endgroup]
+2026-11-17T07:54:40.0473367Z [command]/usr/bin/git log -1 --format=%H
+2026-11-17T07:54:40.0496227Z 0f16e88d1406f0b6e87a9ea7e263887c2eb7d057
+2026-11-17T07:54:40.0856818Z ##[group]Run actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+2026-11-17T07:54:40.0857655Z with:
+2026-11-17T07:54:40.0857943Z   python-version: 3.11
+2026-11-17T07:54:40.0858315Z   check-latest: false
+2026-11-17T07:54:40.0864388Z   token: ***
+2026-11-17T07:54:40.0864729Z   update-environment: true
+2026-11-17T07:54:40.0865149Z   allow-prereleases: false
+2026-11-17T07:54:40.0865610Z   freethreaded: false
+2026-11-17T07:54:40.0865941Z env:
+2026-11-17T07:54:40.0866239Z   POWERSHELL_TELEMETRY_OPTOUT: 1
+2026-11-17T07:54:40.0866710Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-17T07:54:40.0867155Z ##[endgroup]
+2026-11-17T07:54:40.2209051Z ##[group]Installed versions
+2026-11-17T07:54:40.2353433Z Successfully set up CPython (3.11.18)
+2026-11-17T07:54:40.2354662Z ##[endgroup]
+2026-11-17T07:54:40.2514292Z ##[group]Run python3 tools/embed_runtime.py --check
+2026-11-17T07:54:40.2515113Z [36;1mpython3 tools/embed_runtime.py --check[0m
+2026-11-17T07:54:40.2589999Z shell: /usr/bin/bash -e {0}
+2026-11-17T07:54:40.2590672Z env:
+2026-11-17T07:54:40.2591103Z   POWERSHELL_TELEMETRY_OPTOUT: 1
+2026-11-17T07:54:40.2591661Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-17T07:54:40.2592344Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:54:40.2593258Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.18/x64/lib/pkgconfig
+2026-11-17T07:54:40.2594199Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:54:40.2595007Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:54:40.2595764Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:54:40.2596539Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.18/x64/lib
+2026-11-17T07:54:40.2597159Z ##[endgroup]
+2026-11-17T07:54:40.4173939Z Embedded runtimes match canonical sources
+2026-11-17T07:54:40.4280861Z ##[group]Run python3 tools/embed_toml.py --check
+2026-11-17T07:54:40.4281545Z [36;1mpython3 tools/embed_toml.py --check[0m
+2026-11-17T07:54:40.4327267Z shell: /usr/bin/bash -e {0}
+2026-11-17T07:54:40.4327680Z env:
+2026-11-17T07:54:40.4327998Z   POWERSHELL_TELEMETRY_OPTOUT: 1
+2026-11-17T07:54:40.4328473Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-17T07:54:40.4329066Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:54:40.4330037Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.18/x64/lib/pkgconfig
+2026-11-17T07:54:40.4330903Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:54:40.4331841Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:54:40.4332611Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:54:40.4333389Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.18/x64/lib
+2026-11-17T07:54:40.4334008Z ##[endgroup]
+2026-11-17T07:54:40.4807404Z Embedded TOML parser matches its licensed canonical source
+2026-11-17T07:54:40.4904469Z ##[group]Run bash -n runtime/motd.bash
+2026-11-17T07:54:40.4905020Z [36;1mbash -n runtime/motd.bash[0m
+2026-11-17T07:54:40.4950946Z shell: /usr/bin/bash -e {0}
+2026-11-17T07:54:40.4951365Z env:
+2026-11-17T07:54:40.4951690Z   POWERSHELL_TELEMETRY_OPTOUT: 1
+2026-11-17T07:54:40.4952166Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-17T07:54:40.4952749Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:54:40.4953590Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.18/x64/lib/pkgconfig
+2026-11-17T07:54:40.4954452Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:54:40.4955224Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:54:40.4955969Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:54:40.4956718Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.18/x64/lib
+2026-11-17T07:54:40.4957324Z ##[endgroup]
+2026-11-17T07:54:40.5131441Z ##[group]Run sh -n runtime/motd.sh
+2026-11-17T07:54:40.5131977Z [36;1msh -n runtime/motd.sh[0m
+2026-11-17T07:54:40.5178482Z shell: /usr/bin/bash -e {0}
+2026-11-17T07:54:40.5178894Z env:
+2026-11-17T07:54:40.5179211Z   POWERSHELL_TELEMETRY_OPTOUT: 1
+2026-11-17T07:54:40.5179854Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-17T07:54:40.5180459Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:54:40.5181326Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.18/x64/lib/pkgconfig
+2026-11-17T07:54:40.5182183Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:54:40.5182941Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:54:40.5183712Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:54:40.5184472Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.18/x64/lib
+2026-11-17T07:54:40.5185080Z ##[endgroup]
+2026-11-17T07:54:40.5313702Z ##[group]Run sh -n runtime/designs.sh
+2026-11-17T07:54:40.5314241Z [36;1msh -n runtime/designs.sh[0m
+2026-11-17T07:54:40.5356355Z shell: /usr/bin/bash -e {0}
+2026-11-17T07:54:40.5356750Z env:
+2026-11-17T07:54:40.5357066Z   POWERSHELL_TELEMETRY_OPTOUT: 1
+2026-11-17T07:54:40.5357527Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-17T07:54:40.5358103Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:54:40.5358943Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.18/x64/lib/pkgconfig
+2026-11-17T07:54:40.5359976Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:54:40.5360708Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:54:40.5361459Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:54:40.5362236Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.18/x64/lib
+2026-11-17T07:54:40.5362837Z ##[endgroup]
+2026-11-17T07:54:40.5482181Z ##[group]Run sudo apt-get update && sudo apt-get install -y zsh fish busybox mksh ksh
+2026-11-17T07:54:40.5483312Z [36;1msudo apt-get update && sudo apt-get install -y zsh fish busybox mksh ksh[0m
+2026-11-17T07:54:40.5527291Z shell: /usr/bin/bash -e {0}
+2026-11-17T07:54:40.5527690Z env:
+2026-11-17T07:54:40.5528000Z   POWERSHELL_TELEMETRY_OPTOUT: 1
+2026-11-17T07:54:40.5528451Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-17T07:54:40.5529017Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:54:40.5530001Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.18/x64/lib/pkgconfig
+2026-11-17T07:54:40.5530823Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:54:40.5531540Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:54:40.5532266Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:54:40.5533201Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.18/x64/lib
+2026-11-17T07:54:40.5533826Z ##[endgroup]
+2026-11-17T07:54:40.6771190Z Get:1 file:/etc/apt/apt-mirrors.txt Mirrorlist [144 B]
+2026-11-17T07:54:40.6893178Z Get:6 https://packages.microsoft.com/ubuntu/26.04/prod resolute InRelease [3964 B]
+2026-11-17T07:54:40.7103675Z Hit:2 http://azure.archive.ubuntu.com/ubuntu resolute InRelease
+2026-11-17T07:54:40.7126004Z Get:3 http://azure.archive.ubuntu.com/ubuntu resolute-updates InRelease [137 kB]
+2026-11-17T07:54:40.7235743Z Get:4 http://azure.archive.ubuntu.com/ubuntu resolute-backports InRelease [137 kB]
+2026-11-17T07:54:40.7341248Z Get:5 http://azure.archive.ubuntu.com/ubuntu resolute-security InRelease [137 kB]
+2026-11-17T07:54:40.7645009Z Get:7 https://packages.microsoft.com/ubuntu/26.04/prod resolute/main amd64 Packages [160 kB]
+2026-11-17T07:54:40.8204056Z Get:8 https://packages.microsoft.com/ubuntu/26.04/prod resolute/main arm64 Packages [146 kB]
+2026-11-17T07:54:40.8300695Z Get:9 http://azure.archive.ubuntu.com/ubuntu resolute-updates/main amd64v3 Packages [873 kB]
+2026-11-17T07:54:40.8390506Z Get:10 http://azure.archive.ubuntu.com/ubuntu resolute-updates/main Translation-en [195 kB]
+2026-11-17T07:54:40.8391823Z Get:11 http://azure.archive.ubuntu.com/ubuntu resolute-updates/universe amd64v3 Packages [386 kB]
+2026-11-17T07:54:40.8420228Z Get:12 http://azure.archive.ubuntu.com/ubuntu resolute-updates/universe Translation-en [122 kB]
+2026-11-17T07:54:40.8530363Z Get:13 http://azure.archive.ubuntu.com/ubuntu resolute-security/main amd64v3 Packages [719 kB]
+2026-11-17T07:54:40.8567261Z Get:14 http://azure.archive.ubuntu.com/ubuntu resolute-security/main Translation-en [157 kB]
+2026-11-17T07:54:40.8581268Z Get:15 http://azure.archive.ubuntu.com/ubuntu resolute-security/universe amd64v3 Packages [221 kB]
+2026-11-17T07:54:40.8594855Z Get:16 http://azure.archive.ubuntu.com/ubuntu resolute-security/universe Translation-en [72.6 kB]
+2026-11-17T07:54:40.8606733Z Get:17 http://azure.archive.ubuntu.com/ubuntu resolute-security/restricted amd64v3 Packages [590 kB]
+2026-11-17T07:54:40.8644884Z Get:18 http://azure.archive.ubuntu.com/ubuntu resolute-security/restricted Translation-en [122 kB]
+2026-11-17T07:54:47.2885878Z Fetched 4178 kB in 0s (11.2 MB/s)
+2026-11-17T07:54:47.8207381Z Reading package lists...
+2026-11-17T07:54:47.8488254Z Reading package lists...
+2026-11-17T07:54:47.9814359Z Building dependency tree...
+2026-11-17T07:54:47.9820423Z Reading state information...
+2026-11-17T07:54:48.0613121Z Solving dependencies...
+2026-11-17T07:54:48.1397732Z The following additional packages will be installed:
+2026-11-17T07:54:48.1405996Z   fish-common ksh93u+m xsel zsh-common
+2026-11-17T07:54:48.1411424Z Suggested packages:
+2026-11-17T07:54:48.1411855Z   doc-base binfmt-support zsh-doc
+2026-11-17T07:54:48.1851737Z The following packages will be REMOVED:
+2026-11-17T07:54:48.1859848Z   busybox-static ubuntu-standard
+2026-11-17T07:54:48.1860261Z The following NEW packages will be installed:
+2026-11-17T07:54:48.1866375Z   busybox fish fish-common ksh ksh93u+m mksh xsel zsh zsh-common
+2026-11-17T07:54:48.2083238Z 0 upgraded, 9 newly installed, 2 to remove and 25 not upgraded.
+2026-11-17T07:54:48.2083716Z Need to get 16.3 MB of archives.
+2026-11-17T07:54:48.2084021Z After this operation, 71.9 MB of additional disk space will be used.
+2026-11-17T07:54:48.2084350Z Get:1 file:/etc/apt/apt-mirrors.txt Mirrorlist [144 B]
+2026-11-17T07:54:48.2434095Z Get:2 http://azure.archive.ubuntu.com/ubuntu resolute/universe amd64v3 busybox amd64 1:1.37.0-7ubuntu1 [479 kB]
+2026-11-17T07:54:48.2632739Z Get:3 http://azure.archive.ubuntu.com/ubuntu resolute/universe amd64v3 fish-common all 4.2.1-3.2 [1784 kB]
+2026-11-17T07:54:48.2989673Z Get:4 http://azure.archive.ubuntu.com/ubuntu resolute/universe amd64v3 fish amd64 4.2.1-3.2 [6374 kB]
+2026-11-17T07:54:48.3837208Z Get:5 http://azure.archive.ubuntu.com/ubuntu resolute/universe amd64v3 ksh93u+m amd64 1.0.10-2build1 [921 kB]
+2026-11-17T07:54:48.4067486Z Get:6 http://azure.archive.ubuntu.com/ubuntu resolute/universe amd64v3 ksh all 20240113-1.0.10-2build1 [6320 B]
+2026-11-17T07:54:48.4252899Z Get:7 http://azure.archive.ubuntu.com/ubuntu resolute/universe amd64v3 mksh amd64 59c-43 [1741 kB]
+2026-11-17T07:54:48.4532544Z Get:8 http://azure.archive.ubuntu.com/ubuntu resolute/universe amd64v3 xsel amd64 1.2.1-1build1 [20.7 kB]
+2026-11-17T07:54:48.4733247Z Get:9 http://azure.archive.ubuntu.com/ubuntu resolute/main amd64v3 zsh-common all 5.9-8ubuntu3 [4168 kB]
+2026-11-17T07:54:48.5137378Z Get:10 http://azure.archive.ubuntu.com/ubuntu resolute/main amd64v3 zsh amd64 5.9-8ubuntu3 [820 kB]
+2026-11-17T07:54:49.0478314Z Fetched 16.3 MB in 0s (50.5 MB/s)
+2026-11-17T07:54:49.0969824Z (Reading database ... 
+2026-11-17T07:54:49.0970195Z (Reading database ... 5%
+2026-11-17T07:54:49.0970579Z (Reading database ... 10%
+2026-11-17T07:54:49.0979924Z (Reading database ... 15%
+2026-11-17T07:54:49.0980215Z (Reading database ... 20%
+2026-11-17T07:54:49.0980422Z (Reading database ... 25%
+2026-11-17T07:54:49.0980649Z (Reading database ... 30%
+2026-11-17T07:54:49.0980845Z (Reading database ... 35%
+2026-11-17T07:54:49.0981040Z (Reading database ... 40%
+2026-11-17T07:54:49.0981219Z (Reading database ... 45%
+2026-11-17T07:54:49.0981420Z (Reading database ... 50%
+2026-11-17T07:54:49.4071236Z (Reading database ... 55%
+2026-11-17T07:54:49.7073093Z (Reading database ... 60%
+2026-11-17T07:54:49.9641500Z (Reading database ... 65%
+2026-11-17T07:54:50.3303907Z (Reading database ... 70%
+2026-11-17T07:54:50.5593467Z (Reading database ... 75%
+2026-11-17T07:54:50.8962985Z (Reading database ... 80%
+2026-11-17T07:54:51.6773219Z (Reading database ... 85%
+2026-11-17T07:54:52.3245698Z (Reading database ... 90%
+2026-11-17T07:54:52.9111296Z (Reading database ... 95%
+2026-11-17T07:54:52.9111677Z (Reading database ... 100%
+2026-11-17T07:54:52.9111968Z (Reading database ... 213944 files and directories currently installed.)
+2026-11-17T07:54:52.9157102Z Removing ubuntu-standard (1.570.4) ...
+2026-11-17T07:54:52.9607291Z Removing busybox-static (1:1.37.0-7ubuntu1) ...
+2026-11-17T07:54:53.1114349Z Selecting previously unselected package busybox.
+2026-11-17T07:54:53.1166869Z (Reading database ... 
+2026-11-17T07:54:53.1167415Z (Reading database ... 5%
+2026-11-17T07:54:53.1168017Z (Reading database ... 10%
+2026-11-17T07:54:53.1168343Z (Reading database ... 15%
+2026-11-17T07:54:53.1168640Z (Reading database ... 20%
+2026-11-17T07:54:53.1168916Z (Reading database ... 25%
+2026-11-17T07:54:53.1169190Z (Reading database ... 30%
+2026-11-17T07:54:53.1169615Z (Reading database ... 35%
+2026-11-17T07:54:53.1169878Z (Reading database ... 40%
+2026-11-17T07:54:53.1170169Z (Reading database ... 45%
+2026-11-17T07:54:53.1170452Z (Reading database ... 50%
+2026-11-17T07:54:53.1380878Z (Reading database ... 55%
+2026-11-17T07:54:53.1418081Z (Reading database ... 60%
+2026-11-17T07:54:53.1452052Z (Reading database ... 65%
+2026-11-17T07:54:53.1467256Z (Reading database ... 70%
+2026-11-17T07:54:53.1488099Z (Reading database ... 75%
+2026-11-17T07:54:53.1587291Z (Reading database ... 80%
+2026-11-17T07:54:53.1848937Z (Reading database ... 85%
+2026-11-17T07:54:53.1886005Z (Reading database ... 90%
+2026-11-17T07:54:53.2208096Z (Reading database ... 95%
+2026-11-17T07:54:53.2208408Z (Reading database ... 100%
+2026-11-17T07:54:53.2208740Z (Reading database ... 213925 files and directories currently installed.)
+2026-11-17T07:54:53.2258206Z Preparing to unpack .../0-busybox_1%3a1.37.0-7ubuntu1_amd64v3.deb ...
+2026-11-17T07:54:53.2268734Z Unpacking busybox (1:1.37.0-7ubuntu1) ...
+2026-11-17T07:54:53.2578706Z Selecting previously unselected package fish-common.
+2026-11-17T07:54:53.2705186Z Preparing to unpack .../1-fish-common_4.2.1-3.2_all.deb ...
+2026-11-17T07:54:53.2712742Z Unpacking fish-common (4.2.1-3.2) ...
+2026-11-17T07:54:53.5232594Z Selecting previously unselected package fish.
+2026-11-17T07:54:53.5366300Z Preparing to unpack .../2-fish_4.2.1-3.2_amd64v3.deb ...
+2026-11-17T07:54:53.5507360Z Unpacking fish (4.2.1-3.2) ...
+2026-11-17T07:54:53.7791691Z Selecting previously unselected package ksh93u+m.
+2026-11-17T07:54:53.7918821Z Preparing to unpack .../3-ksh93u+m_1.0.10-2build1_amd64v3.deb ...
+2026-11-17T07:54:53.7927662Z Unpacking ksh93u+m (1.0.10-2build1) ...
+2026-11-17T07:54:53.8376860Z Selecting previously unselected package ksh.
+2026-11-17T07:54:53.8502252Z Preparing to unpack .../4-ksh_20240113-1.0.10-2build1_all.deb ...
+2026-11-17T07:54:53.8510755Z Unpacking ksh (20240113-1.0.10-2build1) ...
+2026-11-17T07:54:53.8769802Z Selecting previously unselected package mksh.
+2026-11-17T07:54:53.8901577Z Preparing to unpack .../5-mksh_59c-43_amd64v3.deb ...
+2026-11-17T07:54:53.8910215Z Unpacking mksh (59c-43) ...
+2026-11-17T07:54:53.9719545Z Selecting previously unselected package xsel.
+2026-11-17T07:54:53.9846691Z Preparing to unpack .../6-xsel_1.2.1-1build1_amd64v3.deb ...
+2026-11-17T07:54:53.9858644Z Unpacking xsel (1.2.1-1build1) ...
+2026-11-17T07:54:54.0074196Z Selecting previously unselected package zsh-common.
+2026-11-17T07:54:54.0200772Z Preparing to unpack .../7-zsh-common_5.9-8ubuntu3_all.deb ...
+2026-11-17T07:54:54.0283206Z Unpacking zsh-common (5.9-8ubuntu3) ...
+2026-11-17T07:54:54.3134515Z Selecting previously unselected package zsh.
+2026-11-17T07:54:54.3267831Z Preparing to unpack .../8-zsh_5.9-8ubuntu3_amd64v3.deb ...
+2026-11-17T07:54:54.3351225Z Unpacking zsh (5.9-8ubuntu3) ...
+2026-11-17T07:54:54.4395469Z Setting up xsel (1.2.1-1build1) ...
+2026-11-17T07:54:54.4431385Z Setting up zsh-common (5.9-8ubuntu3) ...
+2026-11-17T07:54:54.4676783Z Setting up busybox (1:1.37.0-7ubuntu1) ...
+2026-11-17T07:54:54.4740047Z Setting up mksh (59c-43) ...
+2026-11-17T07:54:54.4808562Z update-alternatives: using /bin/mksh to provide /bin/ksh (ksh) in auto mode
+2026-11-17T07:54:55.6288199Z Setting up ksh93u+m (1.0.10-2build1) ...
+2026-11-17T07:54:55.6349516Z update-alternatives: using /bin/ksh93 to provide /bin/ksh (ksh) in auto mode
+2026-11-17T07:54:55.6392145Z update-alternatives: using /usr/bin/shcomp93 to provide /usr/bin/shcomp (shcomp) in auto mode
+2026-11-17T07:54:55.6760060Z Setting up ksh (20240113-1.0.10-2build1) ...
+2026-11-17T07:54:55.6779294Z Setting up zsh (5.9-8ubuntu3) ...
+2026-11-17T07:54:55.6884146Z Setting up fish-common (4.2.1-3.2) ...
+2026-11-17T07:54:55.6906859Z Setting up fish (4.2.1-3.2) ...
+2026-11-17T07:54:55.7196118Z Processing triggers for man-db (2.13.1-1build1) ...
+2026-11-17T07:54:55.7413806Z Not building database; man-db/auto-update is not 'true'.
+2026-11-17T07:54:55.8711679Z Processing triggers for debianutils (5.23.2build1) ...
+2026-11-17T07:54:58.1383267Z 
+2026-11-17T07:54:58.1383919Z Running kernel seems to be up-to-date.
+2026-11-17T07:54:58.1384214Z 
+2026-11-17T07:54:58.1384333Z Restarting services...
+2026-11-17T07:54:58.1471323Z 
+2026-11-17T07:54:58.1471957Z Service restarts being deferred:
+2026-11-17T07:54:58.1474575Z  systemctl restart hosted-compute-agent.service
+2026-11-17T07:54:58.1474859Z 
+2026-11-17T07:54:58.1475576Z No containers need to be restarted.
+2026-11-17T07:54:58.1475785Z 
+2026-11-17T07:54:58.1475934Z No user sessions are running outdated binaries.
+2026-11-17T07:54:58.1476228Z 
+2026-11-17T07:54:58.1476829Z No VM guests are running outdated hypervisor (qemu) binaries on this host.
+2026-11-17T07:54:59.1816276Z ##[group]Run pwsh -NoProfile -Command '$PSVersionTable.PSVersion.ToString()'
+2026-11-17T07:54:59.1816731Z [36;1mpwsh -NoProfile -Command '$PSVersionTable.PSVersion.ToString()'[0m
+2026-11-17T07:54:59.1863888Z shell: /usr/bin/bash -e {0}
+2026-11-17T07:54:59.1864109Z env:
+2026-11-17T07:54:59.1864299Z   POWERSHELL_TELEMETRY_OPTOUT: 1
+2026-11-17T07:54:59.1864525Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-17T07:54:59.1864778Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:54:59.1865128Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.18/x64/lib/pkgconfig
+2026-11-17T07:54:59.1865458Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:54:59.1865752Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:54:59.1866050Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:54:59.1866539Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.18/x64/lib
+2026-11-17T07:54:59.1866794Z ##[endgroup]
+2026-11-17T07:55:02.1797422Z 7.6.10
+2026-11-17T07:55:02.2243125Z ##[group]Run python3 -m pip install -r requirements-dev.txt
+2026-11-17T07:55:02.2243486Z [36;1mpython3 -m pip install -r requirements-dev.txt[0m
+2026-11-17T07:55:02.2288530Z shell: /usr/bin/bash -e {0}
+2026-11-17T07:55:02.2288739Z env:
+2026-11-17T07:55:02.2288915Z   POWERSHELL_TELEMETRY_OPTOUT: 1
+2026-11-17T07:55:02.2289132Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-17T07:55:02.2289534Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:55:02.2289903Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.18/x64/lib/pkgconfig
+2026-11-17T07:55:02.2290235Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:55:02.2290530Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:55:02.2290820Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:55:02.2291141Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.18/x64/lib
+2026-11-17T07:55:02.2291428Z ##[endgroup]
+2026-11-17T07:55:02.9716504Z Collecting Pillow>=10 (from -r requirements-dev.txt (line 2))
+2026-11-17T07:55:03.0036640Z   Downloading pillow-13.0.0-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata (9.1 kB)
+2026-11-17T07:55:03.0262541Z Collecting wcwidth>=0.2 (from -r requirements-dev.txt (line 3))
+2026-11-17T07:55:03.0334575Z   Downloading wcwidth-0.9.4-cp310-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (23 kB)
+2026-11-17T07:55:03.0467111Z Downloading pillow-13.0.0-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (7.1 MB)
+2026-11-17T07:55:03.1307909Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 7.1/7.1 MB 105.4 MB/s  0:00:00
+2026-11-17T07:55:03.1382812Z Downloading wcwidth-0.9.4-cp310-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (785 kB)
+2026-11-17T07:55:03.1465782Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 785.9/785.9 kB 84.3 MB/s  0:00:00
+2026-11-17T07:55:03.1999024Z Installing collected packages: wcwidth, Pillow
+2026-11-17T07:55:03.6435933Z 
+2026-11-17T07:55:03.6443256Z Successfully installed Pillow-13.0.0 wcwidth-0.9.4
+2026-11-17T07:55:03.7043620Z ##[group]Run python3 -m unittest discover -s tests -v
+2026-11-17T07:55:03.7043944Z [36;1mpython3 -m unittest discover -s tests -v[0m
+2026-11-17T07:55:03.7087451Z shell: /usr/bin/bash -e {0}
+2026-11-17T07:55:03.7087652Z env:
+2026-11-17T07:55:03.7087825Z   POWERSHELL_TELEMETRY_OPTOUT: 1
+2026-11-17T07:55:03.7088038Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-17T07:55:03.7088285Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:55:03.7088630Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.18/x64/lib/pkgconfig
+2026-11-17T07:55:03.7088957Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:55:03.7089264Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:55:03.7089738Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:55:03.7090048Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.18/x64/lib
+2026-11-17T07:55:03.7090305Z   MOTD_TEST_WRITE_RECORD: 0
+2026-11-17T07:55:03.7090540Z ##[endgroup]
+2026-11-17T07:55:04.0826379Z test_build_and_recover_recipe_round_trip (test_cli.CliTests.test_build_and_recover_recipe_round_trip) ... ok
+2026-11-17T07:55:04.1547904Z test_cancelled_interactive_reconfigure_restores_ui_and_keeps_install (test_cli.CliTests.test_cancelled_interactive_reconfigure_restores_ui_and_keeps_install) ... ok
+2026-11-17T07:55:04.1818991Z test_cli_recovery_reaches_an_orphan_transaction (test_cli.CliTests.test_cli_recovery_reaches_an_orphan_transaction) ... ok
+2026-11-17T07:55:04.2580270Z test_generated_artifact_install_also_requires_explicit_trust (test_cli.CliTests.test_generated_artifact_install_also_requires_explicit_trust) ... ok
+2026-11-17T07:55:04.2858925Z test_missing_artifacts_fail_without_creating_outputs_or_state (test_cli.CliTests.test_missing_artifacts_fail_without_creating_outputs_or_state) ... ok
+2026-11-17T07:55:04.3266985Z test_opaque_import_requires_trust_and_has_no_inferred_recipe (test_cli.CliTests.test_opaque_import_requires_trust_and_has_no_inferred_recipe) ... ok
+2026-11-17T07:55:04.3344276Z test_opaque_plan_does_not_execute_or_require_install_trust (test_cli.CliTests.test_opaque_plan_does_not_execute_or_require_install_trust) ... ok
+2026-11-17T07:55:04.4346333Z test_plan_is_read_only_before_and_after_installation (test_cli.CliTests.test_plan_is_read_only_before_and_after_installation) ... ok
+2026-11-17T07:55:04.7547698Z test_saved_recipe_commands_apply_audience_overrides (test_cli.CliTests.test_saved_recipe_commands_apply_audience_overrides) ... ok
+2026-11-17T07:55:04.8714021Z test_saved_recipe_commands_reject_target_and_destination_changes (test_cli.CliTests.test_saved_recipe_commands_reject_target_and_destination_changes) ... ok
+2026-11-17T07:55:05.4066392Z test_screen_wizard_preview_save_build_cancel_smoke (test_cli.CliTests.test_screen_wizard_preview_save_build_cancel_smoke) ... ok
+2026-11-17T07:55:05.4514008Z test_static_import_preserves_already_serialized_issue_bytes (test_cli.CliTests.test_static_import_preserves_already_serialized_issue_bytes) ... ok
+2026-11-17T07:55:05.4568679Z test_static_preview_displays_controls_without_modifying_import (test_cli.CliTests.test_static_preview_displays_controls_without_modifying_import) ... ok
+2026-11-17T07:55:05.6262407Z test_upgrade_reuses_the_installed_recipe (test_cli.CliTests.test_upgrade_reuses_the_installed_recipe) ... ok
+2026-11-17T07:55:05.8271605Z test_wizard_preview_save_build_cancel_smoke (test_cli.CliTests.test_wizard_preview_save_build_cancel_smoke) ... ok
+2026-11-17T07:55:05.8366236Z test_cli_readability_choices_are_saved_and_recovered (test_design_configuration.DesignConfigurationTests.test_cli_readability_choices_are_saved_and_recovered) ... ok
+2026-11-17T07:55:05.8516280Z test_design_preferences_survive_toml_and_all_executable_exports (test_design_configuration.DesignConfigurationTests.test_design_preferences_survive_toml_and_all_executable_exports) ... ok
+2026-11-17T07:55:05.8582782Z test_imported_artifact_cannot_be_relabelled_as_a_different_design (test_design_configuration.DesignConfigurationTests.test_imported_artifact_cannot_be_relabelled_as_a_different_design) ... ok
+2026-11-17T07:55:05.8585475Z test_invalid_layout_data_is_rejected_before_literal_serialization (test_design_configuration.DesignConfigurationTests.test_invalid_layout_data_is_rejected_before_literal_serialization) ... ok
+2026-11-17T07:55:05.8587188Z test_legacy_recipe_gets_classic_defaults_without_inventing_a_new_design (test_design_configuration.DesignConfigurationTests.test_legacy_recipe_gets_classic_defaults_without_inventing_a_new_design) ... ok
+2026-11-17T07:55:05.8633468Z test_opaque_shell_import_does_not_guess_bash (test_design_configuration.DesignConfigurationTests.test_opaque_shell_import_does_not_guess_bash) ... ok
+2026-11-17T07:55:05.8638414Z test_oversized_input_is_refused_before_opening_its_content (test_design_configuration.DesignConfigurationTests.test_oversized_input_is_refused_before_opening_its_content) ... ok
+2026-11-17T07:55:09.5053249Z test_briefing_promotes_the_first_detail_of_heading_only_sections (test_designs_powershell.NativePowerShellDesignTests.test_briefing_promotes_the_first_detail_of_heading_only_sections) ... ok
+2026-11-17T07:55:11.8532006Z test_builtin_print_is_literal_and_respects_preview_suppression (test_designs_powershell.NativePowerShellDesignTests.test_builtin_print_is_literal_and_respects_preview_suppression) ... ok
+2026-11-17T07:55:14.6105933Z test_colour_emphasis_changes_tones_and_plain_overrides_all (test_designs_powershell.NativePowerShellDesignTests.test_colour_emphasis_changes_tones_and_plain_overrides_all) ... ok
+2026-11-17T07:55:27.7804499Z test_compact_and_extreme_geometry_preserve_complete_frames (test_designs_powershell.NativePowerShellDesignTests.test_compact_and_extreme_geometry_preserve_complete_frames) ... ok
+2026-11-17T07:55:29.4507833Z test_dashboard_preserves_configured_section_order_at_both_widths (test_designs_powershell.NativePowerShellDesignTests.test_dashboard_preserves_configured_section_order_at_both_widths) ... ok
+2026-11-17T07:55:31.3254556Z test_density_padding_and_gap_affect_layout_without_clipping (test_designs_powershell.NativePowerShellDesignTests.test_density_padding_and_gap_affect_layout_without_clipping) ... ok
+2026-11-17T07:55:36.6628015Z test_designs_have_distinct_structures_and_dashboard_reflows (test_designs_powershell.NativePowerShellDesignTests.test_designs_have_distinct_structures_and_dashboard_reflows) ... ok
+2026-11-17T07:55:39.3072756Z test_detail_and_section_override_change_real_fixture_content (test_designs_powershell.NativePowerShellDesignTests.test_detail_and_section_override_change_real_fixture_content) ... ok
+2026-11-17T07:56:15.2183837Z test_every_design_fits_all_requested_sizes_and_character_sets (test_designs_powershell.NativePowerShellDesignTests.test_every_design_fits_all_requested_sizes_and_character_sets) ... ok
+2026-11-17T07:56:16.3024602Z test_legacy_harness_rejects_a_different_engine_before_executing_input (test_designs_powershell.NativePowerShellDesignTests.test_legacy_harness_rejects_a_different_engine_before_executing_input) ... ok
+2026-11-17T07:56:20.5765020Z test_long_titles_cannot_hide_demo_or_identity_without_system_section (test_designs_powershell.NativePowerShellDesignTests.test_long_titles_cannot_hide_demo_or_identity_without_system_section) ... ok
+2026-11-17T07:56:21.4646022Z test_priority_selects_complete_sections_when_space_is_limited (test_designs_powershell.NativePowerShellDesignTests.test_priority_selects_complete_sections_when_space_is_limited) ... ok
+2026-11-17T07:56:25.7319786Z test_tiny_viewports_name_every_selected_or_hidden_section (test_designs_powershell.NativePowerShellDesignTests.test_tiny_viewports_name_every_selected_or_hidden_section) ... ok
+2026-11-17T07:56:30.2856222Z test_unicode_labels_and_untrusted_calls_remain_data_in_all_designs (test_designs_powershell.NativePowerShellDesignTests.test_unicode_labels_and_untrusted_calls_remain_data_in_all_designs) ... ok
+2026-11-17T07:56:30.7611837Z test_briefing_retains_first_observations_and_neutral_attention_title (test_designs_unix.UnixDesignTests.test_briefing_retains_first_observations_and_neutral_attention_title) ... ok
+2026-11-17T07:56:31.4147389Z test_color_emphasis_charsets_and_no_color (test_designs_unix.UnixDesignTests.test_color_emphasis_charsets_and_no_color) ... ok
+2026-11-17T07:56:31.5865486Z test_compact_and_dashboard_summaries_honor_item_visibility (test_designs_unix.UnixDesignTests.test_compact_and_dashboard_summaries_honor_item_visibility) ... ok
+2026-11-17T07:56:32.2353961Z test_demo_and_invalid_style_options_never_run_hooks (test_designs_unix.UnixDesignTests.test_demo_and_invalid_style_options_never_run_hooks) ... ok
+2026-11-17T07:56:32.8346945Z test_designs_have_distinct_structures_and_dashboard_stacks (test_designs_unix.UnixDesignTests.test_designs_have_distinct_structures_and_dashboard_stacks) ... ok
+2026-11-17T07:56:32.9724839Z test_detail_and_spacing_are_independent_controls (test_designs_unix.UnixDesignTests.test_detail_and_spacing_are_independent_controls) ... ok
+2026-11-17T07:56:35.9417205Z test_every_design_fits_extreme_spacing_and_terminal_budgets (test_designs_unix.UnixDesignTests.test_every_design_fits_extreme_spacing_and_terminal_budgets) ... ok
+2026-11-17T07:56:36.3389477Z test_explicit_priority_can_preserve_hints_before_attention (test_designs_unix.UnixDesignTests.test_explicit_priority_can_preserve_hints_before_attention) ... ok
+2026-11-17T07:56:36.8508151Z test_headers_retain_machine_context_and_visible_demo_label (test_designs_unix.UnixDesignTests.test_headers_retain_machine_context_and_visible_demo_label) ... ok
+2026-11-17T07:56:36.8760723Z test_populated_rows_do_not_duplicate_portable_attention_or_pad_empty_cards (test_designs_unix.UnixDesignTests.test_populated_rows_do_not_duplicate_portable_attention_or_pad_empty_cards) ... ok
+2026-11-17T07:56:36.9757097Z test_priority_protects_detail_without_reordering_sections (test_designs_unix.UnixDesignTests.test_priority_protects_detail_without_reordering_sections) ... ok
+2026-11-17T07:56:39.4723870Z test_real_optional_interpreters_execute_generated_outputs (test_designs_unix.UnixDesignTests.test_real_optional_interpreters_execute_generated_outputs) ... ok
+2026-11-17T07:56:40.2220617Z test_saved_controls_and_runtime_overrides_use_the_same_layout (test_designs_unix.UnixDesignTests.test_saved_controls_and_runtime_overrides_use_the_same_layout) ... ok
+2026-11-17T07:56:40.6692533Z test_native_guards_filter_sessions_and_prevent_duplicate_display (test_fish_startup.FishStartupTests.test_native_guards_filter_sessions_and_prevent_duplicate_display) ... ok
+2026-11-17T07:56:40.7197050Z test_actual_child_observes_requested_pty_geometry (test_gallery.GalleryTests.test_actual_child_observes_requested_pty_geometry) ... ok
+2026-11-17T07:56:40.7200050Z test_ansi_styles_and_wide_combining_characters_map_to_cells (test_gallery.GalleryTests.test_ansi_styles_and_wide_combining_characters_map_to_cells) ... ok
+2026-11-17T07:56:42.0351154Z test_bar_layout_captures_have_distinct_ids_and_recipes (test_gallery.GalleryTests.test_bar_layout_captures_have_distinct_ids_and_recipes) ... ok
+2026-11-17T07:56:42.0356515Z test_bounded_sampler_covers_designs_geometries_and_independent_preferences (test_gallery.GalleryTests.test_bounded_sampler_covers_designs_geometries_and_independent_preferences) ... ok
+2026-11-17T07:56:42.0357828Z test_exact_width_followed_by_newline_does_not_wrap (test_gallery.GalleryTests.test_exact_width_followed_by_newline_does_not_wrap) ... ok
+2026-11-17T07:56:42.2183091Z test_four_requested_sizes_fit_actual_bash_without_postprocessing (test_gallery.GalleryTests.test_four_requested_sizes_fit_actual_bash_without_postprocessing) ... ok
+2026-11-17T07:56:42.2185616Z test_full_screen_wizard_frame_uses_last_row_without_scrolling (test_gallery.GalleryTests.test_full_screen_wizard_frame_uses_last_row_without_scrolling) ... ok
+2026-11-17T07:56:42.5291126Z test_manifest_verification_checks_retained_recipe_transcript_and_image (test_gallery.GalleryTests.test_manifest_verification_checks_retained_recipe_transcript_and_image) ... ok
+2026-11-17T07:56:42.5714290Z test_optimizer_that_changes_pixels_is_rejected (test_gallery.GalleryTests.test_optimizer_that_changes_pixels_is_rejected) ... ok
+2026-11-17T07:56:42.6382493Z test_png_decodes_to_every_original_pixel_with_complete_terminal_grid (test_gallery.GalleryTests.test_png_decodes_to_every_original_pixel_with_complete_terminal_grid) ... ok
+2026-11-17T07:56:42.6390071Z test_shared_presentation_source_is_in_provenance (test_gallery.GalleryTests.test_shared_presentation_source_is_in_provenance) ... ok
+2026-11-17T07:56:42.6393592Z test_wrapping_scrolling_prompt_overwrite_and_unknown_controls_fail (test_gallery.GalleryTests.test_wrapping_scrolling_prompt_overwrite_and_unknown_controls_fail) ... ok
+2026-11-17T07:56:42.6447968Z test_artifact_digest_and_embedded_recipe_are_exact (test_generation.GenerationTests.test_artifact_digest_and_embedded_recipe_are_exact) ... ok
+2026-11-17T07:56:42.6475799Z test_changed_body_cannot_silently_supply_configuration (test_generation.GenerationTests.test_changed_body_cannot_silently_supply_configuration) ... ok
+2026-11-17T07:56:42.6516912Z test_changed_recipe_cannot_silently_describe_unchanged_body (test_generation.GenerationTests.test_changed_recipe_cannot_silently_describe_unchanged_body) ... ok
+2026-11-17T07:56:42.6911468Z test_each_hook_phase_combination_has_valid_bash (test_generation.GenerationTests.test_each_hook_phase_combination_has_valid_bash) ... ok
+2026-11-17T07:56:42.6913256Z test_embedded_runtime_is_exact_tracked_template (test_generation.GenerationTests.test_embedded_runtime_is_exact_tracked_template) ... ok
+2026-11-17T07:56:42.6918522Z test_invalid_boolean_ids_and_text_are_rejected (test_generation.GenerationTests.test_invalid_boolean_ids_and_text_are_rejected) ... ok
+2026-11-17T07:56:42.6953206Z test_non_numeric_and_out_of_range_settings_are_rejected (test_generation.GenerationTests.test_non_numeric_and_out_of_range_settings_are_rejected) ... ok
+2026-11-17T07:56:42.6991067Z test_nonempty_hooks_and_empty_hints_round_trip (test_generation.GenerationTests.test_nonempty_hooks_and_empty_hints_round_trip) ... ok
+2026-11-17T07:56:42.7038723Z test_presets_are_independent_and_all_round_trip (test_generation.GenerationTests.test_presets_are_independent_and_all_round_trip) ... ok
+2026-11-17T07:56:42.7041998Z test_public_issue_escapes_backslashes_and_banner_preserves_them (test_generation.GenerationTests.test_public_issue_escapes_backslashes_and_banner_preserves_them) ... ok
+2026-11-17T07:56:42.7045462Z test_public_presets_reject_executable_hooks (test_generation.GenerationTests.test_public_presets_reject_executable_hooks) ... ok
+2026-11-17T07:56:42.7048305Z test_recovery_rejects_invalid_and_oversized_input (test_generation.GenerationTests.test_recovery_rejects_invalid_and_oversized_input) ... ok
+2026-11-17T07:56:42.7554424Z test_strings_are_literal_bash_data (test_generation.GenerationTests.test_strings_are_literal_bash_data) ... ok
+2026-11-17T07:56:42.8331376Z test_active_install_repair_after_identical_reinstall (test_installation.InstallationTests.test_active_install_repair_after_identical_reinstall) ... ok
+2026-11-17T07:56:42.9723363Z test_active_install_repair_after_rollback_of_rollback (test_installation.InstallationTests.test_active_install_repair_after_rollback_of_rollback) ... ok
+2026-11-17T07:56:43.0210940Z test_active_install_repair_includes_unchanged_hook_after_upgrade (test_installation.InstallationTests.test_active_install_repair_includes_unchanged_hook_after_upgrade) ... ok
+2026-11-17T07:56:43.0827522Z test_install_and_identical_reinstall_are_idempotent (test_installation.InstallationTests.test_install_and_identical_reinstall_are_idempotent) ... ok
+2026-11-17T07:56:43.0839712Z test_installation_plan_is_read_only (test_installation.InstallationTests.test_installation_plan_is_read_only) ... ok
+2026-11-17T07:56:43.1050676Z test_interactive_hook_runs_once_and_quotes_output_path (test_installation.InstallationTests.test_interactive_hook_runs_once_and_quotes_output_path) ... ok
+2026-11-17T07:56:43.1380488Z test_modified_managed_block_blocks_upgrade_and_uninstall (test_installation.InstallationTests.test_modified_managed_block_blocks_upgrade_and_uninstall) ... ok
+2026-11-17T07:56:43.1732198Z test_modified_runtime_blocks_upgrade_and_uninstall (test_installation.InstallationTests.test_modified_runtime_blocks_upgrade_and_uninstall) ... ok
+2026-11-17T07:56:43.1936355Z test_noninteractive_shells_never_print_dashboard_even_with_tty (test_installation.InstallationTests.test_noninteractive_shells_never_print_dashboard_even_with_tty) ... ok
+2026-11-17T07:56:43.1946486Z test_symlink_runtime_and_shell_file_are_rejected (test_installation.InstallationTests.test_symlink_runtime_and_shell_file_are_rejected) ... ok
+2026-11-17T07:56:43.2778094Z test_uninstall_preserves_mode_only_shell_change (test_installation.InstallationTests.test_uninstall_preserves_mode_only_shell_change) ... ok
+2026-11-17T07:56:43.3185263Z test_uninstall_preserves_outside_edits_made_before_upgrade (test_installation.InstallationTests.test_uninstall_preserves_outside_edits_made_before_upgrade) ... ok
+2026-11-17T07:56:43.3470342Z test_uninstall_preserves_outside_hook_edits_and_private_mode (test_installation.InstallationTests.test_uninstall_preserves_outside_hook_edits_and_private_mode) ... ok
+2026-11-17T07:56:43.4012763Z test_uninstall_preserves_second_instance_added_before_upgrade (test_installation.InstallationTests.test_uninstall_preserves_second_instance_added_before_upgrade) ... ok
+2026-11-17T07:56:43.4529629Z test_uninstall_rollback_restores_active_install (test_installation.InstallationTests.test_uninstall_rollback_restores_active_install) ... ok
+2026-11-17T07:56:43.5178998Z test_upgrade_can_be_rolled_back_again_after_redo (test_installation.InstallationTests.test_upgrade_can_be_rolled_back_again_after_redo) ... ok
+2026-11-17T07:56:43.6280799Z test_upgrade_rollback_redo_then_uninstall_restores_originals (test_installation.InstallationTests.test_upgrade_rollback_redo_then_uninstall_restores_originals) ... ok
+2026-11-17T07:56:47.1656568Z test_matching_minor_and_major_only_default_execute_real_cases_without_hooks (test_legacy_powershell.LegacyPowerShellVersionTests.test_matching_minor_and_major_only_default_execute_real_cases_without_hooks) ... ok
+2026-11-17T07:56:48.5683764Z test_minor_mismatch_and_invalid_constraint_refuse_before_artifact_execution (test_legacy_powershell.LegacyPowerShellVersionTests.test_minor_mismatch_and_invalid_constraint_refuse_before_artifact_execution) ... ok
+2026-11-17T07:56:48.7082189Z test_live_portable_identity_comes_from_this_host (test_native_platforms.NativePlatformTests.test_live_portable_identity_comes_from_this_host) ... ok
+2026-11-17T07:56:48.7444150Z test_native_bash_dispatch_runs_a_generated_file (test_native_platforms.NativePlatformTests.test_native_bash_dispatch_runs_a_generated_file) ... ok
+2026-11-17T07:56:48.7783291Z test_portable_sections_fit_and_use_additional_rows (test_native_platforms.NativePlatformTests.test_portable_sections_fit_and_use_additional_rows) ... ok
+2026-11-17T07:56:48.8524865Z test_zsh_delegation_matches_the_same_hosts_bash (test_native_platforms.NativePlatformTests.test_zsh_delegation_matches_the_same_hosts_bash) ... ok
+2026-11-17T07:56:48.8526964Z test_archive_suffix_cannot_introduce_an_unregistered_path (test_output_lifecycle.OutputLifecycleTests.test_archive_suffix_cannot_introduce_an_unregistered_path) ... ok
+2026-11-17T07:56:49.3969860Z test_each_output_builds_archives_and_rolls_back_with_its_recipe (test_output_lifecycle.OutputLifecycleTests.test_each_output_builds_archives_and_rolls_back_with_its_recipe) ... ok
+2026-11-17T07:56:49.5038802Z test_fish_install_upgrade_repair_and_uninstall_preserve_unowned_text (test_output_lifecycle.OutputLifecycleTests.test_fish_install_upgrade_repair_and_uninstall_preserve_unowned_text) ... ok
+2026-11-17T07:56:49.5040063Z test_direct_transaction_path_checks_do_not_bypass_control_rejection (test_path_safety.PathSafetyTests.test_direct_transaction_path_checks_do_not_bypass_control_rejection) ... ok
+2026-11-17T07:56:49.5041083Z test_displayed_paths_cannot_inject_terminal_controls_or_managed_markers (test_path_safety.PathSafetyTests.test_displayed_paths_cannot_inject_terminal_controls_or_managed_markers) ... ok
+2026-11-17T07:56:49.5048190Z test_large_existing_target_is_refused_without_creating_a_journal (test_path_safety.PathSafetyTests.test_large_existing_target_is_refused_without_creating_a_journal) ... ok
+2026-11-17T07:56:49.5051631Z test_existing_destination_is_not_overwritten_and_other_files_are_not_created (test_portable_export.PortableExportTests.test_existing_destination_is_not_overwritten_and_other_files_are_not_created) ... ok
+2026-11-17T07:56:49.5069153Z test_failure_compensates_only_owned_new_files (test_portable_export.PortableExportTests.test_failure_compensates_only_owned_new_files) ... ok
+2026-11-17T07:56:49.5084929Z test_failure_preserves_an_external_edit_instead_of_deleting_it (test_portable_export.PortableExportTests.test_failure_preserves_an_external_edit_instead_of_deleting_it) ... ok
+2026-11-17T07:56:49.5087352Z test_manifest_collision_is_rejected_before_creation (test_portable_export.PortableExportTests.test_manifest_collision_is_rejected_before_creation) ... ok
+2026-11-17T07:56:49.5111362Z test_new_utf8_files_and_hash_manifest (test_portable_export.PortableExportTests.test_new_utf8_files_and_hash_manifest) ... ok
+2026-11-17T07:56:49.5114934Z test_observed_windows_reparse_parent_is_refused (test_portable_export.PortableExportTests.test_observed_windows_reparse_parent_is_refused) ... ok
+2026-11-17T07:56:49.5123378Z test_partial_write_can_remove_only_its_exact_prefix (test_portable_export.PortableExportTests.test_partial_write_can_remove_only_its_exact_prefix) ... ok
+2026-11-17T07:56:49.5127322Z test_symlink_parent_is_refused (test_portable_export.PortableExportTests.test_symlink_parent_is_refused) ... ok
+2026-11-17T07:56:49.5134225Z test_verification_refuses_a_filename_replaced_while_reading_its_old_descriptor (test_portable_export.PortableExportTests.test_verification_refuses_a_filename_replaced_while_reading_its_old_descriptor) ... ok
+2026-11-17T07:56:50.3790965Z test_actual_demo_geometry_data_and_resource_bars (test_powershell.PowerShellExecutionTests.test_actual_demo_geometry_data_and_resource_bars) ... ok
+2026-11-17T07:56:57.1040189Z test_all_requested_sizes_and_charsets_expand_actual_content (test_powershell.PowerShellExecutionTests.test_all_requested_sizes_and_charsets_expand_actual_content) ... ok
+2026-11-17T07:56:57.9234185Z test_ascii_mode_preserves_column_width_with_unicode_labels (test_powershell.PowerShellExecutionTests.test_ascii_mode_preserves_column_width_with_unicode_labels) ... ok
+2026-11-17T07:56:58.7398159Z test_configuration_is_data_and_cannot_execute_powershell (test_powershell.PowerShellExecutionTests.test_configuration_is_data_and_cannot_execute_powershell) ... ok
+2026-11-17T07:57:01.6158409Z test_demo_live_preview_help_and_version_do_not_run_hooks (test_powershell.PowerShellExecutionTests.test_demo_live_preview_help_and_version_do_not_run_hooks) ... ok
+2026-11-17T07:57:03.2754350Z test_forced_color_and_explicit_plain_precedence (test_powershell.PowerShellExecutionTests.test_forced_color_and_explicit_plain_precedence) ... ok
+2026-11-17T07:57:04.1116074Z test_hook_failure_continue_allows_dashboard_and_after_hook (test_powershell.PowerShellExecutionTests.test_hook_failure_continue_allows_dashboard_and_after_hook) ... ok
+2026-11-17T07:57:05.2804371Z test_hook_timeout_stops_script_when_requested (test_powershell.PowerShellExecutionTests.test_hook_timeout_stops_script_when_requested) ... ok
+2026-11-17T07:57:05.6128660Z test_invalid_geometry_is_rejected (test_powershell.PowerShellExecutionTests.test_invalid_geometry_is_rejected) ... ok
+2026-11-17T07:57:06.6584200Z test_live_io_connections_and_sessions_keep_units_and_scope (test_powershell.PowerShellExecutionTests.test_live_io_connections_and_sessions_keep_units_and_scope) ... ok
+2026-11-17T07:57:07.6294727Z test_live_local_memory_storage_and_process_observations (test_powershell.PowerShellExecutionTests.test_live_local_memory_storage_and_process_observations) ... ok
+2026-11-17T07:57:08.4668033Z test_native_arguments_and_before_after_order_are_preserved (test_powershell.PowerShellExecutionTests.test_native_arguments_and_before_after_order_are_preserved) ... ok
+2026-11-17T07:57:09.2880005Z test_observed_control_characters_are_sanitized (test_powershell.PowerShellExecutionTests.test_observed_control_characters_are_sanitized) ... ok
+2026-11-17T07:57:10.1134906Z test_present_empty_no_color_disables_forced_color (test_powershell.PowerShellExecutionTests.test_present_empty_no_color_disables_forced_color) ... ok
+2026-11-17T07:57:13.3662886Z test_saved_charset_and_color_are_defaults_overridden_by_runtime_switches (test_powershell.PowerShellExecutionTests.test_saved_charset_and_color_are_defaults_overridden_by_runtime_switches) ... ok
+2026-11-17T07:57:18.5201328Z test_small_preview_budgets_fit_without_overdrawing_controls (test_powershell.PowerShellExecutionTests.test_small_preview_budgets_fit_without_overdrawing_controls) ... ok
+2026-11-17T07:57:19.3484377Z test_trap_preserves_failure_and_rejects_partial_observations (test_powershell.PowerShellExecutionTests.test_trap_preserves_failure_and_rejects_partial_observations) ... ok
+2026-11-17T07:57:20.1482457Z test_unavailable_network_api_does_not_render_zero_connections (test_powershell.PowerShellExecutionTests.test_unavailable_network_api_does_not_render_zero_connections) ... ok
+2026-11-17T07:57:20.9732470Z test_unavailable_service_provider_does_not_report_required_services_missing (test_powershell.PowerShellExecutionTests.test_unavailable_service_provider_does_not_report_required_services_missing) ... ok
+2026-11-17T07:57:21.8092713Z test_unicode_cells_count_wide_and_combining_text (test_powershell.PowerShellExecutionTests.test_unicode_cells_count_wide_and_combining_text) ... ok
+2026-11-17T07:57:23.4541656Z test_unix_service_providers_share_required_and_excluded_filters (test_powershell.PowerShellExecutionTests.test_unix_service_providers_share_required_and_excluded_filters) ... ok
+2026-11-17T07:57:24.2794584Z test_v1_command_launcher_works_with_a_script_path_containing_spaces (test_powershell.PowerShellExecutionTests.test_v1_command_launcher_works_with_a_script_path_containing_spaces) ... ok
+2026-11-17T07:57:24.2812017Z test_canonical_runtime_and_checked_recipe (test_powershell.PowerShellGenerationTests.test_canonical_runtime_and_checked_recipe) ... ok
+2026-11-17T07:57:24.2852709Z test_core_does_not_reintroduce_known_post_v1_grammar (test_powershell.PowerShellGenerationTests.test_core_does_not_reintroduce_known_post_v1_grammar) ... ok
+2026-11-17T07:57:24.2867653Z test_source_is_ascii_even_when_configuration_is_unicode (test_powershell.PowerShellGenerationTests.test_source_is_ascii_even_when_configuration_is_unicode) ... ok
+2026-11-17T07:57:24.2968683Z test_all_presets_round_trip_through_bundled_parser (test_python_compatibility.BundledTomlTests.test_all_presets_round_trip_through_bundled_parser) ... ok
+2026-11-17T07:57:24.3433831Z test_generated_plain_embedding_matches_licensed_source (test_python_compatibility.BundledTomlTests.test_generated_plain_embedding_matches_licensed_source) ... ok
+2026-11-17T07:57:24.3437080Z test_invalid_documents_are_rejected (test_python_compatibility.BundledTomlTests.test_invalid_documents_are_rejected) ... ok
+2026-11-17T07:57:24.3438719Z test_plain_string_is_data_and_binary_file_load_uses_utf8 (test_python_compatibility.BundledTomlTests.test_plain_string_is_data_and_binary_file_load_uses_utf8) ... ok
+2026-11-17T07:57:24.3443483Z test_toml_one_zero_values_match_standard_library (test_python_compatibility.BundledTomlTests.test_toml_one_zero_values_match_standard_library) ... ok
+2026-11-17T07:57:24.3445216Z test_single_file_import_and_recipe_round_trip_in_real_python38 (test_python_compatibility.Python38ExecutionTests.test_single_file_import_and_recipe_round_trip_in_real_python38) ... skipped 'Set MOTD_TEST_PYTHON38 for actual Python 3.8 execution'
+2026-11-17T07:57:24.6444172Z test_adaptive_geometry_preserves_sections_and_rankings (test_runtime.RuntimeTests.test_adaptive_geometry_preserves_sections_and_rankings) ... ok
+2026-11-17T07:57:25.7066336Z test_cli_recipe_and_known_artifact_previews_skip_hooks (test_runtime.RuntimeTests.test_cli_recipe_and_known_artifact_previews_skip_hooks) ... ok
+2026-11-17T07:57:25.8670790Z test_display_timeout_runs_outer_hooks_once (test_runtime.RuntimeTests.test_display_timeout_runs_outer_hooks_once) ... ok
+2026-11-17T07:57:25.8798620Z test_help_has_one_layout_and_no_old_mode_options (test_runtime.RuntimeTests.test_help_has_one_layout_and_no_old_mode_options) ... ok
+2026-11-17T07:57:25.9068147Z test_home_lab_and_plain_ascii (test_runtime.RuntimeTests.test_home_lab_and_plain_ascii) ... ok
+2026-11-17T07:57:26.1599215Z test_hook_argv_does_not_implicitly_execute_shell_text (test_runtime.RuntimeTests.test_hook_argv_does_not_implicitly_execute_shell_text) ... ok
+2026-11-17T07:57:26.1811773Z test_hook_stop_policy_preserves_exit_code (test_runtime.RuntimeTests.test_hook_stop_policy_preserves_exit_code) ... ok
+2026-11-17T07:57:26.3104732Z test_hooks_skip_demos_and_informational_commands (test_runtime.RuntimeTests.test_hooks_skip_demos_and_informational_commands) ... ok
+2026-11-17T07:57:26.5784311Z test_live_hooks_run_once_around_supervised_display (test_runtime.RuntimeTests.test_live_hooks_run_once_around_supervised_display) ... ok
+2026-11-17T07:57:26.8157559Z test_no_hooks_flag_skips_all_calls (test_runtime.RuntimeTests.test_no_hooks_flag_skips_all_calls) ... ok
+2026-11-17T07:57:26.8756696Z test_runtime_rejects_non_numeric_options_and_removed_modes (test_runtime.RuntimeTests.test_runtime_rejects_non_numeric_options_and_removed_modes) ... ok
+2026-11-17T07:57:26.9427161Z test_terminal_size_handoff_and_configured_width_cap (test_runtime.RuntimeTests.test_terminal_size_handoff_and_configured_width_cap) ... ok
+2026-11-17T07:57:27.2486829Z test_timed_out_hook_keeps_partial_output_and_runs_after_once (test_runtime.RuntimeTests.test_timed_out_hook_keeps_partial_output_and_runs_after_once) ... ok
+2026-11-17T07:57:27.2758596Z test_visibility_and_custom_order (test_runtime.RuntimeTests.test_visibility_and_custom_order) ... ok
+2026-11-17T07:57:27.4992982Z test_worker_reentry_skips_hooks (test_runtime.RuntimeTests.test_worker_reentry_skips_hooks) ... ok
+2026-11-17T07:57:27.5622786Z test_colon_service_names_remain_distinct_with_requirements_and_exclusions (test_runtime_review.PortableServiceReviewTests.test_colon_service_names_remain_distinct_with_requirements_and_exclusions) ... ok
+2026-11-17T07:57:27.5938060Z test_required_services_are_promoted_once_when_patterns_overlap (test_runtime_review.PortableServiceReviewTests.test_required_services_are_promoted_once_when_patterns_overlap) ... ok
+2026-11-17T07:57:27.5957346Z test_fraction_formatter_does_not_invent_bars_for_missing_or_invalid_values (test_runtime_review.WideResourceTests.test_fraction_formatter_does_not_invent_bars_for_missing_or_invalid_values) ... ok
+2026-11-17T07:57:27.9380491Z test_invalid_bar_layout_is_rejected_before_before_hook (test_runtime_review.WideResourceTests.test_invalid_bar_layout_is_rejected_before_before_hook) ... ok
+2026-11-17T07:57:37.6958999Z test_power_shell_wide_bars_fit_layouts_and_use_existing_totals (test_runtime_review.WideResourceTests.test_power_shell_wide_bars_fit_layouts_and_use_existing_totals) ... ok
+2026-11-17T07:57:39.1948785Z test_wide_unix_bars_fit_all_designs_and_small_viewports (test_runtime_review.WideResourceTests.test_wide_unix_bars_fit_all_designs_and_small_viewports) ... ok
+2026-11-17T07:57:39.2736048Z test_wide_unix_bars_honor_swap_visibility_and_cli_override (test_runtime_review.WideResourceTests.test_wide_unix_bars_honor_swap_visibility_and_cli_override) ... ok
+2026-11-17T07:57:39.4424267Z test_wide_unix_bars_use_full_panel_width_and_numeric_observations (test_runtime_review.WideResourceTests.test_wide_unix_bars_use_full_panel_width_and_numeric_observations) ... ok
+2026-11-17T07:57:39.4426238Z test_bash32_automatically_renders_with_portable_backend (test_shell_compatibility.ShellCompatibilityTests.test_bash32_automatically_renders_with_portable_backend) ... skipped 'Set MOTD_TEST_BASH32 to an actual Bash 3.2 binary for the historical boundary test'
+2026-11-17T07:57:39.4721546Z test_bash_missing_timeout_uses_the_explicit_partial_fallback (test_shell_compatibility.ShellCompatibilityTests.test_bash_missing_timeout_uses_the_explicit_partial_fallback) ... ok
+2026-11-17T07:57:39.5061729Z test_cli_can_rebuild_a_recipe_for_another_interpreter (test_shell_compatibility.ShellCompatibilityTests.test_cli_can_rebuild_a_recipe_for_another_interpreter) ... ok
+2026-11-17T07:57:39.5147447Z test_cli_does_not_relabel_an_existing_generated_interpreter (test_shell_compatibility.ShellCompatibilityTests.test_cli_does_not_relabel_an_existing_generated_interpreter) ... ok
+2026-11-17T07:57:39.5161026Z test_old_recipe_still_defaults_to_bash (test_shell_compatibility.ShellCompatibilityTests.test_old_recipe_still_defaults_to_bash) ... ok
+2026-11-17T07:57:39.5162835Z test_optional_historical_bash_binaries_render_instead_of_rejecting (test_shell_compatibility.ShellCompatibilityTests.test_optional_historical_bash_binaries_render_instead_of_rejecting) ... skipped 'Set MOTD_TEST_BASH1/2/32/43 to real historical Bash executables'
+2026-11-17T07:57:39.5164819Z test_optional_historical_startup_guards_on_a_real_pty (test_shell_compatibility.ShellCompatibilityTests.test_optional_historical_startup_guards_on_a_real_pty)
+2026-11-17T07:57:39.5166179Z Check the actual old shell, not a modern shell with a fake version. ... skipped 'Set MOTD_TEST_BASH1/2 or MOTD_TEST_ZSH2 for real historical startup tests'
+2026-11-17T07:57:39.5185366Z test_optional_historical_zsh_launchers_and_no_bash_fallback (test_shell_compatibility.ShellCompatibilityTests.test_optional_historical_zsh_launchers_and_no_bash_fallback) ... skipped 'Set MOTD_TEST_ZSH2/3/4 to actual historical Zsh executables'
+2026-11-17T07:57:39.8891246Z test_saved_charset_and_color_preferences_and_cli_overrides (test_shell_compatibility.ShellCompatibilityTests.test_saved_charset_and_color_preferences_and_cli_overrides) ... ok
+2026-11-17T07:57:40.0673428Z test_sh_and_zsh_installation_restore_explicit_startup_files (test_shell_compatibility.ShellCompatibilityTests.test_sh_and_zsh_installation_restore_explicit_startup_files) ... ok
+2026-11-17T07:57:40.1886612Z test_sh_captured_preview_color_respects_theme_and_plain_preferences (test_shell_compatibility.ShellCompatibilityTests.test_sh_captured_preview_color_respects_theme_and_plain_preferences) ... ok
+2026-11-17T07:57:40.2444560Z test_sh_hook_deadline_keeps_partial_output_and_stops_when_requested (test_shell_compatibility.ShellCompatibilityTests.test_sh_hook_deadline_keeps_partial_output_and_stops_when_requested) ... ok
+2026-11-17T07:57:40.4513731Z test_sh_hooks_run_once_and_preview_options_suppress_them (test_shell_compatibility.ShellCompatibilityTests.test_sh_hooks_run_once_and_preview_options_suppress_them) ... ok
+2026-11-17T07:57:40.4526447Z test_sh_interactive_frequency_requires_explicit_startup_location (test_shell_compatibility.ShellCompatibilityTests.test_sh_interactive_frequency_requires_explicit_startup_location) ... ok
+2026-11-17T07:57:40.4623274Z test_sh_is_recoverable_and_runs_under_dash_without_helpers (test_shell_compatibility.ShellCompatibilityTests.test_sh_is_recoverable_and_runs_under_dash_without_helpers) ... ok
+2026-11-17T07:57:40.4703252Z test_sh_live_mode_has_no_external_collector_dependency (test_shell_compatibility.ShellCompatibilityTests.test_sh_live_mode_has_no_external_collector_dependency) ... ok
+2026-11-17T07:57:40.4782597Z test_sh_missing_timeout_does_not_execute_the_hook (test_shell_compatibility.ShellCompatibilityTests.test_sh_missing_timeout_does_not_execute_the_hook) ... ok
+2026-11-17T07:57:40.4860644Z test_sh_rejects_invalid_width_before_hooks_or_arithmetic (test_shell_compatibility.ShellCompatibilityTests.test_sh_rejects_invalid_width_before_hooks_or_arithmetic) ... ok
+2026-11-17T07:57:41.0653498Z test_short_row_budgets_replan_without_cropping_and_keep_attention (test_shell_compatibility.ShellCompatibilityTests.test_short_row_budgets_replan_without_cropping_and_keep_attention) ... ok
+2026-11-17T07:57:41.0827227Z test_startup_guards_require_interactivity_and_run_once (test_shell_compatibility.ShellCompatibilityTests.test_startup_guards_require_interactivity_and_run_once) ... ok
+2026-11-17T07:57:41.3640686Z test_zsh_before_and_after_hooks_are_not_repeated_by_bash_workers (test_shell_compatibility.ShellCompatibilityTests.test_zsh_before_and_after_hooks_are_not_repeated_by_bash_workers) ... ok
+2026-11-17T07:57:41.3729675Z test_zsh_default_startup_files_respect_zdotdir (test_shell_compatibility.ShellCompatibilityTests.test_zsh_default_startup_files_respect_zdotdir) ... ok
+2026-11-17T07:57:41.4048098Z test_zsh_launcher_does_not_reexec_forever_for_inherited_version_text (test_shell_compatibility.ShellCompatibilityTests.test_zsh_launcher_does_not_reexec_forever_for_inherited_version_text) ... ok
+2026-11-17T07:57:41.4635154Z test_zsh_launcher_matches_the_shared_bash_demo (test_shell_compatibility.ShellCompatibilityTests.test_zsh_launcher_matches_the_shared_bash_demo) ... ok
+2026-11-17T07:57:41.4752302Z test_zsh_login_frequency_does_not_run_in_nonlogin_interactive_shell (test_shell_compatibility.ShellCompatibilityTests.test_zsh_login_frequency_does_not_run_in_nonlogin_interactive_shell) ... ok
+2026-11-17T07:57:41.4787891Z test_zsh_refuses_empty_or_relative_zdotdir (test_shell_compatibility.ShellCompatibilityTests.test_zsh_refuses_empty_or_relative_zdotdir) ... ok
+2026-11-17T07:57:41.5033466Z test_apply_rechecks_after_separate_stage (test_transactions.TransactionTests.test_apply_rechecks_after_separate_stage) ... ok
+2026-11-17T07:57:41.5103352Z test_corrupted_backup_is_rejected_before_apply (test_transactions.TransactionTests.test_corrupted_backup_is_rejected_before_apply) ... ok
+2026-11-17T07:57:41.5560837Z test_create_replace_remove_and_exact_binary_rollback (test_transactions.TransactionTests.test_create_replace_remove_and_exact_binary_rollback) ... ok
+2026-11-17T07:57:41.5561833Z test_existing_numeric_ownership_is_preserved_and_restored (test_transactions.TransactionTests.test_existing_numeric_ownership_is_preserved_and_restored) ... skipped 'numeric ownership restoration requires root'
+2026-11-17T07:57:41.5634826Z test_identical_writes_and_missing_deletes_are_noops (test_transactions.TransactionTests.test_identical_writes_and_missing_deletes_are_noops) ... ok
+2026-11-17T07:57:41.5780292Z test_interruption_after_rename_is_recoverable_from_durable_intent (test_transactions.TransactionTests.test_interruption_after_rename_is_recoverable_from_durable_intent) ... ok
+2026-11-17T07:57:41.5800810Z test_lock_rejects_concurrent_mutation (test_transactions.TransactionTests.test_lock_rejects_concurrent_mutation) ... ok
+2026-11-17T07:57:41.5953449Z test_normal_failure_compensates_prior_writes (test_transactions.TransactionTests.test_normal_failure_compensates_prior_writes) ... ok
+2026-11-17T07:57:41.6015427Z test_orphan_stage_abandonment_never_infers_target_paths (test_transactions.TransactionTests.test_orphan_stage_abandonment_never_infers_target_paths) ... ok
+2026-11-17T07:57:41.6074770Z test_partial_staging_can_be_cancelled_without_target_mutation (test_transactions.TransactionTests.test_partial_staging_can_be_cancelled_without_target_mutation) ... ok
+2026-11-17T07:57:41.6125956Z test_plan_is_read_only_and_stage_does_not_touch_targets (test_transactions.TransactionTests.test_plan_is_read_only_and_stage_does_not_touch_targets) ... ok
+2026-11-17T07:57:41.6155704Z test_plan_rechecks_content_and_mode_drift (test_transactions.TransactionTests.test_plan_rechecks_content_and_mode_drift) ... ok
+2026-11-17T07:57:41.6513014Z test_private_state_and_complete_recovery_archives (test_transactions.TransactionTests.test_private_state_and_complete_recovery_archives) ... ok
+2026-11-17T07:57:41.7050143Z test_process_exit_after_replace_uses_persisted_recovery_intent (test_transactions.TransactionTests.test_process_exit_after_replace_uses_persisted_recovery_intent) ... ok
+2026-11-17T07:57:41.7206625Z test_public_owner_field_preserves_requested_current_identity_and_validates (test_transactions.TransactionTests.test_public_owner_field_preserves_requested_current_identity_and_validates) ... ok
+2026-11-17T07:57:41.7406579Z test_recovery_does_not_touch_unattempted_targets (test_transactions.TransactionTests.test_recovery_does_not_touch_unattempted_targets) ... ok
+2026-11-17T07:57:41.7540569Z test_recovery_preserves_external_edit_and_blocks_new_apply (test_transactions.TransactionTests.test_recovery_preserves_external_edit_and_blocks_new_apply) ... ok
+2026-11-17T07:57:41.7546848Z test_rejects_symlinks_nonregular_hardlinks_and_symlink_parents (test_transactions.TransactionTests.test_rejects_symlinks_nonregular_hardlinks_and_symlink_parents) ... ok
+2026-11-17T07:57:41.7551399Z test_rejects_traversal_duplicate_targets_state_overlap_and_root_state (test_transactions.TransactionTests.test_rejects_traversal_duplicate_targets_state_overlap_and_root_state) ... ok
+2026-11-17T07:57:41.7784928Z test_repair_does_not_resurrect_newer_intentional_deletion (test_transactions.TransactionTests.test_repair_does_not_resurrect_newer_intentional_deletion) ... ok
+2026-11-17T07:57:41.7977437Z test_repair_restores_missing_only_and_preserves_modified (test_transactions.TransactionTests.test_repair_restores_missing_only_and_preserves_modified) ... ok
+2026-11-17T07:57:41.8560278Z test_repeated_rollback_after_redo_uses_effective_inverse (test_transactions.TransactionTests.test_repeated_rollback_after_redo_uses_effective_inverse) ... ok
+2026-11-17T07:57:41.8796622Z test_rollback_original_after_repair_preserves_original_preimage (test_transactions.TransactionTests.test_rollback_original_after_repair_preserves_original_preimage) ... ok
+2026-11-17T07:57:41.8931559Z test_rollback_refuses_drift_before_changing_any_file (test_transactions.TransactionTests.test_rollback_refuses_drift_before_changing_any_file) ... ok
+2026-11-17T07:57:41.9127530Z test_rollback_refuses_superseded_ownership (test_transactions.TransactionTests.test_rollback_refuses_superseded_ownership) ... ok
+2026-11-17T07:57:41.9516088Z test_undo_restores_previous_owner_for_missing_file_repair (test_transactions.TransactionTests.test_undo_restores_previous_owner_for_missing_file_repair) ... ok
+2026-11-17T07:57:41.9520281Z test_unmarked_or_unprotected_state_is_not_adopted (test_transactions.TransactionTests.test_unmarked_or_unprotected_state_is_not_adopted) ... ok
+2026-11-17T07:57:42.0562778Z test_bsd_enabled_scripts_are_not_reported_running (test_unix_collectors.UnixCollectorTests.test_bsd_enabled_scripts_are_not_reported_running) ... ok
+2026-11-17T07:57:42.1621816Z test_darwin_collectors_keep_free_memory_and_idle_jobs_distinct (test_unix_collectors.UnixCollectorTests.test_darwin_collectors_keep_free_memory_and_idle_jobs_distinct) ... ok
+2026-11-17T07:57:43.1835725Z test_direct_helper_deadline_works_without_gnu_timeout (test_unix_collectors.UnixCollectorTests.test_direct_helper_deadline_works_without_gnu_timeout) ... ok
+2026-11-17T07:57:43.2246656Z test_failed_and_missing_queries_do_not_become_healthy_zeros (test_unix_collectors.UnixCollectorTests.test_failed_and_missing_queries_do_not_become_healthy_zeros) ... ok
+2026-11-17T07:57:43.2929775Z test_malformed_vm_stat_cannot_claim_zero_free_memory (test_unix_collectors.UnixCollectorTests.test_malformed_vm_stat_cannot_claim_zero_free_memory) ... ok
+2026-11-17T07:57:43.3335992Z test_real_pty_geometry_clamps_defaults_and_explicit_flags_win (test_unix_collectors.UnixCollectorTests.test_real_pty_geometry_clamps_defaults_and_explicit_flags_win) ... ok
+2026-11-17T07:57:43.3627723Z test_service_exclusions_and_required_patterns_are_data (test_unix_collectors.UnixCollectorTests.test_service_exclusions_and_required_patterns_are_data) ... ok
+2026-11-17T07:57:43.3683903Z test_cmd_recipe_is_after_the_batch_exit_not_a_command_length_hazard (test_windows_adapters.AdapterGenerationTests.test_cmd_recipe_is_after_the_batch_exit_not_a_command_length_hazard) ... ok
+2026-11-17T07:57:43.3841329Z test_create_only_cli_build_and_recover_do_not_create_install_state (test_windows_adapters.AdapterGenerationTests.test_create_only_cli_build_and_recover_do_not_create_install_state) ... ok
+2026-11-17T07:57:43.3872304Z test_fish_and_cmd_recover_the_exact_recipe (test_windows_adapters.AdapterGenerationTests.test_fish_and_cmd_recover_the_exact_recipe) ... ok
+2026-11-17T07:57:43.3874372Z test_native_batch_notice_refuses_ambiguous_unicode_code_pages (test_windows_adapters.AdapterGenerationTests.test_native_batch_notice_refuses_ambiguous_unicode_code_pages) ... ok
+2026-11-17T07:57:43.3879902Z test_windows_key_reader_joins_utf16_pairs_before_cursor_editing (test_windows_adapters.AdapterGenerationTests.test_windows_key_reader_joins_utf16_pairs_before_cursor_editing) ... ok
+2026-11-17T07:57:43.3881345Z test_batch_text_prints_metacharacters_literally_without_powershell (test_windows_adapters.NativeWindowsAdapterTests.test_batch_text_prints_metacharacters_literally_without_powershell) ... skipped 'Requires native Windows cmd.exe'
+2026-11-17T07:57:43.3882459Z test_cmd_demo_suppresses_configured_hooks (test_windows_adapters.NativeWindowsAdapterTests.test_cmd_demo_suppresses_configured_hooks) ... skipped 'Requires native Windows cmd.exe'
+2026-11-17T07:57:43.3883399Z test_cmd_filename_metacharacters_are_data (test_windows_adapters.NativeWindowsAdapterTests.test_cmd_filename_metacharacters_are_data) ... skipped 'Requires native Windows cmd.exe'
+2026-11-17T07:57:43.3884428Z test_cmd_launcher_runs_embedded_renderer_at_requested_geometry (test_windows_adapters.NativeWindowsAdapterTests.test_cmd_launcher_runs_embedded_renderer_at_requested_geometry) ... skipped 'Requires native Windows cmd.exe'
+2026-11-17T07:57:43.3885879Z test_default_windows_export_uses_create_only_manifest (test_windows_adapters.NativeWindowsAdapterTests.test_default_windows_export_uses_create_only_manifest) ... skipped 'Requires native Windows cmd.exe'
+2026-11-17T07:57:43.3891584Z test_all_configuration_pages_fit_five_question_rows (test_wizard.WizardTests.test_all_configuration_pages_fit_five_question_rows) ... ok
+2026-11-17T07:57:43.3904010Z test_auto_screen_falls_back_for_dumb_small_and_redirected_terminals (test_wizard.WizardTests.test_auto_screen_falls_back_for_dumb_small_and_redirected_terminals) ... ok
+2026-11-17T07:57:43.3918439Z test_batch_notice_rejects_unicode_edit_without_losing_draft (test_wizard.WizardTests.test_batch_notice_rejects_unicode_edit_without_losing_draft) ... ok
+2026-11-17T07:57:43.4804745Z test_call_samples_are_opt_in_ordered_and_never_execute (test_wizard.WizardTests.test_call_samples_are_opt_in_ordered_and_never_execute) ... ok
+2026-11-17T07:57:43.5942982Z test_cancel_and_demo_do_not_execute_configured_calls (test_wizard.WizardTests.test_cancel_and_demo_do_not_execute_configured_calls) ... ok
+2026-11-17T07:57:43.5951257Z test_line_menu_does_not_advertise_unavailable_arrow_input (test_wizard.WizardTests.test_line_menu_does_not_advertise_unavailable_arrow_input) ... ok
+2026-11-17T07:57:43.6345497Z test_line_preview_includes_only_opted_in_call_samples (test_wizard.WizardTests.test_line_preview_includes_only_opted_in_call_samples) ... ok
+2026-11-17T07:57:43.6971782Z test_long_call_samples_are_labelled_and_scrollable (test_wizard.WizardTests.test_long_call_samples_are_labelled_and_scrollable) ... ok
+2026-11-17T07:57:43.6991301Z test_missing_interpreter_is_labelled_instead_of_substituted (test_wizard.WizardTests.test_missing_interpreter_is_labelled_instead_of_substituted) ... ok
+2026-11-17T07:57:43.7007096Z test_navigation_back_retains_edits_and_invalid_value_does_not_replace_draft (test_wizard.WizardTests.test_navigation_back_retains_edits_and_invalid_value_does_not_replace_draft) ... ok
+2026-11-17T07:57:43.7685898Z test_page_preview_is_actual_fixture_bounded_to_screen (test_wizard.WizardTests.test_page_preview_is_actual_fixture_bounded_to_screen) ... ok
+2026-11-17T07:57:43.7727309Z test_preview_choice_explains_two_steps_at_40_columns (test_wizard.WizardTests.test_preview_choice_explains_two_steps_at_40_columns) ... ok
+2026-11-17T07:57:43.7733735Z test_preview_clips_wide_cells_and_drops_terminal_control (test_wizard.WizardTests.test_preview_clips_wide_cells_and_drops_terminal_control) ... ok
+2026-11-17T07:57:43.9815319Z test_preview_replans_all_four_terminal_geometries_without_editing_recipe (test_wizard.WizardTests.test_preview_replans_all_four_terminal_geometries_without_editing_recipe) ... ok
+2026-11-17T07:57:43.9828261Z test_public_demo_shows_literal_text_before_consumer_serialization (test_wizard.WizardTests.test_public_demo_shows_literal_text_before_consumer_serialization) ... ok
+2026-11-17T07:57:44.1202043Z test_theme_selection_redraws_preview_before_accepting (test_wizard.WizardTests.test_theme_selection_redraws_preview_before_accepting) ... ok
+2026-11-17T07:57:44.5150296Z test_bare_escape_does_not_swallow_later_printable_input (test_wizard_resize_review.WizardInputReviewTests.test_bare_escape_does_not_swallow_later_printable_input) ... ok
+2026-11-17T07:57:44.6590815Z test_eof_restores_terminal_flags (test_wizard_resize_review.WizardInputReviewTests.test_eof_restores_terminal_flags) ... ok
+2026-11-17T07:57:45.0040980Z test_interrupt_after_resize_restores_terminal_flags (test_wizard_resize_review.WizardInputReviewTests.test_interrupt_after_resize_restores_terminal_flags) ... ok
+2026-11-17T07:57:45.1485776Z test_modified_arrow_never_inserts_escape_parameters (test_wizard_resize_review.WizardInputReviewTests.test_modified_arrow_never_inserts_escape_parameters) ... ok
+2026-11-17T07:57:45.7032036Z test_resize_reflows_preview_without_enter_and_preserves_answer (test_wizard_resize_review.WizardInputReviewTests.test_resize_reflows_preview_without_enter_and_preserves_answer) ... ok
+2026-11-17T07:57:45.7032931Z 
+2026-11-17T07:57:45.7033115Z ----------------------------------------------------------------------
+2026-11-17T07:57:45.7033562Z Ran 258 tests in 161.707s
+2026-11-17T07:57:45.7033740Z 
+2026-11-17T07:57:45.7033844Z OK (skipped=11)
+2026-11-17T07:57:45.7356207Z ##[group]Run python3 tools/build_examples.py
+2026-11-17T07:57:45.7356526Z [36;1mpython3 tools/build_examples.py[0m
+2026-11-17T07:57:45.7403389Z shell: /usr/bin/bash -e {0}
+2026-11-17T07:57:45.7403602Z env:
+2026-11-17T07:57:45.7403778Z   POWERSHELL_TELEMETRY_OPTOUT: 1
+2026-11-17T07:57:45.7403994Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-17T07:57:45.7404250Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:57:45.7404791Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.18/x64/lib/pkgconfig
+2026-11-17T07:57:45.7405117Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:57:45.7405411Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:57:45.7405697Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:57:45.7405987Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.18/x64/lib
+2026-11-17T07:57:45.7406243Z ##[endgroup]
+2026-11-17T07:57:45.9471768Z Generated examples from current recipes and embedded runtime
+2026-11-17T07:57:45.9672242Z ##[group]Run git diff --exit-code -- examples presets
+2026-11-17T07:57:45.9672587Z [36;1mgit diff --exit-code -- examples presets[0m
+2026-11-17T07:57:45.9716313Z shell: /usr/bin/bash -e {0}
+2026-11-17T07:57:45.9716535Z env:
+2026-11-17T07:57:45.9716734Z   POWERSHELL_TELEMETRY_OPTOUT: 1
+2026-11-17T07:57:45.9716951Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-17T07:57:45.9717221Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:57:45.9717575Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.18/x64/lib/pkgconfig
+2026-11-17T07:57:45.9717900Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:57:45.9718196Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:57:45.9718488Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:57:45.9718779Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.18/x64/lib
+2026-11-17T07:57:45.9719038Z ##[endgroup]
+2026-11-17T07:57:46.0356392Z ##[group]Run python3 tools/build_gallery.py --verify --require-full
+2026-11-17T07:57:46.0356792Z [36;1mpython3 tools/build_gallery.py --verify --require-full[0m
+2026-11-17T07:57:46.0400591Z shell: /usr/bin/bash -e {0}
+2026-11-17T07:57:46.0400788Z env:
+2026-11-17T07:57:46.0400964Z   POWERSHELL_TELEMETRY_OPTOUT: 1
+2026-11-17T07:57:46.0401179Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-17T07:57:46.0401446Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:57:46.0401788Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.18/x64/lib/pkgconfig
+2026-11-17T07:57:46.0402121Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:57:46.0402411Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:57:46.0402695Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:57:46.0402984Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.18/x64/lib
+2026-11-17T07:57:46.0403238Z ##[endgroup]
+2026-11-17T07:58:03.4557529Z {
+2026-11-17T07:58:03.4557884Z   "verified_logical_cases": 524,
+2026-11-17T07:58:03.4558164Z   "verified_unique_pngs": 196,
+2026-11-17T07:58:03.4558372Z   "verified_comparisons": 8,
+2026-11-17T07:58:03.4558589Z   "all_decoded_pixels_verified": true
+2026-11-17T07:58:03.4558802Z }
+2026-11-17T07:58:03.4781624Z ##[group]Run python3 tools/build_gallery.py --verify --require-sampler --output examples/designs
+2026-11-17T07:58:03.4782195Z [36;1mpython3 tools/build_gallery.py --verify --require-sampler --output examples/designs[0m
+2026-11-17T07:58:03.4826820Z shell: /usr/bin/bash -e {0}
+2026-11-17T07:58:03.4827042Z env:
+2026-11-17T07:58:03.4827223Z   POWERSHELL_TELEMETRY_OPTOUT: 1
+2026-11-17T07:58:03.4827445Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-17T07:58:03.4827704Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:58:03.4828059Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.18/x64/lib/pkgconfig
+2026-11-17T07:58:03.4828390Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:58:03.4828684Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:58:03.4828980Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:58:03.4829270Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.18/x64/lib
+2026-11-17T07:58:03.4829764Z ##[endgroup]
+2026-11-17T07:58:11.0692283Z {
+2026-11-17T07:58:11.0692907Z   "verified_logical_cases": 140,
+2026-11-17T07:58:11.0693414Z   "verified_unique_pngs": 138,
+2026-11-17T07:58:11.0694292Z   "verified_comparisons": 4,
+2026-11-17T07:58:11.0694611Z   "all_decoded_pixels_verified": true
+2026-11-17T07:58:11.0694901Z }
+2026-11-17T07:58:11.0909649Z ##[group]Run python3 tools/build_gallery.py --verify --output examples/bars
+2026-11-17T07:58:11.0910103Z [36;1mpython3 tools/build_gallery.py --verify --output examples/bars[0m
+2026-11-17T07:58:11.0954511Z shell: /usr/bin/bash -e {0}
+2026-11-17T07:58:11.0954726Z env:
+2026-11-17T07:58:11.0954899Z   POWERSHELL_TELEMETRY_OPTOUT: 1
+2026-11-17T07:58:11.0955109Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-17T07:58:11.0955359Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:58:11.0955724Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.18/x64/lib/pkgconfig
+2026-11-17T07:58:11.0956061Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:58:11.0956367Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:58:11.0956667Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.18/x64
+2026-11-17T07:58:11.0956981Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.18/x64/lib
+2026-11-17T07:58:11.0957241Z ##[endgroup]
+2026-11-17T07:58:13.2072356Z {
+2026-11-17T07:58:13.2072682Z   "verified_logical_cases": 48,
+2026-11-17T07:58:13.2073029Z   "verified_unique_pngs": 48,
+2026-11-17T07:58:13.2073320Z   "verified_comparisons": 0,
+2026-11-17T07:58:13.2073618Z   "all_decoded_pixels_verified": true
+2026-11-17T07:58:13.2073912Z }
+2026-11-17T07:58:13.2329824Z Post job cleanup.
+2026-11-17T07:58:13.3539956Z Post job cleanup.
+2026-11-17T07:58:13.4286729Z [command]/usr/bin/git version
+2026-11-17T07:58:13.4359027Z git version 2.56.1
+2026-11-17T07:58:13.4396520Z Temporarily overriding HOME='/home/runner/work/_temp/97b4191a-645f-4c04-918c-fd214c7346bf' before making global git config changes
+2026-11-17T07:58:13.4397793Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-17T07:58:13.4401800Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/motd/motd
+2026-11-17T07:58:13.4436984Z Removing SSH command configuration
+2026-11-17T07:58:13.4443349Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-17T07:58:13.4481214Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-17T07:58:13.4752025Z Removing HTTP extra header
+2026-11-17T07:58:13.4757678Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-17T07:58:13.4805310Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-17T07:58:13.5088298Z Removing includeIf entries pointing to credentials config files
+2026-11-17T07:58:13.5094875Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-17T07:58:13.5122789Z includeif.gitdir:/home/runner/work/motd/motd/.git.path
+2026-11-17T07:58:13.5123531Z includeif.gitdir:/home/runner/work/motd/motd/.git/worktrees/*.path
+2026-11-17T07:58:13.5124272Z includeif.gitdir:/github/workspace/.git.path
+2026-11-17T07:58:13.5124957Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-17T07:58:13.5132290Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/motd/motd/.git.path
+2026-11-17T07:58:13.5154361Z /home/runner/work/_temp/git-credentials-bb0bf593-c8ae-4d51-87e8-62a1f6b65979.config
+2026-11-17T07:58:13.5164041Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/motd/motd/.git.path /home/runner/work/_temp/git-credentials-bb0bf593-c8ae-4d51-87e8-62a1f6b65979.config
+2026-11-17T07:58:13.5198837Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/motd/motd/.git/worktrees/*.path
+2026-11-17T07:58:13.5220693Z /home/runner/work/_temp/git-credentials-bb0bf593-c8ae-4d51-87e8-62a1f6b65979.config
+2026-11-17T07:58:13.5231256Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/motd/motd/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-bb0bf593-c8ae-4d51-87e8-62a1f6b65979.config
+2026-11-17T07:58:13.5264237Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-11-17T07:58:13.5285265Z /github/runner_temp/git-credentials-bb0bf593-c8ae-4d51-87e8-62a1f6b65979.config
+2026-11-17T07:58:13.5293995Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-bb0bf593-c8ae-4d51-87e8-62a1f6b65979.config
+2026-11-17T07:58:13.5326725Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-17T07:58:13.5347310Z /github/runner_temp/git-credentials-bb0bf593-c8ae-4d51-87e8-62a1f6b65979.config
+2026-11-17T07:58:13.5354298Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-bb0bf593-c8ae-4d51-87e8-62a1f6b65979.config
+2026-11-17T07:58:13.5390922Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-17T07:58:13.5637313Z Removing credentials config '/home/runner/work/_temp/git-credentials-bb0bf593-c8ae-4d51-87e8-62a1f6b65979.config'
+2026-11-17T07:58:13.5777983Z Cleaning up orphan processes

@@ -1,0 +1,286 @@
+﻿2026-11-17T07:50:19.9777360Z Current runner version: '2.338.2'
+2026-11-17T07:50:19.9807780Z ##[group]Runner Image Provisioner
+2026-11-17T07:50:19.9808460Z Hosted Compute Agent
+2026-11-17T07:50:19.9808830Z Version: 20261103.629
+2026-11-17T07:50:19.9809240Z Commit: 15dbd9ccb5dbf34fae002b6ed1a2670f52df37bc
+2026-11-17T07:50:19.9809800Z Build Date: 2026-11-03T17:26:59Z
+2026-11-17T07:50:19.9810290Z Worker ID: {4284c78a-5ecd-47a2-b84b-f0f15aca1d9b}
+2026-11-17T07:50:19.9810780Z Region: westus
+2026-11-17T07:50:19.9811120Z Cloud: MacCloud
+2026-11-17T07:50:19.9811460Z ##[endgroup]
+2026-11-17T07:50:19.9812520Z ##[group]Operating System
+2026-11-17T07:50:19.9812920Z macOS
+2026-11-17T07:50:19.9813240Z 26.7.2
+2026-11-17T07:50:19.9813550Z 25G332
+2026-11-17T07:50:19.9813870Z ##[endgroup]
+2026-11-17T07:50:19.9815350Z ##[group]Runner Image
+2026-11-17T07:50:19.9817040Z Image: macos-26-arm64
+2026-11-17T07:50:19.9817490Z Version: 20261112.0504.1
+2026-11-17T07:50:19.9818420Z Included Software: https://github.com/actions/runner-images/blob/macos-26-arm64/20261112.0504/images/macos/macos-26-arm64-Readme.md
+2026-11-17T07:50:19.9819580Z Image Release: https://github.com/actions/runner-images/releases/tag/macos-26-arm64%2F20261112.0504
+2026-11-17T07:50:19.9820250Z ##[endgroup]
+2026-11-17T07:50:19.9821040Z ##[group]GITHUB_TOKEN Permissions
+2026-11-17T07:50:19.9822820Z Contents: read
+2026-11-17T07:50:19.9823200Z Metadata: read
+2026-11-17T07:50:19.9823590Z ##[endgroup]
+2026-11-17T07:50:19.9825930Z Secret source: Actions
+2026-11-17T07:50:19.9826530Z Cache mode: write
+2026-11-17T07:50:19.9827010Z Prepare workflow directory
+2026-11-17T07:50:20.0324430Z Prepare all required actions
+2026-11-17T07:50:20.0390950Z Getting action download info
+2026-11-17T07:50:20.4794440Z Download action repository 'actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803' (SHA:d23441a48e516b6c34aea4fa41551a30e30af803)
+2026-11-17T07:50:20.8962040Z Download action repository 'actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1' (SHA:ece7cb06caefa5fff74198d8649806c4678c61a1)
+2026-11-17T07:50:21.1636330Z Complete job name: native-designs (macos-latest, pwsh)
+2026-11-17T07:50:21.2406740Z ##[group]Run actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+2026-11-17T07:50:21.2407910Z with:
+2026-11-17T07:50:21.2408280Z   repository: Julesc013/motd
+2026-11-17T07:50:21.2411080Z   token: ***
+2026-11-17T07:50:21.2411400Z   ssh-strict: true
+2026-11-17T07:50:21.2411730Z   ssh-user: git
+2026-11-17T07:50:21.2412060Z   persist-credentials: true
+2026-11-17T07:50:21.2412420Z   clean: true
+2026-11-17T07:50:21.2412760Z   sparse-checkout-cone-mode: true
+2026-11-17T07:50:21.2413150Z   fetch-depth: 1
+2026-11-17T07:50:21.2413470Z   fetch-tags: false
+2026-11-17T07:50:21.2413810Z   show-progress: true
+2026-11-17T07:50:21.2414140Z   lfs: false
+2026-11-17T07:50:21.2414450Z   submodules: false
+2026-11-17T07:50:21.2414780Z   set-safe-directory: true
+2026-11-17T07:50:21.2415160Z   allow-unsafe-pr-checkout: false
+2026-11-17T07:50:21.2415760Z env:
+2026-11-17T07:50:21.2416090Z   POWERSHELL_TELEMETRY_OPTOUT: 1
+2026-11-17T07:50:21.2416890Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-17T07:50:21.2417310Z ##[endgroup]
+2026-11-17T07:50:21.7015560Z Syncing repository: Julesc013/motd
+2026-11-17T07:50:21.7018020Z ##[group]Getting Git version info
+2026-11-17T07:50:21.7018650Z Working directory is '/Users/runner/work/motd/motd'
+2026-11-17T07:50:21.7027590Z [command]/opt/homebrew/bin/git version
+2026-11-17T07:50:21.7416030Z git version 2.56.1
+2026-11-17T07:50:21.7450590Z ##[endgroup]
+2026-11-17T07:50:21.7461970Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/3bb9dd00-0a1a-4b7b-8d90-158efcdde6db/.gitconfig'
+2026-11-17T07:50:21.7466480Z Temporarily overriding HOME='/Users/runner/work/_temp/3bb9dd00-0a1a-4b7b-8d90-158efcdde6db' before making global git config changes
+2026-11-17T07:50:21.7469720Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-17T07:50:21.7472340Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/motd/motd
+2026-11-17T07:50:21.7596810Z Deleting the contents of '/Users/runner/work/motd/motd'
+2026-11-17T07:50:21.7601920Z ##[group]Determining repository object format
+2026-11-17T07:50:21.7604140Z ##[endgroup]
+2026-11-17T07:50:21.7605890Z ##[group]Initializing the repository
+2026-11-17T07:50:21.7608060Z [command]/opt/homebrew/bin/git init /Users/runner/work/motd/motd
+2026-11-17T07:50:21.7882000Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-11-17T07:50:21.7883490Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-11-17T07:50:21.7884380Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-11-17T07:50:21.7885160Z hint: call:
+2026-11-17T07:50:21.7885620Z hint:
+2026-11-17T07:50:21.7886180Z hint: 	git config --global init.defaultBranch <name>
+2026-11-17T07:50:21.7886800Z hint:
+2026-11-17T07:50:21.7887320Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-11-17T07:50:21.7888150Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-11-17T07:50:21.7889580Z hint:
+2026-11-17T07:50:21.7890080Z hint: 	git branch -m <name>
+2026-11-17T07:50:21.7890550Z hint:
+2026-11-17T07:50:21.7891230Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-11-17T07:50:21.7897720Z Initialized empty Git repository in /Users/runner/work/motd/motd/.git/
+2026-11-17T07:50:21.7905710Z [command]/opt/homebrew/bin/git remote add origin https://github.com/Julesc013/motd
+2026-11-17T07:50:21.7992000Z ##[endgroup]
+2026-11-17T07:50:21.7993250Z ##[group]Disabling automatic garbage collection
+2026-11-17T07:50:21.7994040Z [command]/opt/homebrew/bin/git config --local gc.auto 0
+2026-11-17T07:50:21.8081770Z ##[endgroup]
+2026-11-17T07:50:21.8085430Z ##[group]Setting up auth
+2026-11-17T07:50:21.8087130Z Removing SSH command configuration
+2026-11-17T07:50:21.8087970Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-17T07:50:21.8199080Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-17T07:50:21.9528410Z Removing HTTP extra header
+2026-11-17T07:50:21.9533870Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-17T07:50:21.9603180Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-17T07:50:22.0567910Z Removing includeIf entries pointing to credentials config files
+2026-11-17T07:50:22.0573170Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-17T07:50:22.0647960Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-17T07:50:22.1795920Z [command]/opt/homebrew/bin/git config --file /Users/runner/work/_temp/git-credentials-ecb3a6ae-2952-470f-b7df-cb37d4043687.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-11-17T07:50:22.1914820Z [command]/opt/homebrew/bin/git config --local includeIf.gitdir:/Users/runner/work/motd/motd/.git.path /Users/runner/work/_temp/git-credentials-ecb3a6ae-2952-470f-b7df-cb37d4043687.config
+2026-11-17T07:50:22.1988910Z [command]/opt/homebrew/bin/git config --local includeIf.gitdir:/Users/runner/work/motd/motd/.git/worktrees/*.path /Users/runner/work/_temp/git-credentials-ecb3a6ae-2952-470f-b7df-cb37d4043687.config
+2026-11-17T07:50:22.2051060Z [command]/opt/homebrew/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-ecb3a6ae-2952-470f-b7df-cb37d4043687.config
+2026-11-17T07:50:22.2202500Z [command]/opt/homebrew/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-ecb3a6ae-2952-470f-b7df-cb37d4043687.config
+2026-11-17T07:50:22.2315510Z ##[endgroup]
+2026-11-17T07:50:22.2317030Z ##[group]Fetching the repository
+2026-11-17T07:50:22.2319780Z [command]/opt/homebrew/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +9cefbdd775372a8ee3cfb5ce64fbfcbbbd7aef27:refs/remotes/origin/feat/readability-and-portability-review
+2026-11-17T07:50:26.6286340Z From https://github.com/Julesc013/motd
+2026-11-17T07:50:26.6288570Z  * [new ref]         9cefbdd775372a8ee3cfb5ce64fbfcbbbd7aef27 -> origin/feat/readability-and-portability-review
+2026-11-17T07:50:26.6314720Z [command]/opt/homebrew/bin/git branch --list --remote origin/feat/readability-and-portability-review
+2026-11-17T07:50:26.6425730Z   origin/feat/readability-and-portability-review
+2026-11-17T07:50:26.6445830Z [command]/opt/homebrew/bin/git rev-parse refs/remotes/origin/feat/readability-and-portability-review
+2026-11-17T07:50:26.6523360Z 9cefbdd775372a8ee3cfb5ce64fbfcbbbd7aef27
+2026-11-17T07:50:26.6527790Z ##[endgroup]
+2026-11-17T07:50:26.6530680Z ##[group]Determining the checkout info
+2026-11-17T07:50:26.6531460Z ##[endgroup]
+2026-11-17T07:50:26.6543730Z [command]/opt/homebrew/bin/git sparse-checkout disable
+2026-11-17T07:50:26.6653710Z [command]/opt/homebrew/bin/git config --local --unset-all extensions.worktreeConfig
+2026-11-17T07:50:26.6746670Z ##[group]Checking out the ref
+2026-11-17T07:50:26.6752010Z [command]/opt/homebrew/bin/git checkout --progress --force -B feat/readability-and-portability-review refs/remotes/origin/feat/readability-and-portability-review
+2026-11-17T07:50:27.2994490Z Switched to a new branch 'feat/readability-and-portability-review'
+2026-11-17T07:50:27.3016830Z branch 'feat/readability-and-portability-review' set up to track 'origin/feat/readability-and-portability-review'.
+2026-11-17T07:50:27.3056390Z ##[endgroup]
+2026-11-17T07:50:27.3338540Z [command]/opt/homebrew/bin/git log -1 --format=%H
+2026-11-17T07:50:27.3463130Z 9cefbdd775372a8ee3cfb5ce64fbfcbbbd7aef27
+2026-11-17T07:50:27.4358240Z ##[group]Run actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+2026-11-17T07:50:27.4358800Z with:
+2026-11-17T07:50:27.4359060Z   python-version: 3.11
+2026-11-17T07:50:27.4359360Z   check-latest: false
+2026-11-17T07:50:27.4361660Z   token: ***
+2026-11-17T07:50:27.4361940Z   update-environment: true
+2026-11-17T07:50:27.4362250Z   allow-prereleases: false
+2026-11-17T07:50:27.4362520Z   freethreaded: false
+2026-11-17T07:50:27.4362820Z env:
+2026-11-17T07:50:27.4363050Z   POWERSHELL_TELEMETRY_OPTOUT: 1
+2026-11-17T07:50:27.4363440Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-17T07:50:27.4363730Z ##[endgroup]
+2026-11-17T07:50:27.8069470Z ##[group]Installed versions
+2026-11-17T07:50:27.8296980Z Successfully set up CPython (3.11.9)
+2026-11-17T07:50:27.8298010Z ##[endgroup]
+2026-11-17T07:50:27.8469400Z ##[group]Run $env:MOTD_TEST_POWERSHELL = @(Get-Command 'pwsh' -CommandType Application)[0].Source
+2026-11-17T07:50:27.8470840Z [36;1m$env:MOTD_TEST_POWERSHELL = @(Get-Command 'pwsh' -CommandType Application)[0].Source[0m
+2026-11-17T07:50:27.8471570Z [36;1m& $env:MOTD_TEST_POWERSHELL -NoProfile -Command '$PSVersionTable | Format-List'[0m
+2026-11-17T07:50:27.8472500Z [36;1mforeach ($pattern in @('test_designs_powershell.py', 'test_runtime_review.py', 'test_legacy_powershell.py', 'test_windows_adapters.py', 'test_portable_export.py', 'test_python_compatibility.py')) {[0m
+2026-11-17T07:50:27.8473460Z [36;1m  python -m unittest discover -s tests -p $pattern -v[0m
+2026-11-17T07:50:27.8473850Z [36;1m  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }[0m
+2026-11-17T07:50:27.8474180Z [36;1m}[0m
+2026-11-17T07:50:27.8582730Z shell: /usr/local/bin/pwsh -command ". '{0}'"
+2026-11-17T07:50:27.8583190Z env:
+2026-11-17T07:50:27.8583370Z   POWERSHELL_TELEMETRY_OPTOUT: 1
+2026-11-17T07:50:27.8583640Z   DOTNET_CLI_TELEMETRY_OPTOUT: 1
+2026-11-17T07:50:27.8583960Z   pythonLocation: /Users/runner/hostedtoolcache/Python/3.11.9/arm64
+2026-11-17T07:50:27.8584500Z   PKG_CONFIG_PATH: /Users/runner/hostedtoolcache/Python/3.11.9/arm64/lib/pkgconfig
+2026-11-17T07:50:27.8589170Z   Python_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.11.9/arm64
+2026-11-17T07:50:27.8589640Z   Python2_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.11.9/arm64
+2026-11-17T07:50:27.8590010Z   Python3_ROOT_DIR: /Users/runner/hostedtoolcache/Python/3.11.9/arm64
+2026-11-17T07:50:27.8590310Z ##[endgroup]
+2026-11-17T07:50:29.5865200Z 
+2026-11-17T07:50:29.5894120Z [32;1mName  : [0mPSVersion
+2026-11-17T07:50:29.5895460Z [32;1mValue : [0m7.6.10
+2026-11-17T07:50:29.5895730Z 
+2026-11-17T07:50:29.5895980Z [32;1mName  : [0mPSEdition
+2026-11-17T07:50:29.5896320Z [32;1mValue : [0mCore
+2026-11-17T07:50:29.5896490Z 
+2026-11-17T07:50:29.5896770Z [32;1mName  : [0mGitCommitId
+2026-11-17T07:50:29.5897120Z [32;1mValue : [0m7.6.10
+2026-11-17T07:50:29.5897440Z 
+2026-11-17T07:50:29.5898050Z [32;1mName  : [0mOS
+2026-11-17T07:50:29.5898860Z [32;1mValue : [0mmacOS 26.7.2
+2026-11-17T07:50:29.5899050Z 
+2026-11-17T07:50:29.5899390Z [32;1mName  : [0mPlatform
+2026-11-17T07:50:29.5899830Z [32;1mValue : [0mUnix
+2026-11-17T07:50:29.5900020Z 
+2026-11-17T07:50:29.5904030Z [32;1mName  : [0mPSCompatibleVersions
+2026-11-17T07:50:29.5904910Z [32;1mValue : [0m{1.0, 2.0, 3.0, 4.0…}
+2026-11-17T07:50:29.5905400Z 
+2026-11-17T07:50:29.5905810Z [32;1mName  : [0mPSRemotingProtocolVersion
+2026-11-17T07:50:29.5906580Z [32;1mValue : [0m2.4
+2026-11-17T07:50:29.5907040Z 
+2026-11-17T07:50:29.5907430Z [32;1mName  : [0mSerializationVersion
+2026-11-17T07:50:29.5908190Z [32;1mValue : [0m1.1.0.1
+2026-11-17T07:50:29.5908590Z 
+2026-11-17T07:50:29.5908980Z [32;1mName  : [0mWSManStackVersion
+2026-11-17T07:50:29.5909690Z [32;1mValue : [0m3.0
+2026-11-17T07:50:29.5910070Z 
+2026-11-17T07:50:31.0292200Z test_briefing_promotes_the_first_detail_of_heading_only_sections (test_designs_powershell.NativePowerShellDesignTests.test_briefing_promotes_the_first_detail_of_heading_only_sections) ... ok
+2026-11-17T07:50:32.6662160Z test_builtin_print_is_literal_and_respects_preview_suppression (test_designs_powershell.NativePowerShellDesignTests.test_builtin_print_is_literal_and_respects_preview_suppression) ... ok
+2026-11-17T07:50:35.1405460Z test_colour_emphasis_changes_tones_and_plain_overrides_all (test_designs_powershell.NativePowerShellDesignTests.test_colour_emphasis_changes_tones_and_plain_overrides_all) ... ok
+2026-11-17T07:50:46.0055530Z test_compact_and_extreme_geometry_preserve_complete_frames (test_designs_powershell.NativePowerShellDesignTests.test_compact_and_extreme_geometry_preserve_complete_frames) ... ok
+2026-11-17T07:50:47.0618140Z test_dashboard_preserves_configured_section_order_at_both_widths (test_designs_powershell.NativePowerShellDesignTests.test_dashboard_preserves_configured_section_order_at_both_widths) ... ok
+2026-11-17T07:50:48.5909000Z test_density_padding_and_gap_affect_layout_without_clipping (test_designs_powershell.NativePowerShellDesignTests.test_density_padding_and_gap_affect_layout_without_clipping) ... ok
+2026-11-17T07:50:52.9415590Z test_designs_have_distinct_structures_and_dashboard_reflows (test_designs_powershell.NativePowerShellDesignTests.test_designs_have_distinct_structures_and_dashboard_reflows) ... ok
+2026-11-17T07:50:54.6240060Z test_detail_and_section_override_change_real_fixture_content (test_designs_powershell.NativePowerShellDesignTests.test_detail_and_section_override_change_real_fixture_content) ... ok
+2026-11-17T07:51:24.7462960Z test_every_design_fits_all_requested_sizes_and_character_sets (test_designs_powershell.NativePowerShellDesignTests.test_every_design_fits_all_requested_sizes_and_character_sets) ... ok
+2026-11-17T07:51:25.3750840Z test_legacy_harness_rejects_a_different_engine_before_executing_input (test_designs_powershell.NativePowerShellDesignTests.test_legacy_harness_rejects_a_different_engine_before_executing_input) ... ok
+2026-11-17T07:51:28.0241650Z test_long_titles_cannot_hide_demo_or_identity_without_system_section (test_designs_powershell.NativePowerShellDesignTests.test_long_titles_cannot_hide_demo_or_identity_without_system_section) ... ok
+2026-11-17T07:51:28.6778010Z test_priority_selects_complete_sections_when_space_is_limited (test_designs_powershell.NativePowerShellDesignTests.test_priority_selects_complete_sections_when_space_is_limited) ... ok
+2026-11-17T07:51:31.5052770Z test_tiny_viewports_name_every_selected_or_hidden_section (test_designs_powershell.NativePowerShellDesignTests.test_tiny_viewports_name_every_selected_or_hidden_section) ... ok
+2026-11-17T07:51:34.5235100Z test_unicode_labels_and_untrusted_calls_remain_data_in_all_designs (test_designs_powershell.NativePowerShellDesignTests.test_unicode_labels_and_untrusted_calls_remain_data_in_all_designs) ... ok
+2026-11-17T07:51:34.5317480Z 
+2026-11-17T07:51:34.5319860Z ----------------------------------------------------------------------
+2026-11-17T07:51:34.5321960Z Ran 14 tests in 64.233s
+2026-11-17T07:51:34.5323080Z 
+2026-11-17T07:51:34.5323410Z OK
+2026-11-17T07:51:35.4322570Z test_colon_service_names_remain_distinct_with_requirements_and_exclusions (test_runtime_review.PortableServiceReviewTests.test_colon_service_names_remain_distinct_with_requirements_and_exclusions) ... ok
+2026-11-17T07:51:35.5766110Z test_required_services_are_promoted_once_when_patterns_overlap (test_runtime_review.PortableServiceReviewTests.test_required_services_are_promoted_once_when_patterns_overlap) ... ok
+2026-11-17T07:51:35.5892360Z test_fraction_formatter_does_not_invent_bars_for_missing_or_invalid_values (test_runtime_review.WideResourceTests.test_fraction_formatter_does_not_invent_bars_for_missing_or_invalid_values) ... ok
+2026-11-17T07:51:35.9674280Z test_invalid_bar_layout_is_rejected_before_before_hook (test_runtime_review.WideResourceTests.test_invalid_bar_layout_is_rejected_before_before_hook) ... ok
+2026-11-17T07:51:42.3115770Z test_power_shell_wide_bars_fit_layouts_and_use_existing_totals (test_runtime_review.WideResourceTests.test_power_shell_wide_bars_fit_layouts_and_use_existing_totals) ... ok
+2026-11-17T07:51:45.3833620Z test_wide_unix_bars_fit_all_designs_and_small_viewports (test_runtime_review.WideResourceTests.test_wide_unix_bars_fit_all_designs_and_small_viewports) ... ok
+2026-11-17T07:51:45.5793220Z test_wide_unix_bars_honor_swap_visibility_and_cli_override (test_runtime_review.WideResourceTests.test_wide_unix_bars_honor_swap_visibility_and_cli_override) ... ok
+2026-11-17T07:51:45.6171590Z test_wide_unix_bars_use_full_panel_width_and_numeric_observations (test_runtime_review.WideResourceTests.test_wide_unix_bars_use_full_panel_width_and_numeric_observations) ... 
+2026-11-17T07:51:45.6175250Z   test_wide_unix_bars_use_full_panel_width_and_numeric_observations (test_runtime_review.WideResourceTests.test_wide_unix_bars_use_full_panel_width_and_numeric_observations) (shell='bash', columns=40, design='cards') ... FAIL
+2026-11-17T07:51:45.6607080Z   test_wide_unix_bars_use_full_panel_width_and_numeric_observations (test_runtime_review.WideResourceTests.test_wide_unix_bars_use_full_panel_width_and_numeric_observations) (shell='bash', columns=40, design='briefing') ... FAIL
+2026-11-17T07:51:45.7153660Z   test_wide_unix_bars_use_full_panel_width_and_numeric_observations (test_runtime_review.WideResourceTests.test_wide_unix_bars_use_full_panel_width_and_numeric_observations) (shell='bash', columns=80, design='cards') ... FAIL
+2026-11-17T07:51:45.7621760Z   test_wide_unix_bars_use_full_panel_width_and_numeric_observations (test_runtime_review.WideResourceTests.test_wide_unix_bars_use_full_panel_width_and_numeric_observations) (shell='bash', columns=80, design='briefing') ... FAIL
+2026-11-17T07:51:45.9363610Z 
+2026-11-17T07:51:45.9364760Z ======================================================================
+2026-11-17T07:51:45.9368270Z FAIL: test_wide_unix_bars_use_full_panel_width_and_numeric_observations (test_runtime_review.WideResourceTests.test_wide_unix_bars_use_full_panel_width_and_numeric_observations) (shell='bash', columns=40, design='cards')
+2026-11-17T07:51:45.9370780Z ----------------------------------------------------------------------
+2026-11-17T07:51:45.9372170Z Traceback (most recent call last):
+2026-11-17T07:51:45.9390410Z   File "/Users/runner/work/motd/motd/tests/test_runtime_review.py", line 130, in test_wide_unix_bars_use_full_panel_width_and_numeric_observations
+2026-11-17T07:51:45.9391490Z     self.assertLessEqual(abs(bars[0].count('#') / len(bars[0]) - expected), 1 / len(bars[0]))
+2026-11-17T07:51:45.9392100Z AssertionError: 0.5 not less than or equal to 0.027777777777777776
+2026-11-17T07:51:45.9392410Z 
+2026-11-17T07:51:45.9392510Z ======================================================================
+2026-11-17T07:51:45.9393590Z FAIL: test_wide_unix_bars_use_full_panel_width_and_numeric_observations (test_runtime_review.WideResourceTests.test_wide_unix_bars_use_full_panel_width_and_numeric_observations) (shell='bash', columns=40, design='briefing')
+2026-11-17T07:51:45.9394520Z ----------------------------------------------------------------------
+2026-11-17T07:51:45.9394880Z Traceback (most recent call last):
+2026-11-17T07:51:45.9396170Z   File "/Users/runner/work/motd/motd/tests/test_runtime_review.py", line 130, in test_wide_unix_bars_use_full_panel_width_and_numeric_observations
+2026-11-17T07:51:45.9397000Z     self.assertLessEqual(abs(bars[0].count('#') / len(bars[0]) - expected), 1 / len(bars[0]))
+2026-11-17T07:51:45.9397590Z AssertionError: 0.5 not less than or equal to 0.027777777777777776
+2026-11-17T07:51:45.9397940Z 
+2026-11-17T07:51:45.9398100Z ======================================================================
+2026-11-17T07:51:45.9398940Z FAIL: test_wide_unix_bars_use_full_panel_width_and_numeric_observations (test_runtime_review.WideResourceTests.test_wide_unix_bars_use_full_panel_width_and_numeric_observations) (shell='bash', columns=80, design='cards')
+2026-11-17T07:51:45.9399890Z ----------------------------------------------------------------------
+2026-11-17T07:51:45.9400230Z Traceback (most recent call last):
+2026-11-17T07:51:45.9401050Z   File "/Users/runner/work/motd/motd/tests/test_runtime_review.py", line 130, in test_wide_unix_bars_use_full_panel_width_and_numeric_observations
+2026-11-17T07:51:45.9401890Z     self.assertLessEqual(abs(bars[0].count('#') / len(bars[0]) - expected), 1 / len(bars[0]))
+2026-11-17T07:51:45.9402450Z AssertionError: 0.5 not less than or equal to 0.013157894736842105
+2026-11-17T07:51:45.9402720Z 
+2026-11-17T07:51:45.9402940Z ======================================================================
+2026-11-17T07:51:45.9403990Z FAIL: test_wide_unix_bars_use_full_panel_width_and_numeric_observations (test_runtime_review.WideResourceTests.test_wide_unix_bars_use_full_panel_width_and_numeric_observations) (shell='bash', columns=80, design='briefing')
+2026-11-17T07:51:45.9405710Z ----------------------------------------------------------------------
+2026-11-17T07:51:45.9407090Z Traceback (most recent call last):
+2026-11-17T07:51:45.9407890Z   File "/Users/runner/work/motd/motd/tests/test_runtime_review.py", line 130, in test_wide_unix_bars_use_full_panel_width_and_numeric_observations
+2026-11-17T07:51:45.9409120Z     self.assertLessEqual(abs(bars[0].count('#') / len(bars[0]) - expected), 1 / len(bars[0]))
+2026-11-17T07:51:45.9409610Z AssertionError: 0.5 not less than or equal to 0.013157894736842105
+2026-11-17T07:51:45.9409910Z 
+2026-11-17T07:51:45.9410140Z ----------------------------------------------------------------------
+2026-11-17T07:51:45.9410540Z Ran 8 tests in 10.970s
+2026-11-17T07:51:45.9410760Z 
+2026-11-17T07:51:45.9410910Z FAILED (failures=4)
+2026-11-17T07:51:46.0306730Z ##[error]Process completed with exit code 1.
+2026-11-17T07:51:46.0732990Z Post job cleanup.
+2026-11-17T07:51:46.5578100Z [command]/opt/homebrew/bin/git version
+2026-11-17T07:51:46.5892540Z git version 2.56.1
+2026-11-17T07:51:46.5920680Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/dd3c61c4-90b9-458b-950b-1a3a1340d7f2/.gitconfig'
+2026-11-17T07:51:46.5929490Z Temporarily overriding HOME='/Users/runner/work/_temp/dd3c61c4-90b9-458b-950b-1a3a1340d7f2' before making global git config changes
+2026-11-17T07:51:46.5930650Z Adding repository directory to the temporary git global config as a safe directory
+2026-11-17T07:51:46.5950270Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/motd/motd
+2026-11-17T07:51:46.6265970Z Removing SSH command configuration
+2026-11-17T07:51:46.6268860Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-11-17T07:51:46.6346370Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-11-17T07:51:46.7877750Z Removing HTTP extra header
+2026-11-17T07:51:46.7882270Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-11-17T07:51:46.7978550Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-11-17T07:51:46.9347540Z Removing includeIf entries pointing to credentials config files
+2026-11-17T07:51:46.9349480Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-11-17T07:51:46.9481550Z includeif.gitdir:/Users/runner/work/motd/motd/.git.path
+2026-11-17T07:51:46.9482800Z includeif.gitdir:/Users/runner/work/motd/motd/.git/worktrees/*.path
+2026-11-17T07:51:46.9483890Z includeif.gitdir:/github/workspace/.git.path
+2026-11-17T07:51:46.9484810Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-17T07:51:46.9487440Z [command]/opt/homebrew/bin/git config --local --get-all includeif.gitdir:/Users/runner/work/motd/motd/.git.path
+2026-11-17T07:51:46.9600330Z /Users/runner/work/_temp/git-credentials-ecb3a6ae-2952-470f-b7df-cb37d4043687.config
+2026-11-17T07:51:46.9622150Z [command]/opt/homebrew/bin/git config --local --unset includeif.gitdir:/Users/runner/work/motd/motd/.git.path /Users/runner/work/_temp/git-credentials-ecb3a6ae-2952-470f-b7df-cb37d4043687.config
+2026-11-17T07:51:46.9774980Z [command]/opt/homebrew/bin/git config --local --get-all includeif.gitdir:/Users/runner/work/motd/motd/.git/worktrees/*.path
+2026-11-17T07:51:46.9883030Z /Users/runner/work/_temp/git-credentials-ecb3a6ae-2952-470f-b7df-cb37d4043687.config
+2026-11-17T07:51:46.9894560Z [command]/opt/homebrew/bin/git config --local --unset includeif.gitdir:/Users/runner/work/motd/motd/.git/worktrees/*.path /Users/runner/work/_temp/git-credentials-ecb3a6ae-2952-470f-b7df-cb37d4043687.config
+2026-11-17T07:51:46.9985570Z [command]/opt/homebrew/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-11-17T07:51:47.0066100Z /github/runner_temp/git-credentials-ecb3a6ae-2952-470f-b7df-cb37d4043687.config
+2026-11-17T07:51:47.0081150Z [command]/opt/homebrew/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-ecb3a6ae-2952-470f-b7df-cb37d4043687.config
+2026-11-17T07:51:47.0166430Z [command]/opt/homebrew/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-11-17T07:51:47.0250860Z /github/runner_temp/git-credentials-ecb3a6ae-2952-470f-b7df-cb37d4043687.config
+2026-11-17T07:51:47.0265570Z [command]/opt/homebrew/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-ecb3a6ae-2952-470f-b7df-cb37d4043687.config
+2026-11-17T07:51:47.0376160Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-11-17T07:51:47.1650350Z Removing credentials config '/Users/runner/work/_temp/git-credentials-ecb3a6ae-2952-470f-b7df-cb37d4043687.config'
+2026-11-17T07:51:47.1979100Z Cleaning up orphan processes

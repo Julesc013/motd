@@ -172,5 +172,293 @@
     "retained_path": "build/review-20261117/motd-runtime-review-tests.log",
     "sha256": "85498fc6016a69dcdbe053fb04120dbfe4fbbcf800d375b37cc45d9bd25969dc",
     "bytes": 1515
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-9cefbdd/actual-powershell-2-evidence.zip",
+    "retained_path": "build/review-20261117/native-ci-9cefbdd/actual-powershell-2-evidence.zip",
+    "sha256": "2ef1555442edab00aede6bd881aa352a4f28237b4a3eaac6d3e96950676e2e19",
+    "bytes": 1769
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-9cefbdd/artifacts.json",
+    "retained_path": "build/review-20261117/native-ci-9cefbdd/artifacts.json",
+    "sha256": "091b134bc26b32530e233426104c39eef5f80bd49db480f4dfd63c85d39a71a5",
+    "bytes": 852
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-9cefbdd/corrected-bar-contract-bash32.log",
+    "retained_path": "build/review-20261117/native-ci-9cefbdd/corrected-bar-contract-bash32.log",
+    "sha256": "be58820112fa799dfc4788694fc1558cf95f20c51be840fcc452fe0f9d66ddbf",
+    "bytes": 338
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-9cefbdd/evidence.json",
+    "retained_path": "build/review-20261117/native-ci-9cefbdd/evidence.json",
+    "sha256": "add51eb9f2b4c0382a0d8b66def14d7d3cfbd08e38f2f7d307c92398d557e553",
+    "bytes": 11859
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-9cefbdd/job-133897796812-macos-pwsh.log",
+    "retained_path": "build/review-20261117/native-ci-9cefbdd/job-133897796812-macos-pwsh.log",
+    "sha256": "706ac19b548f31e015ccfddd5fc1c33f562140d188aed5f9c48770c1eb993009",
+    "bytes": 28487
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-9cefbdd/job-133897796999-windows-powershell.log",
+    "retained_path": "build/review-20261117/native-ci-9cefbdd/job-133897796999-windows-powershell.log",
+    "sha256": "53237c7b8c40003244497b29447515c2cc12efac87b4ea544d3f8edff9edbf2b",
+    "bytes": 29443
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-9cefbdd/job-133897797142-windows-pwsh.log",
+    "retained_path": "build/review-20261117/native-ci-9cefbdd/job-133897797142-windows-pwsh.log",
+    "sha256": "b959a66cc1d2613399f7fcb56efd94a1a1d604d52ecb88d10bcea17d698bd07d",
+    "bytes": 29632
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-9cefbdd/job-133897797169-powershell-2.log",
+    "retained_path": "build/review-20261117/native-ci-9cefbdd/job-133897797169-powershell-2.log",
+    "sha256": "915ac4e02514ee57ea881efe84a3eb5a695969e12499e9aee76c0c82cd781022",
+    "bytes": 28004
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-9cefbdd/jobs-latest.json",
+    "retained_path": "build/review-20261117/native-ci-9cefbdd/jobs-latest.json",
+    "sha256": "5d7889a4fb651ad915ff2dfd6da1decc37eeb6aea8fbdc0c15acf339d204ba36",
+    "bytes": 9769
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-9cefbdd/powershell-2-evidence.xml",
+    "retained_path": "build/review-20261117/native-ci-9cefbdd/powershell-2-evidence.xml",
+    "sha256": "93fa081b5d8edae0276c7bd3ec0f448417802b06607f31ca465c4f8d2cd708a4",
+    "bytes": 10628
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-9cefbdd/powershell-2-probe.json",
+    "retained_path": "build/review-20261117/native-ci-9cefbdd/powershell-2-probe.json",
+    "sha256": "db0500667098b6a10b36b8fca38c1e22b0fec1d7c9e92802738f06efbb420407",
+    "bytes": 1116
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-9cefbdd/run-final.json",
+    "retained_path": "build/review-20261117/native-ci-9cefbdd/run-final.json",
+    "sha256": "7080a88413c743d1dab978ca77adf959a85508d9127ab0ecfbe603495e51f4c5",
+    "bytes": 12623
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-9cefbdd/run-initial.json",
+    "retained_path": "build/review-20261117/native-ci-9cefbdd/run-initial.json",
+    "sha256": "0395c362858015ce87230829f57fe86f8f6f9ad9ffb1cc9ecf97837051cbd620",
+    "bytes": 12620
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-9cefbdd/verify-job-133897796904.log",
+    "retained_path": "build/review-20261117/native-ci-9cefbdd/verify-job-133897796904.log",
+    "sha256": "573653f2a85d2ffbfc31270e522a1110a2844d63bde7633377bc0e0620e9066a",
+    "bytes": 29963
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-9cefbdd/verify-job-133897797271.log",
+    "retained_path": "build/review-20261117/native-ci-9cefbdd/verify-job-133897797271.log",
+    "sha256": "3b95365e32416a0a08d9fa643aa79155e07ed44fea970e04ffe1300a49ba9312",
+    "bytes": 22460
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-9cefbdd/verify-job-133897797352.log",
+    "retained_path": "build/review-20261117/native-ci-9cefbdd/verify-job-133897797352.log",
+    "sha256": "9d1966f221a451dc0709888e1d269217469440628303fda7dcf8b2d4bfbc5757",
+    "bytes": 22269
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-9cefbdd/verify-job-133897797440.log",
+    "retained_path": "build/review-20261117/native-ci-9cefbdd/verify-job-133897797440.log",
+    "sha256": "724fca7f01948509c6f13836664099dba94520a0f6d4219d5e72dd7c26386e74",
+    "bytes": 28158
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-9cefbdd/verify-job-133897797469.log",
+    "retained_path": "build/review-20261117/native-ci-9cefbdd/verify-job-133897797469.log",
+    "sha256": "c98f7ac9b9bcd0f7a20964b5da619a429b3016bfca8d628442debda74e387b8b",
+    "bytes": 91696
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-9cefbdd/verify-jobs-final.json",
+    "retained_path": "build/review-20261117/native-ci-9cefbdd/verify-jobs-final.json",
+    "sha256": "ab2f91e21a492dc9270ea058caf5a42b7ae1201c2e0df2a59ca7df2661751e61",
+    "bytes": 14602
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-9cefbdd/verify-run-final.json",
+    "retained_path": "build/review-20261117/native-ci-9cefbdd/verify-run-final.json",
+    "sha256": "703a3eaf1c4c2ef7ff0ecb4eb5dfdd9fbf4b53ae9685d2ad2cdc390c9e74025a",
+    "bytes": 12563
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-9cefbdd/verify-summary.json",
+    "retained_path": "build/review-20261117/native-ci-9cefbdd/verify-summary.json",
+    "sha256": "e09db5e6d68af67c36330fbbe3b5184647a1f15dbc1ab21a72773eb18d10890c",
+    "bytes": 10564
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-0f16e88/actual-powershell-2-evidence.zip",
+    "retained_path": "build/review-20261117/native-ci-0f16e88/actual-powershell-2-evidence.zip",
+    "sha256": "bf6dcb71629d8c527a2f5988e3ea5fe143bed45e1bd6134284f014d564114585",
+    "bytes": 1765
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-0f16e88/artifacts.json",
+    "retained_path": "build/review-20261117/native-ci-0f16e88/artifacts.json",
+    "sha256": "fd40ae26757921048a3fdfbd008582b0ae16e20f263d51512b8cf708171e64ea",
+    "bytes": 852
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-0f16e88/correction-commit.json",
+    "retained_path": "build/review-20261117/native-ci-0f16e88/correction-commit.json",
+    "sha256": "278d787fc5933ff588a8f459e8d03172bc966b902fb07e066f7e58ca46bd1c57",
+    "bytes": 6299
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-0f16e88/evidence.json",
+    "retained_path": "build/review-20261117/native-ci-0f16e88/evidence.json",
+    "sha256": "2d65009149965f26b31d63271ea5810b07c51c025cbd74f303e88ca537958bb9",
+    "bytes": 20286
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-0f16e88/job-133899591795-powershell-2.log",
+    "retained_path": "build/review-20261117/native-ci-0f16e88/job-133899591795-powershell-2.log",
+    "sha256": "12a394fc3f76e168f836d77315ef8d47a55b6f6cf26aa9ac93174b054fdc9e75",
+    "bytes": 28005
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-0f16e88/job-133899592037-windows-powershell.log",
+    "retained_path": "build/review-20261117/native-ci-0f16e88/job-133899592037-windows-powershell.log",
+    "sha256": "b33d7d7cc55ed474013368ff0c0693309b15e3c334f3856b3f4ae03f0fa44170",
+    "bytes": 29440
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-0f16e88/job-133899592107-windows-pwsh.log",
+    "retained_path": "build/review-20261117/native-ci-0f16e88/job-133899592107-windows-pwsh.log",
+    "sha256": "bc3c6ca7cc79215a30b31adb772b42b31c8831c6a9dcde9fd586c740aa5d4a5d",
+    "bytes": 29632
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-0f16e88/job-133899592173-macos-pwsh.log",
+    "retained_path": "build/review-20261117/native-ci-0f16e88/job-133899592173-macos-pwsh.log",
+    "sha256": "c17101a5e4dd256b8db2a0765c001f7537d142f338ec9d285578f6472358b192",
+    "bytes": 30179
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-0f16e88/jobs-latest.json",
+    "retained_path": "build/review-20261117/native-ci-0f16e88/jobs-latest.json",
+    "sha256": "c3c4f83c7b5bc4fbb9050f2211f1b1105b04285390810296235491dd50a6b4a9",
+    "bytes": 9769
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-0f16e88/powershell-2-evidence.xml",
+    "retained_path": "build/review-20261117/native-ci-0f16e88/powershell-2-evidence.xml",
+    "sha256": "a605b4804ef1835308de5d04a21cc3a5207ffc99d79b179d6fb71e5cf623456d",
+    "bytes": 10628
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-0f16e88/powershell-2-probe.json",
+    "retained_path": "build/review-20261117/native-ci-0f16e88/powershell-2-probe.json",
+    "sha256": "1fe29ec0febd328c69c8810cb6bf7ddb003ac9a80245d7169411975d9740ce45",
+    "bytes": 1116
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-0f16e88/powershell-2-verification.json",
+    "retained_path": "build/review-20261117/native-ci-0f16e88/powershell-2-verification.json",
+    "sha256": "d17e8bdc4b62b8a2884718236fb08e01765438424fec810d8dceb6c497ed2afd",
+    "bytes": 3586
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-0f16e88/run-final.json",
+    "retained_path": "build/review-20261117/native-ci-0f16e88/run-final.json",
+    "sha256": "0058d7e215cf9e6e4e286ad3dbbb24921c9ff9ef69d7376724e39d338710b86a",
+    "bytes": 12333
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-0f16e88/run-initial.json",
+    "retained_path": "build/review-20261117/native-ci-0f16e88/run-initial.json",
+    "sha256": "c1d5ffa9f3d59e3207de6612a150960c3f8f98a2f8dc5ee2d73e5274fd8c777f",
+    "bytes": 13659
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-0f16e88/verify-job-133899591924.log",
+    "retained_path": "build/review-20261117/native-ci-0f16e88/verify-job-133899591924.log",
+    "sha256": "096621e503065aaa1d5bdb84122920a4fbe54dd3f6a4d24227339672e1b2bed5",
+    "bytes": 29963
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-0f16e88/verify-job-133899592243.log",
+    "retained_path": "build/review-20261117/native-ci-0f16e88/verify-job-133899592243.log",
+    "sha256": "83e5b8ac85585dc4659de5d0e818dd01caaa19bc38608e20822a4193c36e3fe6",
+    "bytes": 22269
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-0f16e88/verify-job-133899592291.log",
+    "retained_path": "build/review-20261117/native-ci-0f16e88/verify-job-133899592291.log",
+    "sha256": "2fb4cf98f6bdbf52d3791a290636dd47c5cdc0317887b9914c9e9dbdd8970d77",
+    "bytes": 91853
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-0f16e88/verify-job-133899592293.log",
+    "retained_path": "build/review-20261117/native-ci-0f16e88/verify-job-133899592293.log",
+    "sha256": "583be5ab4244e998f730102cfd6aa8aa82d896a9178520a28a2664e953d1d9b4",
+    "bytes": 22460
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-0f16e88/verify-job-133899592306.log",
+    "retained_path": "build/review-20261117/native-ci-0f16e88/verify-job-133899592306.log",
+    "sha256": "725653220524f536f3624be7e2097d5396c5d2a6bb8d99c154d9adb4d4d3b0a9",
+    "bytes": 28156
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-0f16e88/verify-jobs-final.json",
+    "retained_path": "build/review-20261117/native-ci-0f16e88/verify-jobs-final.json",
+    "sha256": "3b9fc5396347d5cfb2dc443a9588e444043d98b87f307abda0270cd8c1140258",
+    "bytes": 14602
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-0f16e88/verify-run-final.json",
+    "retained_path": "build/review-20261117/native-ci-0f16e88/verify-run-final.json",
+    "sha256": "ad9ed5c6364fb79cecca6cb6641153f1b7b81756533a9b74e77e9b1555e809f5",
+    "bytes": 12273
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/native-ci-0f16e88/verify-summary.json",
+    "retained_path": "build/review-20261117/native-ci-0f16e88/verify-summary.json",
+    "sha256": "50edc7dc552d465131db2f7ed167e5c594b54458448df4329b5761a89daec5d9",
+    "bytes": 11354
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/synthetic-render-benchmark-20261117.json",
+    "retained_path": "build/review-20261117/synthetic-render-benchmark-20261117.json",
+    "sha256": "273810587d1c1599d862f66cef88fdf99ac344b3333d695e8a73a8e3667fe2c3",
+    "bytes": 8143
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/run-synthetic-render-benchmark-20261117.py",
+    "retained_path": "build/review-20261117/run-synthetic-render-benchmark-20261117.py",
+    "sha256": "4de8d2988de1d68445c880a4c21a493d9f80febaffc8f95bfad830f31b8acebf",
+    "bytes": 8382
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/synthetic-render-benchmark-artifacts/bash-demo.txt",
+    "retained_path": "build/review-20261117/bash-demo.txt",
+    "sha256": "7c79e2f2d524750202b9f983883d6ae3ba36f3e8b578f853ba9847aaad946556",
+    "bytes": 1397
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/synthetic-render-benchmark-artifacts/sh-demo.txt",
+    "retained_path": "build/review-20261117/sh-demo.txt",
+    "sha256": "921a71fad69653fbf71f3ac4bb6cedc462f319aff3c8d8b90bf3d35346fd6624",
+    "bytes": 1387
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/synthetic-render-benchmark-artifacts/powershell-demo.txt",
+    "retained_path": "build/review-20261117/powershell-demo.txt",
+    "sha256": "644f87a40df5d28115bf6a87ba84071391de54acfd7812641e9d4da974ccbc7b",
+    "bytes": 1863
   }
 ]

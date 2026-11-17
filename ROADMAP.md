@@ -45,14 +45,17 @@ skips and the example-builder qualification on the current-Python run. Native
 interactive Windows console resizing remains an explicit coverage gap below.
 Those records describe their own source hashes. Follow-up runtime/generator
 changes require relevant new checks and refreshed artifact provenance; an old
-checked gate does not certify a changed tree. Reconcile remote refs, local
-sources and retained galleries before calling the interrupted delivery published.
+checked gate does not certify a changed tree. The continuation reconciled remote
+refs, local sources and retained galleries, then published the complete tree.
+Its corrected implementation commit `0f16e88` passed all nine native CI jobs;
+the [current evidence index](build/verification-review-20261117.json) retains
+the initial failure, correction, exact engines and final gallery verification.
 
 ### Readability follow-up
 
 The shared suffix-registry correction and required-service deduplication are
 implemented. The current review verifies complete build/export/install paths for each generated output
-suffix, including Fish and CMD, and preserve distinct missing/inactive/unavailable
+suffix, including Fish and CMD, and preserves distinct missing/inactive/unavailable
 service findings. A generation-only test does not exercise archival validation.
 
 Inline/wide bars now use existing numeric observations through the recipe, CLI,
@@ -76,12 +79,18 @@ Record cold preview, cached choice and resize latency separately. Preserve the h
 of less than 100 ms (ideally nearer 10 ms) and the controlled-stall 400 ms target
 as measured goals on named hosts, with coverage and fallback counts disclosed.
 No historic Workshop1.2 benchmark establishes current-release performance.
+The current [synthetic baseline](build/review-20261117/synthetic-render-benchmark-20261117.json)
+measured 20 fresh processes per route after a warmup on one Linux host: median
+45.8 ms for Bash, 10.1 ms for sh/dash and 625.1 ms for PowerShell 7.6.10. Those
+include startup/render/capture, not live queries or interactive redraw. Profile
+those components separately before applying one latency promise to every route.
 
 ## 2. Close the highest-value native coverage gaps
 
 Run the legacy PowerShell harness on actual 1.0, 3.0, 4.0 and 5.0 engines
-when those environments are available. Retain and repeat the actual PS2/Server
-2022 check obtained during this review for the final source. A prepared harness is not a test pass.
+when those environments are available. The final-source PS2/Server 2022 check
+passed 81/81 cases on the actual 2.0 engine; retain that evidence and repeat it
+when its runtime changes. A prepared harness is not a test pass.
 Record host OS, engine, encoding, terminal capability, source hashes and skipped
 collectors. Investigate actual failures before widening a support claim.
 

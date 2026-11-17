@@ -1,0 +1,7 @@
+GNU bash, version 3.2.0(2)-release (x86_64-unknown-linux-gnu)
+test_wide_unix_bars_use_full_panel_width_and_numeric_observations (test_runtime_review.WideResourceTests.test_wide_unix_bars_use_full_panel_width_and_numeric_observations) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.165s
+
+OK

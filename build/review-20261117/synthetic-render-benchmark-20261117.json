@@ -1,0 +1,250 @@
+{
+  "status": "complete",
+  "recorded_utc": "2026-11-17T08:00:37.259751+00:00",
+  "git_commit": "0f16e88d1406f0b6e87a9ea7e263887c2eb7d057",
+  "git_source_blob": "38ef16f5f32af841d39ccc4ad79294a3656f13f1",
+  "generator_sha256": "eda912a538325d00f798dc969f8da4389f5c34ad5d4d13f2caba99087622a130",
+  "runtime_sha256": {
+    "runtime/designs.sh": "6faaea0c5521f143faa58294f5a60ba3966b0d933543d80535183a3908ebd3b3",
+    "runtime/motd.bash": "12cfb6fa5f1a4ad97334bc92767e0af85a31c77f74d6f16b8b281fba081c6046",
+    "runtime/motd.sh": "36bdcf6dad14d80fd73894bd4c16790ca4b8019ae2217ce9099b3dbff5cc1a48",
+    "runtime/motd.ps1": "d34364f4a29c6adc287f793232611ec06a6046817b02e92a23bcaf59d97f9c46"
+  },
+  "host": {
+    "os_release": {
+      "PRETTY_NAME": "Debian GNU/Linux 13 (trixie)",
+      "NAME": "Debian GNU/Linux",
+      "VERSION_ID": "13",
+      "VERSION": "13 (trixie)",
+      "VERSION_CODENAME": "trixie",
+      "DEBIAN_VERSION_FULL": "13.6",
+      "ID": "debian",
+      "HOME_URL": "https://www.debian.org/",
+      "SUPPORT_URL": "https://www.debian.org/support",
+      "BUG_REPORT_URL": "https://bugs.debian.org/"
+    },
+    "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+    "machine": "x86_64",
+    "cpu_model": "AMD EPYC 9V74 80-Core Processor",
+    "logical_cpus": 9
+  },
+  "python": {
+    "executable": "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+    "version": "3.12.14 (main, Aug 25 2026, 14:00:49) [Clang 22.1.3 ]"
+  },
+  "settings": {
+    "preset": "home-lab",
+    "design": "cards",
+    "density": "comfortable",
+    "detail": "brief",
+    "bar_layout": "wide",
+    "width": 80,
+    "rows": 25,
+    "charset": "ascii",
+    "color": "never",
+    "hooks": {
+      "before": [],
+      "after": []
+    }
+  },
+  "method": {
+    "warmup_invocations_per_route": 1,
+    "measured_invocations_per_route": 20,
+    "clock": "time.perf_counter_ns, elapsed wall time in milliseconds",
+    "interval": "Immediately before subprocess.run until process exit and stdout/stderr capture complete",
+    "p95": "Nearest rank: sorted[ceil(0.95*n)-1]; rank 19 of 20",
+    "per_process_timeout_seconds": 8,
+    "overall_timeout_seconds": 60,
+    "cache_state": "Each invocation is a fresh process; one discarded warmup precedes each route. OS caches are warmed, not true cold boot.",
+    "execution": "Sequential routes and invocations; exclusive host scheduling was not controlled.",
+    "scope": "Synthetic generated-artifact rendering plus interpreter startup and output capture; no live observations, hook execution or installation.",
+    "exclusions": [
+      "CLI preview was not measured",
+      "Interactive wizard redraw was not measured",
+      "Terminal painting, SSH/PAM transport and real login attachment were not measured",
+      "These observations do not establish the 100 ms live target or 400 ms controlled-stall target"
+    ]
+  },
+  "routes": [
+    {
+      "shell": "bash",
+      "executable": "/usr/bin/bash",
+      "resolved_executable": "/usr/bin/bash",
+      "version": "GNU bash, version 5.2.37(1)-release (x86_64-pc-linux-gnu)",
+      "executable_sha256": "223fe8564b60636bc738b6178d3ba9a50ef7d791266b0efae6363bb716e4c47f",
+      "command": [
+        "/usr/bin/bash",
+        "/workspace/scratch/e6a94ceb1ad8/work/synthetic-render-benchmark-artifacts/home-lab.bash",
+        "--demo",
+        "--no-hooks",
+        "--width",
+        "80",
+        "--rows",
+        "25",
+        "--ascii",
+        "--plain"
+      ],
+      "artifact": "/workspace/scratch/e6a94ceb1ad8/work/synthetic-render-benchmark-artifacts/home-lab.bash",
+      "artifact_sha256": "4eddba7fa27ca48e86dd250eb20f9ba10367dbe451878bfcf2ef36de055d0a00",
+      "elapsed_ms": [
+        45.042415,
+        46.334415,
+        43.493198,
+        46.963636,
+        55.409411,
+        46.441357,
+        42.922657,
+        42.717857,
+        48.082429,
+        42.492959,
+        45.204395,
+        50.939435,
+        47.927265,
+        51.071565,
+        43.914369,
+        42.986618,
+        50.037274,
+        41.550019,
+        47.064087,
+        42.718449
+      ],
+      "warmup_ms": 52.912959,
+      "stdout_bytes": 1397,
+      "stdout_lines": 22,
+      "summary_ms": {
+        "median": 45.769405,
+        "p95_nearest_rank": 51.071565,
+        "min": 41.550019,
+        "max": 55.409411
+      },
+      "measured_invocations": 20,
+      "stdout_sha256_values": [
+        "7c79e2f2d524750202b9f983883d6ae3ba36f3e8b578f853ba9847aaad946556"
+      ],
+      "all_exit_zero": true,
+      "all_stderr_empty": true
+    },
+    {
+      "shell": "sh",
+      "executable": "/bin/sh",
+      "resolved_executable": "/usr/bin/dash",
+      "version": "dash; package version unavailable in this host image, exact binary SHA256 recorded",
+      "executable_sha256": "a6f559e00b69a4aa4d8cb607be18d9386c5aee55c509e2c075549dcf00e00fc7",
+      "command": [
+        "/bin/sh",
+        "/workspace/scratch/e6a94ceb1ad8/work/synthetic-render-benchmark-artifacts/home-lab.sh",
+        "--demo",
+        "--no-hooks",
+        "--width",
+        "80",
+        "--rows",
+        "25",
+        "--ascii",
+        "--plain"
+      ],
+      "artifact": "/workspace/scratch/e6a94ceb1ad8/work/synthetic-render-benchmark-artifacts/home-lab.sh",
+      "artifact_sha256": "e5a3788e11fa84cd62ac262feaeb4ae98c1777277224f3e78950333c3d633745",
+      "elapsed_ms": [
+        9.710404,
+        9.17763,
+        9.529422,
+        11.169345,
+        9.129227,
+        10.199853,
+        12.807629,
+        12.881821,
+        8.684326,
+        9.10363,
+        10.060827,
+        9.967923,
+        9.737506,
+        11.276437,
+        11.997697,
+        11.341846,
+        10.66401,
+        9.623273,
+        10.742902,
+        11.370289
+      ],
+      "warmup_ms": 10.438949,
+      "stdout_bytes": 1387,
+      "stdout_lines": 22,
+      "summary_ms": {
+        "median": 10.13034,
+        "p95_nearest_rank": 12.807629,
+        "min": 8.684326,
+        "max": 12.881821
+      },
+      "measured_invocations": 20,
+      "stdout_sha256_values": [
+        "921a71fad69653fbf71f3ac4bb6cedc462f319aff3c8d8b90bf3d35346fd6624"
+      ],
+      "all_exit_zero": true,
+      "all_stderr_empty": true
+    },
+    {
+      "shell": "powershell",
+      "executable": "/workspace/scratch/e6a94ceb1ad8/work/powershell/7.6.10/pwsh",
+      "resolved_executable": "/workspace/scratch/e6a94ceb1ad8/work/powershell/7.6.10/pwsh",
+      "version": "7.6.10",
+      "executable_sha256": "292d0d8573eaeaf44685c1b454a2d14d68f6c91d1eff42e484c73c72ba235695",
+      "command": [
+        "/workspace/scratch/e6a94ceb1ad8/work/powershell/7.6.10/pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "/workspace/scratch/e6a94ceb1ad8/work/synthetic-render-benchmark-artifacts/home-lab.ps1",
+        "-Demo",
+        "-NoHooks",
+        "-Width",
+        "80",
+        "-Rows",
+        "25",
+        "-Ascii",
+        "-Plain"
+      ],
+      "artifact": "/workspace/scratch/e6a94ceb1ad8/work/synthetic-render-benchmark-artifacts/home-lab.ps1",
+      "artifact_sha256": "5afc3be8b3224972dc79d51a9df0ce7a00b696c0680e2c7f6ce0c8fd615b0cae",
+      "elapsed_ms": [
+        610.343726,
+        640.996881,
+        651.739336,
+        673.634483,
+        598.252313,
+        594.45969,
+        681.897717,
+        580.743046,
+        587.241584,
+        646.754938,
+        567.960652,
+        612.337761,
+        586.703702,
+        664.146079,
+        621.771453,
+        562.804076,
+        628.460396,
+        635.36059,
+        642.774443,
+        669.405265
+      ],
+      "warmup_ms": 744.264248,
+      "stdout_bytes": 1863,
+      "stdout_lines": 23,
+      "summary_ms": {
+        "median": 625.1159244999999,
+        "p95_nearest_rank": 673.634483,
+        "min": 562.804076,
+        "max": 681.897717
+      },
+      "measured_invocations": 20,
+      "stdout_sha256_values": [
+        "644f87a40df5d28115bf6a87ba84071391de54acfd7812641e9d4da974ccbc7b"
+      ],
+      "all_exit_zero": true,
+      "all_stderr_empty": true
+    }
+  ],
+  "total_runner_seconds": 14.78865492699697,
+  "runner_sha256": "4de8d2988de1d68445c880a4c21a493d9f80febaffc8f95bfad830f31b8acebf"
+}

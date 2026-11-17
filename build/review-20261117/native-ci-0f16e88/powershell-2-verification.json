@@ -1,0 +1,102 @@
+{
+  "recorded_at_utc": "2026-11-17T07:57:01.881623+00:00",
+  "head_sha": "0f16e88d1406f0b6e87a9ea7e263887c2eb7d057",
+  "run_id": 44042319335,
+  "job_id": 133899591795,
+  "artifact_id": 14309732137,
+  "verified": true,
+  "actual_version": "2.0",
+  "clr_version": "2.0.50727.9188",
+  "process_bitness": 64,
+  "os": "Microsoft Windows NT 10.0.20348.0",
+  "started_at": "2026-11-17T07:55:04.4699164Z",
+  "completed_at": "2026-11-17T07:55:12.6572913Z",
+  "executed_cases": 81,
+  "passed_cases": 81,
+  "failed_cases": 0,
+  "skipped_cases": 0,
+  "case_kinds": {
+    "synthetic-alerts": 80,
+    "live-local-no-hooks": 1
+  },
+  "source_sha256": {
+    "motd.py": "eda912a538325d00f798dc969f8da4389f5c34ad5d4d13f2caba99087622a130",
+    "runtime/motd.ps1": "d34364f4a29c6adc287f793232611ec06a6046817b02e92a23bcaf59d97f9c46",
+    "tools/test_legacy_powershell.ps1": "f67642f425b4f06f40511803c00e6ac165c58aaacccdfa3fc979e8f2a8ecc710",
+    ".github/workflows/powershell-compatibility.yml": "bfd50e9ec363c024e5d292552d0ab999b7b80664e65ffec25a3cae93acb37eb5"
+  },
+  "generation": "workshop preset; shell=powershell; each of5 designs and2 bar layouts; sections=list(motd.SECTION_IDS); UTF-8 Windows CRLF write_text output",
+  "artifacts": [
+    {
+      "file": "briefing-inline.ps1",
+      "sha256": "7ddf56c253504b7c8b6f15a8a1af03a5088f5b1d39ba8272c3be1db62eb964c7",
+      "bytes": 58314,
+      "matches_generated_windows_bytes": true,
+      "executed_cases": 8
+    },
+    {
+      "file": "briefing-wide.ps1",
+      "sha256": "4a438b5442a98159648754e8b87164d1d7d1d84012b3f5d76c28b7dd82edb846",
+      "bytes": 58312,
+      "matches_generated_windows_bytes": true,
+      "executed_cases": 8
+    },
+    {
+      "file": "cards-inline.ps1",
+      "sha256": "cf869d1565172e2824d2866ad65f75ebb5660fbe2be983576fa6818caf13ddb9",
+      "bytes": 58307,
+      "matches_generated_windows_bytes": true,
+      "executed_cases": 8
+    },
+    {
+      "file": "cards-wide.ps1",
+      "sha256": "4113bf6760e78978b4750a060a24309d8d2c9fe8544d14bb06954bb21f066ac3",
+      "bytes": 58305,
+      "matches_generated_windows_bytes": true,
+      "executed_cases": 8
+    },
+    {
+      "file": "classic-inline.ps1",
+      "sha256": "604899824978f39c32cc17df75d8860dec57a14f9e7f90d520b54de1444bfe85",
+      "bytes": 58313,
+      "matches_generated_windows_bytes": true,
+      "executed_cases": 8
+    },
+    {
+      "file": "classic-wide.ps1",
+      "sha256": "8571393425afdc90ebfd30ef482d09d44bc17b0b28f61cc371374324aca7d299",
+      "bytes": 58307,
+      "matches_generated_windows_bytes": true,
+      "executed_cases": 8
+    },
+    {
+      "file": "dashboard-inline.ps1",
+      "sha256": "f2ab2350b62d82a4c90376b38d6fdc6175bafa1dd8c6b739e67d73d1f1b02c03",
+      "bytes": 58319,
+      "matches_generated_windows_bytes": true,
+      "executed_cases": 8
+    },
+    {
+      "file": "dashboard-wide.ps1",
+      "sha256": "86419d4e8fbcd05e582555739b5c4ad56280de1ef71e2382629c9cdc78ae02e5",
+      "bytes": 58313,
+      "matches_generated_windows_bytes": true,
+      "executed_cases": 8
+    },
+    {
+      "file": "ledger-inline.ps1",
+      "sha256": "4e6c07cfffabf027c92c4d9ddfd7a0edc2b935a8ee7936b97eef84900d907c0f",
+      "bytes": 58312,
+      "matches_generated_windows_bytes": true,
+      "executed_cases": 8
+    },
+    {
+      "file": "ledger-wide.ps1",
+      "sha256": "2905f01fefd03c6cb63a54dec63d8373c1f91f99b44ce8f63bbf056ddd69a903",
+      "bytes": 58306,
+      "matches_generated_windows_bytes": true,
+      "executed_cases": 8
+    }
+  ],
+  "archive_sha256": "bf6dcb71629d8c527a2f5988e3ea5fe143bed45e1bd6134284f014d564114585"
+}
