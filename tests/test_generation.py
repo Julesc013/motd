@@ -8,12 +8,12 @@ import re
 import subprocess
 import sys
 import tempfile
-import tomllib
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 import motd
+tomllib = motd.tomllib
 
 
 class GenerationTests(unittest.TestCase):
@@ -109,9 +109,9 @@ class GenerationTests(unittest.TestCase):
                     config[table][field] = bad
                     with self.assertRaises(motd.MotdError):
                         motd.validate_config(config)
-        # The default section set needs at least twenty rows including framing.
+        # Short layouts now replan whole sections; below eight rows is unsupported.
         config = motd.preset_config()
-        config['display']['rows'] = 18
+        config['display']['rows'] = 7
         with self.assertRaises(motd.MotdError):
             motd.validate_config(config)
 

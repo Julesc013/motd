@@ -85,15 +85,21 @@ for name in motd.PRESET_NAMES:
                     'sha256':motd.hashlib.sha256(output.encode()).hexdigest()})
 # SSH pre-authentication text is a distinct serialisation of the public recipe.
 public=motd.preset_config('public-console');public['target']='ssh-banner'
-(ROOT/'examples/public-ssh-banner.txt').write_text(motd.generate_artifact(public),encoding='utf-8')
-public['target'] = 'text'
-(ROOT/'examples/public-notice.txt').write_text(motd.generate_artifact(public), encoding='utf-8')
+for target, filename in [('ssh-banner', 'public-ssh-banner.txt'),
+                         ('text', 'public-notice.txt'), ('batch-text', 'public-notice.cmd')]:
+    public['target'] = target
+    output = motd.generate_artifact(public)
+    path = ROOT/'examples'/filename
+    path.write_text(output, encoding='utf-8')
+    records.append({'preset': 'public-console', 'target': target,
+                    'path': str(path.relative_to(ROOT)),
+                    'sha256': motd.hashlib.sha256(output.encode()).hexdigest()})
 
 # Every dashboard preset is copyable in every output route. The generated Unix
 # files select modern or portable collection at invocation time; native
 # PowerShell has the same recoverable recipe format and its own collectors.
 for name in ('workshop', 'home-lab'):
-    for shell in ('zsh', 'sh', 'powershell'):
+    for shell in ('zsh', 'sh', 'powershell', 'fish', 'cmd'):
         config = motd.load_config(ROOT/'presets'/f'{name}.toml')
         motd.select_shell(config, shell)
         output = motd.generate_artifact(config)

@@ -1,8 +1,8 @@
 # Installation and recovery
 
-The configurator and transaction engine run on Linux with Python 3.11 or later.
-Select Bash, Zsh or native sh for managed Linux shell installation. Native
-PowerShell output can be generated and copied elsewhere; PowerShell profile
+The configurator requires Python 3.8 or later. Generation, recipe recovery and create-only export are available across supported Python hosts; the managed transaction engine and startup-file installation target Linux.
+Select Bash, Zsh, native sh or Fish for managed Linux shell installation. Native
+PowerShell and CMD output can be generated and copied elsewhere; PowerShell profile
 installation is not managed in this version. Output dependencies are listed in
 the [compatibility guide](compatibility.md).
 
@@ -35,11 +35,13 @@ An installation owns its recorded files or explicitly marked integration region.
 | `shell`, Bash user | Installs a `.bash` output and guarded blocks in `.bashrc` and the active Bash login file. | Interactive terminal sessions only. |
 | `shell`, Zsh user | Installs a `.zsh` output and guarded blocks in `.zshrc` and `.zprofile` under `ZDOTDIR` or the home directory. | The output delegates through `/bin/bash`, or `/bin/sh` when Bash is absent. |
 | `shell`, sh user | Installs a `.sh` output and a guarded login-profile attachment. | Portable native renderer; other startup routes need an explicit appropriate file. |
+| `shell`, Fish user | Installs a `.fish` launcher and a guarded block in `$XDG_CONFIG_HOME/fish/config.fish` or `~/.config/fish/config.fish`. | The parent directory must already exist; the output needs `/bin/sh`. Uses Fish interactive/login checks and a per-process duplicate marker. |
 | `shell`, system | Installs `/usr/local/bin/motd-ID`; Bash uses `/etc/profile.d/70-motd-ID.sh` by default. | Zsh and nonstandard routes need an explicit startup file. No assumption that all shells read `/etc/profile.d`. |
-| `shell`, PowerShell | Build/export only. | No automatic PowerShell profile or Windows filesystem installation. |
+| `shell`, PowerShell or CMD | Build/export only. | No automatic PowerShell profile or Windows managed installation. A CMD dashboard needs a compatible installed PowerShell. |
 | `issue` | Installs static public text; the system default is `/etc/issue`, with explicit backup/replacement. | agetty reads text, not Bash. Custom agetty options can select another file or disable issue display. |
 | `ssh-banner` | Installs static public text; the system default is `/etc/ssh/motd-ID.banner`. | OpenSSH must reference that file through `Banner`. Installing the file is not proof that it is enabled. |
 | `text` | Exports or installs generic static text to an explicit destination. | No inferred consumer, encoding conversion, authentication configuration or default system file. |
+| `batch-text` | Generates an ASCII `.cmd` notice for Windows NT CMD. | Literal notice only; no collectors, PowerShell requirement or automatic Windows login attachment. |
 
 `ID` is the value of `--name`. Static user-scope installations require an explicit
 `--destination`; generic `text` always requires one for installation. Other static
@@ -60,6 +62,21 @@ specified for later support.
 
 Official references: [agetty manual](https://manpages.debian.org/trixie/util-linux/agetty.8.en.html) · [OpenSSH Banner](https://man.openbsd.org/sshd_config#Banner).
 
+## Export on Windows, macOS or another generator host
+
+Windows builds use create-only output automatically. Other hosts can select the same path with `--create-only`:
+
+```sh
+python3 motd.py build --preset workshop --shell powershell --design cards \
+  --output ./workshop.ps1 --save-config ./workshop.toml --create-only
+python3 motd.py build --preset home-lab --shell cmd --output ./home-lab.cmd --create-only
+python3 motd.py build --preset public-console --target batch-text --output ./notice.cmd --create-only
+```
+
+Choose an existing directory you control and new destination names. The exporter refuses overwrites and `--replace`; it writes a final `.export.json` manifest containing hashes. On an ordinary failed write, it removes only files still matching the identity and bytes created by that attempt. A changed file is left for inspection. This is not managed installation, a crash-recovery journal, ACL backup or protection against hostile concurrent parent-directory replacement. A manifest's hashes identify content; they are not a signature or evidence that a login integration has been enabled.
+
+On Windows, `py -3 motd.py ...` may be the appropriate Python launcher. Run the generated `.ps1` in the intended PowerShell or the generated `.cmd` in CMD; review the machine's existing execution policy and profile arrangement. This project does not silently change them. On macOS/BSD/other Unix hosts, attach generated output only through a startup route that is actually read on that host. See the compatibility guide for tested engines and pending integrations.
+
 ## Keep noninteractive sessions quiet
 
 A terminal alone does not prove that a shell is interactive. The shell hook checks both interactive state and terminal output before displaying the dashboard, then applies the configured SSH filter. This matters for remote commands and file-transfer tools that rely on clean protocol streams.
@@ -70,7 +87,7 @@ This project does not need to modify PAM authentication behavior or disable the 
 
 ## Installing an existing output
 
-Imports must be UTF-8 text files. For a recognized project-generated shell output,
+Imports must be regular, non-hardlinked UTF-8 text files up to 2 MB. For a recognized project-generated shell output,
 inspect its metadata and recovered configuration before installing or
 reconfiguring it. Validate the recovered data; metadata is not permission to
 execute arbitrary code. Static outputs carry no configuration metadata; retain
@@ -111,6 +128,8 @@ preserves file bytes, mode, UID and GID. ACLs and extended attributes are not
 preserved.
 
 Each file replacement is atomic. A transaction involving several files is not one atomic operation; the journal records progress so interruption can be diagnosed and reversed. The configurator locks cooperating operations and checks for changed files, but cannot provide a universal compare-and-swap guarantee against a different program writing concurrently. Do not edit affected files while applying or recovering a transaction.
+
+Transaction snapshots are limited to 16 MiB per managed file, checked before changes and during reads. Path names containing newlines or terminal control characters are refused before mutation. These bounds prevent accidental unbounded backups and ambiguous terminal plans; they do not make arbitrary destinations safe to take over.
 
 The archive does not reverse external effects of user commands. A hook can change things outside the installer's ownership. Both preview modes suppress hooks for generated recipes; the explicit opaque-code execution described above has no such guarantee.
 

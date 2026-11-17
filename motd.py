@@ -4,7 +4,7 @@
 Read this file in order: CONFIGURATION -> GENERATION -> INSTALLATION PLANS ->
 TRANSACTIONS -> CLI/WIZARD. Only transaction apply functions change installed
 files. Planning, inspection and configuration parsing do not execute artifacts.
-Python 3.11+ is needed here; generated Bash files do not need Python or TOML.
+Python 3.8+ is needed here; generated files do not need Python or TOML.
 """
 from __future__ import annotations
 
@@ -28,17 +28,61 @@ import textwrap
 import time
 import unicodedata
 
-if sys.version_info < (3, 11):
-    raise SystemExit('The configurator requires Python 3.11+. Generated Bash does not.')
-import tomllib
+if sys.version_info < (3, 8):
+    raise SystemExit('The configurator requires Python 3.8+. Generated files do not.')
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    # The same TOML 1.0 contract is provided by the pinned, licensed plain-source
+    # parser at the end of this file. No package installation or network is used.
+    tomllib = None
 
-VERSION = '0.3.0'
-SHELLS = ('bash', 'zsh', 'sh', 'powershell')
-TARGETS = ('shell', 'issue', 'ssh-banner', 'text')
+VERSION = '0.4.0'
+SHELLS = ('bash', 'zsh', 'sh', 'fish', 'powershell', 'cmd')
+TARGETS = ('shell', 'issue', 'ssh-banner', 'text', 'batch-text')
 SECTION_IDS = ('system', 'resources', 'services', 'processes', 'sessions',
                'connections', 'attention', 'hints', 'io')
 PRESET_NAMES = ('workshop', 'home-lab', 'public-console')
 MAX_ARTIFACT_BYTES = 2_000_000
+DESIGNS = ('classic', 'cards', 'ledger', 'briefing', 'dashboard')
+DETAILS = ('brief', 'normal', 'full')
+DEFAULT_PRIORITY = ('attention', 'resources', 'system', 'services', 'processes',
+                    'io', 'sessions', 'connections', 'hints')
+
+# Descriptions belong to the configurator. The runtimes consume only validated
+# design IDs and data; choosing a presentation never selects another collector.
+DESIGN_DESCRIPTIONS = {
+    'classic': 'Classic frame — familiar compact sections',
+    'cards': 'Cards — separate panels and breathing room',
+    'ledger': 'Ledger — open headings and aligned facts',
+    'briefing': 'Briefing — attention and essentials first',
+    'dashboard': 'Dashboard — metric-led panels; stack when narrow',
+}
+SECTION_LABELS = {
+    'system': 'Computer and identity', 'resources': 'Memory and storage',
+    'services': 'Running services', 'processes': 'Busy programs', 'sessions': 'Signed-in users',
+    'connections': 'Network connections', 'attention': 'Warnings and notices',
+    'hints': 'Useful commands', 'io': 'Disk input/output',
+}
+SETTING_HELP = {
+    'target': 'Choose where the message appears. A greeting runs after sign-in. Public notices show text before sign-in and cannot run commands.',
+    'shell': 'Choose the interpreter on the destination computer. Bash and sh serve Unix systems; fish and Zsh use shared Unix collectors. CMD uses the PowerShell engine.',
+    'display.design': 'Design changes how the same information is arranged. Use the live preview and resize the window before accepting.',
+    'display.density': 'Compact favours information per screen. Comfortable favours separation and breathing room. Detail is a separate choice.',
+    'display.detail': 'Brief shows essential observations. Full requests more rows and explanations when space permits. Nothing forces content beyond the available screen.',
+    'display.padding': 'Horizontal blank cells inside each panel, from zero to three. Padding consumes available width.',
+    'display.section_gap': 'Preferred blank rows between sections, from zero to two. The layout may reduce spacing before dropping essential information.',
+    'display.priority': 'The first sections are protected and expanded first when space is scarce. This preference does not silently change the chosen display order.',
+    'display.width': 'Maximum output width in character cells. The live wizard preview temporarily uses the actual terminal width.',
+    'display.rows': 'Maximum output height, including space for the next shell prompt. The wizard preview uses the rows left below its ten control rows.',
+    'display.color_emphasis': 'Quiet reduces visual noise; balanced separates headings and facts; vivid uses stronger emphasis. Plain and NO_COLOR still take precedence.',
+    'display.charset': 'ASCII uses basic characters for older terminals. Unicode uses box drawing where the terminal font supports it.',
+    'display.sections': 'Selected sections appear in this order. Disabled sections are hidden; shared collectors can still supply other sections and warning checks.',
+    'services.required': 'Optional service names that matter on your computer. Leave empty if you do not know them. Missing required services are reported; the wizard never installs a service.',
+    'services.exclude': 'Optional service names or wildcard patterns to omit from the display. Leave the defaults unless you need different filtering.',
+    'audience': 'SSH selection uses SSH environment markers. Non-SSH can include a local terminal, Telnet, or a terminal inside a remote desktop.',
+    'frequency': 'Login displays once when a login shell starts. Every interactive shell also covers new terminal tabs. The managed hook suppresses duplicate display in one shell.',
+}
 
 
 class MotdError(Exception):
@@ -58,6 +102,9 @@ def preset_config(name='workshop', shell='bash'):
         'messages': [],
         'display': {'title': 'WORKSHOP STATUS', 'site': 'Workshop', 'theme': 'cyan',
                     'charset': 'auto', 'color': 'auto',
+                    'design': 'classic', 'density': 'balanced', 'detail': 'normal',
+                    'padding': 1, 'section_gap': 0, 'color_emphasis': 'balanced',
+                    'priority': list(DEFAULT_PRIORITY), 'section_detail': {},
                     'width': 132, 'rows': 25, 'top_entries': 3,
                     'sections': list(SECTION_IDS[:-1]), 'show_swap': True,
                     'show_compression': True, 'show_pressure': True},
@@ -79,7 +126,7 @@ def preset_config(name='workshop', shell='bash'):
     elif name == 'public-console':
         c.update(target='issue', public_text='Authorised access only.\nContact the system administrator.')
         c['display'].update(title='SYSTEM CONSOLE', site='', theme='mono', width=80)
-    if shell == 'powershell':
+    if shell in ('powershell', 'cmd'):
         c['hints'] = [
             {'id': 'tasks', 'label': 'Tasks', 'command': 'Get-Process', 'note': 'Local processes'},
             {'id': 'services', 'label': 'Services', 'command': 'Get-Service', 'note': 'Windows services'},
@@ -162,16 +209,25 @@ def validate_config(data):
         raise MotdError('Character set must be auto, ascii or unicode')
     if d['color'] not in ('auto', 'always', 'never'):
         raise MotdError('Colour mode must be auto, always or never')
-    for key, lo, hi in [('width', 40, 240), ('rows', 20, 60), ('top_entries', 1, 10)]:
+    for key, options in [('design', DESIGNS), ('density', ('compact', 'balanced', 'comfortable')),
+                         ('detail', DETAILS), ('color_emphasis', ('quiet', 'balanced', 'vivid'))]:
+        if d[key] not in options:
+            raise MotdError(f'display.{key} must be one of {", ".join(options)}')
+    for key, lo, hi in [('width', 40, 240), ('rows', 8, 200), ('top_entries', 1, 10),
+                        ('padding', 0, 3), ('section_gap', 0, 2)]:
         _number(d[key], lo, hi, f'display.{key}')
     _strings(d['sections'], 'display.sections', 9)
     if not d['sections'] or len(set(d['sections'])) != len(d['sections']) or set(d['sections']) - set(SECTION_IDS):
         raise MotdError('Sections must be unique supported section IDs')
-    minimum = {'system': 2, 'resources': 3, 'services': 2, 'processes': 3,
-               'sessions': 2, 'connections': 1, 'attention': 2, 'hints': 1, 'io': 2}
-    required_rows = 3 + sum(minimum[x] for x in d['sections'])
-    if d['rows'] < required_rows:
-        raise MotdError(f'These sections need at least {required_rows} rows including borders/prompt')
+    # A small viewport is legitimate. The runtime budgets complete sections and
+    # reports omissions, so a saved short layout needs no separate "concise" mode.
+    _strings(d['priority'], 'display.priority', 9)
+    if len(set(d['priority'])) != len(d['priority']) or set(d['priority']) - set(SECTION_IDS):
+        raise MotdError('Priority must contain unique supported section IDs')
+    _keys(d['section_detail'], SECTION_IDS, 'display.section_detail')
+    for section, detail in d['section_detail'].items():
+        if detail not in DETAILS:
+            raise MotdError(f'display.section_detail.{section} must be brief, normal or full')
     for key in ('show_swap', 'show_compression', 'show_pressure'):
         if type(d[key]) is not bool:
             raise MotdError(f'display.{key} must be true or false')
@@ -225,7 +281,7 @@ def validate_config(data):
 
 
 def load_config(path):
-    return validate_config(tomllib.loads(Path(path).read_text(encoding='utf-8')))
+    return validate_config(tomllib.loads(_source_text(path)))
 
 
 def dump_config(config):
@@ -233,6 +289,8 @@ def dump_config(config):
     c = validate_config(config)
     def value(v):
         if isinstance(v, bool): return 'true' if v else 'false'
+        if isinstance(v, dict):
+            return '{' + ', '.join(f'{key} = {value(item)}' for key, item in sorted(v.items())) + '}'
         return json.dumps(v, ensure_ascii=False)
     out = ['# MOTD recipe. Edit by hand or pass back to motd.py.',
            '# Hooks are explicit executable calls; hints are display-only text.']
@@ -269,6 +327,9 @@ def runtime_assignments(config):
     c = validate_config(config); d = c['display']; p = c['collection']
     values = {'TITLE': d['title'], 'SITE_LABEL': d['site'], 'THEME': d['theme'],
               'CHARSET': d['charset'], 'COLOR_MODE': d['color'],
+              'DESIGN': d['design'], 'DENSITY': d['density'], 'DETAIL': d['detail'],
+              'PADDING': d['padding'], 'SECTION_GAP': d['section_gap'],
+              'COLOR_EMPHASIS': d['color_emphasis'], 'SECTION_PRIORITY': d['priority'],
               'MAX_WIDTH': d['width'], 'COMPACT_ROWS': d['rows'],
               'TOP_N': d['top_entries'], 'IO_TOP_N': d['top_entries'],
               'SECTIONS': d['sections'], 'SHOW_SWAP': d['show_swap'],
@@ -281,7 +342,11 @@ def runtime_assignments(config):
               'IO_PROCESS_LIMIT': p['process_limit'], 'IO_SCAN_BUDGET_MS': p['io_scan_ms'],
               'MESSAGES': ['INFO|' + x for x in c['messages']],
               'HINTS': ['|'.join(h[k] for k in ('id', 'label', 'command', 'note')) for h in c['hints']]}
-    return '\n'.join(_assignment(k, v) for k, v in values.items())
+    result = '\n'.join(_assignment(k, v) for k, v in values.items())
+    result += '\ndeclare -A SECTION_DETAIL=()\n'
+    result += '\n'.join('SECTION_DETAIL[' + shlex.quote(key) + ']=' + shlex.quote(value)
+                        for key, value in sorted(d['section_detail'].items()))
+    return result
 
 
 def hook_wrapper(config):
@@ -301,11 +366,15 @@ def hook_wrapper(config):
         '    --_motd-core) motd_core=1 ;;',
         '    --_worker) motd_core=1; motd_args+=("$motd_arg") ;;',
         '    --no-hooks) motd_hooks_enabled=0 ;;',
-        '    --demo|--demo-alerts|--help|-h|--version|--list-sections|--list-items)',
+        '    --demo|--demo-alerts|--help|-h|--version|--list-sections|--list-items|--_validate-options)',
         '      motd_hooks_enabled=0; motd_args+=("$motd_arg") ;;',
         '    *) motd_args+=("$motd_arg") ;;',
         '  esac', 'done', 'set -- "${motd_args[@]}"',
         'if (( ! motd_core )); then',
+        '  # Reject invalid runtime choices before any configured command runs.',
+        '  if (( motd_hooks_enabled )); then',
+        '    /bin/bash "${BASH_SOURCE[0]}" --_motd-core --_validate-options "$@" || exit $?',
+        '  fi',
     ]
     def calls(phase):
         if not config['hooks'][phase]: return []
@@ -313,11 +382,14 @@ def hook_wrapper(config):
         for i, hook in enumerate(config['hooks'][phase], 1):
             argv = ' '.join(shlex.quote(a) for a in hook['argv'])
             sec = str(hook['timeout_seconds'])
-            result += [f'    motd_call=({argv})', '    motd_hook_rc=0',
-                       '    if command -v timeout >/dev/null 2>&1; then',
-                       f'      timeout --kill-after=0.2s {sec}s "${{motd_call[@]}}" || motd_hook_rc=$?',
-                       '    else motd_hook_rc=127; fi',
-                       f'    if (( motd_hook_rc )); then printf "%s\\n" "MOTD {phase} hook {i} failed ($motd_hook_rc)." >&2;']
+            result += [f'    motd_call=({argv})', '    motd_hook_rc=0']
+            if hook['argv'][0] == 'motd:print':
+                result += ['    printf "%s\\n" "${motd_call[@]:1}" || motd_hook_rc=$?']
+            else:
+                result += ['    if command -v timeout >/dev/null 2>&1; then',
+                           f'      timeout --kill-after=0.2s {sec}s "${{motd_call[@]}}" || motd_hook_rc=$?',
+                           '    else motd_hook_rc=127; fi']
+            result += [f'    if (( motd_hook_rc )); then printf "%s\\n" "MOTD {phase} hook {i} failed ($motd_hook_rc)." >&2;']
             if hook['on_failure'] == 'stop': result.append('      exit "$motd_hook_rc"')
             result.append('    fi')
         result += ['  fi']
@@ -340,6 +412,9 @@ def portable_runtime_assignments(config):
     settings = {
         'TITLE': d['title'], 'SITE_LABEL': d['site'], 'THEME': d['theme'],
         'CHARSET': d['charset'], 'COLOR_MODE': d['color'],
+        'DESIGN': d['design'], 'DENSITY': d['density'], 'DETAIL': d['detail'],
+        'PADDING': d['padding'], 'SECTION_GAP': d['section_gap'],
+        'COLOR_EMPHASIS': d['color_emphasis'], 'SECTION_PRIORITY': ' '.join(d['priority']),
         'MAX_WIDTH': d['width'], 'ROWS': d['rows'],
         'TOP_N': d['top_entries'],
         # A hard portable-shell cap avoids tens of thousands of shell reads.
@@ -350,6 +425,10 @@ def portable_runtime_assignments(config):
         'SECTIONS': ' '.join(d['sections']),
     }
     lines = [f'{key}={shlex.quote(str(value))}' for key, value in settings.items()]
+    lines += ['motd_section_detail() {', '    case "$1" in']
+    for section, detail in sorted(d['section_detail'].items()):
+        lines.append('        ' + section + ') printf "%s\\n" ' + shlex.quote(detail) + ' ;;')
+    lines += ['        *) printf "%s\\n" "$DETAIL" ;;', '    esac', '}']
     for name, items in [('motd_messages', c['messages']),
                         ('motd_hints', [f"{h['label']}: {h['command']} - {h['note']}" for h in c['hints']])]:
         lines.append(name + '() {')
@@ -384,11 +463,14 @@ def portable_hook_wrapper(config):
                   '    if [ "$MOTD_HOOKS_ENABLED" -ne 1 ]; then return 0; fi']
         for index, hook in enumerate(config['hooks'][phase], 1):
             argv = ' '.join(shlex.quote(argument) for argument in hook['argv'])
-            lines += ['    motd_hook_rc=0',
-                      '    if command -v timeout >/dev/null 2>&1; then',
-                      f'        timeout --kill-after=0.2s {hook["timeout_seconds"]}s {argv} || motd_hook_rc=$?',
-                      '    else motd_hook_rc=127; fi',
-                      '    if [ "$motd_hook_rc" -ne 0 ]; then',
+            lines += ['    motd_hook_rc=0']
+            if hook['argv'][0] == 'motd:print':
+                lines.append('    printf "%s\\n" ' + ' '.join(shlex.quote(a) for a in hook['argv'][1:]) + ' || motd_hook_rc=$?')
+            else:
+                lines += ['    if command -v timeout >/dev/null 2>&1; then',
+                          f'        timeout --kill-after=0.2s {hook["timeout_seconds"]}s {argv} || motd_hook_rc=$?',
+                          '    else motd_hook_rc=127; fi']
+            lines += ['    if [ "$motd_hook_rc" -ne 0 ]; then',
                       f'        printf "%s\\n" "MOTD {phase} hook {index} failed ($motd_hook_rc)." >&2']
             if hook['on_failure'] == 'stop': lines.append('        return "$motd_hook_rc"')
             lines.append('    fi')
@@ -414,10 +496,11 @@ def zsh_launcher():
             'fi\n')
 
 
-def portable_body(config):
+def portable_body(config, include_designs=True):
     if SH_TEMPLATE.count('# @MOTD_CONFIG@') != 1:
         raise MotdError('Embedded portable template has an invalid configuration marker')
-    return SH_TEMPLATE.replace('# @MOTD_CONFIG@', portable_runtime_assignments(config))
+    prefix = DESIGNS_TEMPLATE + '\n' if include_designs else ''
+    return prefix + SH_TEMPLATE.replace('# @MOTD_CONFIG@', portable_runtime_assignments(config))
 
 
 def unix_dispatch(config):
@@ -432,7 +515,7 @@ def unix_dispatch(config):
             'case "${BASH_VERSION-}:${OSTYPE-}" in\n'
             '  4.[3-9]*:linux*|[5-9].*:linux*|[1-9][0-9].*:linux*) _motd_modern=1 ;;\n'
             'esac\n'
-            'if [ "$_motd_modern" -eq 0 ]; then\n' + portable_body(config) +
+            'if [ "$_motd_modern" -eq 0 ]; then\n' + portable_body(config, include_designs=False) +
             '\n    exit $?\nfi\nunset _motd_modern\n')
 
 
@@ -474,21 +557,97 @@ def generate_powershell_body(config):
     return PS_TEMPLATE.replace('# @MOTD_CONFIG@', powershell_assignments(config))
 
 
+def fish_literal(value):
+    """Fish single quotes escape only backslash and apostrophe; shlex is wrong here."""
+    return "'" + value.replace('\\', '\\\\').replace("'", "\\'") + "'"
+
+
+def generate_fish_body(config):
+    """One delivered file, one portable collector, no temporary script or eval.
+
+    Fish has a different grammar from Bourne shells. Its thin entry point hands
+    a literal, generator-owned script to /bin/sh with argv intact. The explicit
+    size bound avoids Linux's per-argument limit; unusually large recipes can
+    use the direct .sh output without this launcher constraint.
+    """
+    payload = portable_body(config)
+    if len(payload.encode('utf-8')) > 96_000:
+        raise MotdError('This fish payload exceeds 96,000 bytes; use the direct sh output for this large recipe')
+    return ('# Fish entry point; collectors and designs are the canonical portable Unix core.\n'
+            'exec /bin/sh -c ' + fish_literal(payload) + ' motd-fish $argv\n')
+
+
+def generate_cmd_body(config, recipe):
+    """CMD launcher with the native PowerShell core retained as readable source.
+
+    The file path travels as environment data, never as interpolated PowerShell
+    syntax. cmd.exe stops before the payload. PowerShell reads that exact file
+    and executes only the fixed post-marker script. This is not a second Windows
+    collector. A compatible installed PowerShell is an explicit requirement.
+    """
+    command = (
+        "$s=[IO.File]::ReadAllText($env:MOTD_CMD_FILE); "
+        "$m=[char]10+'# MOTD-POWERSHELL-BEGIN'+[char]10; "
+        "$s=$s.Replace([string][char]13,''); $i=$s.IndexOf($m); "
+        "if($i -lt 0){throw 'MOTD payload marker missing'}; "
+        "if(-not ([ScriptBlock].GetMethods() | Where-Object {$_.Name -eq 'Create'}))"
+        "{throw 'The CMD adapter requires PowerShell 2 or later; use the ps1 output directly on older engines'}; "
+        "$b=$s.Substring($i+$m.Length); & ([ScriptBlock]::Create($b))"
+    )
+    return ('setlocal EnableExtensions DisableDelayedExpansion\n'
+            'set "MOTD_CMD_FILE=%~f0"\n'
+            'set "MOTD_PS=pwsh.exe"\n'
+            'if exist "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" '
+            'set "MOTD_PS=%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"\n'
+            '"%MOTD_PS%" -NoLogo -NoProfile -Command "' + command + '" %*\n'
+            'exit /b %ERRORLEVEL%\n'
+            '# MOTD-POWERSHELL-BEGIN\n# MOTD-CONFIG-BASE64: ' + recipe + '\n' + generate_powershell_body(config))
+
+
+def batch_notice(text, columns):
+    """Plain ASCII CMD notice, with no PowerShell, collectors or external calls.
+
+    Percent signs are doubled for batch parsing, delayed expansion is disabled,
+    and command metacharacters are escaped. Wrapping keeps every command well
+    below cmd.exe's line limit. COMMAND.COM and arbitrary code pages are not
+    inferred from this NT-family batch target.
+    """
+    if not text.isascii():
+        raise MotdError('Native batch text requires ASCII; choose text or PowerShell for Unicode')
+    rows = ['@echo off', 'setlocal EnableExtensions DisableDelayedExpansion']
+    for line in text.splitlines():
+        for piece in textwrap.wrap(line, columns, replace_whitespace=False, drop_whitespace=False) or ['']:
+            piece = piece.replace('^', '^^').replace('%', '%%')
+            for char in '&|<>()"': piece = piece.replace(char, '^' + char)
+            rows.append('echo(' + piece)
+    return '\n'.join(rows + ['endlocal', 'exit /b 0', ''])
+
+
 def artifact_suffix(config):
-    return {"bash": ".bash", "zsh": ".zsh", "sh": ".sh", "powershell": ".ps1"}[config["shell"]] if config["target"] == "shell" else ".txt"
+    if config['target'] == 'batch-text': return '.cmd'
+    return {"bash": ".bash", "zsh": ".zsh", "sh": ".sh", "fish": ".fish",
+            "powershell": ".ps1", "cmd": ".cmd"}[config["shell"]] if config["target"] == "shell" else ".txt"
 
 
 def generate_artifact(config):
     c = validate_config(config)
     if c['target'] != 'shell':
         text = c['display']['title'] + '\n\n' + c['public_text'].strip() + '\n'
+        if c['target'] == 'batch-text': return batch_notice(text, c['display']['width'])
         # agetty interprets backslash escapes. Public user text is literal.
         return text.replace('\\', '\\\\') if c['target'] == 'issue' else text
     recipe = base64.b64encode(dump_config(c).encode()).decode()
-    body = f'# MOTD-CONFIG-BASE64: {recipe}\n'
+    comment = 'rem #' if c['shell'] == 'cmd' else '#'
+    body = '' if c['shell'] == 'cmd' else f'{comment} MOTD-CONFIG-BASE64: {recipe}\n'
     if c['shell'] == 'powershell':
         body += generate_powershell_body(c)
         header = '# Native PowerShell output; invoke with & ./message.ps1\n'
+    elif c['shell'] == 'cmd':
+        body += generate_cmd_body(c, recipe)
+        header = '@echo off\n'
+    elif c['shell'] == 'fish':
+        body += generate_fish_body(c)
+        header = '#!/usr/bin/env fish\n'
     elif c['shell'] == 'sh':
         body += portable_body(c)
         header = '#!/bin/sh\n'
@@ -496,24 +655,24 @@ def generate_artifact(config):
         if BASH_TEMPLATE.count('# @MOTD_CONFIG@') != 1 or BASH_TEMPLATE.count('# @MOTD_HOOKS@') != 1:
             raise MotdError('Embedded Bash template has invalid configuration/hook markers')
         if c['shell'] == 'zsh': body += zsh_launcher()
-        body += unix_dispatch(c)
+        body += DESIGNS_TEMPLATE + '\n' + unix_dispatch(c)
         # The canonical minimum-version guard runs before any configured call.
         body += BASH_TEMPLATE.replace('# @MOTD_CONFIG@', runtime_assignments(c)).replace('# @MOTD_HOOKS@', hook_wrapper(c))
         header = '#!/usr/bin/env ' + c['shell'] + '\n'
     digest = hashlib.sha256(body.encode()).hexdigest()
-    return (header + f'# Generated by MOTD {VERSION}; standalone {c["shell"]} output.\n'
-            f'# MOTD-BODY-SHA256: {digest}\n'
-            '# MOTD-BODY-BEGIN\n' + body)
+    return (header + f'{comment} Generated by MOTD {VERSION}; standalone {c["shell"]} output.\n'
+            f'{comment} MOTD-BODY-SHA256: {digest}\n'
+            f'{comment} MOTD-BODY-BEGIN\n' + body)
 
 
 def extract_config(artifact):
     """Read data only. The digest detects changes; it is not authentication."""
     if len(artifact.encode()) > MAX_ARTIFACT_BYTES:
         raise MotdError('Artifact is too large')
-    matches = list(re.finditer(r'^# MOTD-CONFIG-BASE64: ([A-Za-z0-9+/=]+)$', artifact, re.M))
+    matches = list(re.finditer(r'^(?:rem )?# MOTD-CONFIG-BASE64: ([A-Za-z0-9+/=]+)$', artifact, re.M))
     match = matches[0] if len(matches) == 1 else None
-    digest = re.search(r'^# MOTD-BODY-SHA256: ([0-9a-f]{64})$', artifact, re.M)
-    marker = '# MOTD-BODY-BEGIN\n'
+    digest = re.search(r'^(?:rem )?# MOTD-BODY-SHA256: ([0-9a-f]{64})$', artifact, re.M)
+    marker = ('rem ' if artifact.startswith('@echo off\n') else '') + '# MOTD-BODY-BEGIN\n'
     if not match or not digest or artifact.count(marker) != 1:
         raise MotdError('No recoverable MOTD recipe; supply a TOML recipe or import the bytes explicitly')
     body = artifact.split(marker, 1)[1]
@@ -530,10 +689,16 @@ def extract_config(artifact):
 # ====================== 3. INSTALLATION PLANS (READ ONLY) =====================
 
 def absolute(path):
-    return os.path.abspath(os.path.expanduser(str(path)))
+    text = str(path)
+    if any(ord(ch) < 32 or 0x7f <= ord(ch) < 0xa0 for ch in text):
+        raise MotdError('File paths cannot contain terminal controls or newlines')
+    return os.path.abspath(os.path.expanduser(text))
 
 
 def default_state(scope='user'):
+    if os.name == 'nt':
+        base = os.environ.get('LOCALAPPDATA') or str(Path.home() / 'AppData' / 'Local')
+        return absolute(Path(base) / 'MOTD')
     if scope == 'system':
         return '/var/lib/motd-wizard'
     base = os.environ.get('XDG_STATE_HOME') or str(Path.home() / '.local/state')
@@ -552,10 +717,37 @@ def _file_text(path):
 
 
 def _source_text(path):
-    state, text = _file_text(path)
-    if not state['exists']:
+    """Read-only, bounded import on every configurator host; never execute it.
+
+    Input inspection does not need the installer backend. Check the opened file
+    identity and type, cap the read before allocation, and reject a replacement
+    during reading. Installation still performs its stronger pinned-parent checks.
+    """
+    path = absolute(path)
+    try: initial = os.lstat(path)
+    except FileNotFoundError:
         raise MotdError(f'Input artifact does not exist: {path}')
-    return text
+    if not stat.S_ISREG(initial.st_mode) or initial.st_nlink != 1:
+        raise MotdError('Input artifact must be an ordinary, non-hardlinked file')
+    if initial.st_size > MAX_ARTIFACT_BYTES:
+        raise MotdError('Artifact exceeds 2 MB')
+    flags = os.O_RDONLY | getattr(os, 'O_NOFOLLOW', 0) | getattr(os, 'O_BINARY', 0)
+    fd = os.open(path, flags)
+    with os.fdopen(fd, 'rb') as stream:
+        opened = os.fstat(stream.fileno())
+        if not stat.S_ISREG(opened.st_mode) or opened.st_nlink != 1 or (initial.st_dev, initial.st_ino) != (opened.st_dev, opened.st_ino):
+            raise MotdError('Input artifact changed while opening it')
+        data = stream.read(MAX_ARTIFACT_BYTES + 1)
+        final = os.fstat(stream.fileno())
+    named = os.lstat(path)
+    keys = ('st_dev', 'st_ino', 'st_size', 'st_mtime_ns', 'st_ctime_ns')
+    if any(getattr(opened, key) != getattr(final, key) for key in keys) or (named.st_dev, named.st_ino) != (final.st_dev, final.st_ino):
+        raise MotdError('Input artifact changed while reading it')
+    if len(data) > MAX_ARTIFACT_BYTES:
+        raise MotdError('Artifact exceeds 2 MB')
+    try: return data.decode('utf-8')
+    except UnicodeDecodeError as exc:
+        raise MotdError(f'Expected a UTF-8 artifact: {path}') from exc
 
 
 def _trusted_system_path(path):
@@ -599,12 +791,28 @@ def shell_block(config, artifact_path):
     c = validate_config(config)
     kind = c.get('shell', 'bash')
     marker = '_MOTD_SEEN_' + c['name'].replace('-', '_')
+    if kind == 'fish':
+        tests = ['status --is-interactive', 'test -t 1', 'not test -e "$HOME/.hushlogin"']
+        if c['frequency'] == 'login': tests.append('status --is-login')
+        if c['audience'] == 'ssh':
+            tests.append('begin; test -n "$SSH_CONNECTION"; or test -n "$SSH_TTY"; end')
+        elif c['audience'] == 'local':
+            tests.extend(['test -z "$SSH_CONNECTION"', 'test -z "$SSH_TTY"'])
+        return '\n'.join([
+            f'# >>> motd {c["name"]} >>>',
+            '# Managed by motd.py; terminal-only fish greeting, once per process.',
+            'if ' + '; and '.join(tests),
+            f'    if not set -q {marker}; or test "${marker}" != "$fish_pid"',
+            f'        set -g {marker} $fish_pid',
+            '        fish ' + fish_literal(artifact_path) + '; or true',
+            '    end', 'end', f'# <<< motd {c["name"]} <<<',
+        ]) + '\n'
     tests = ['[ -t 1 ]', '[ ! -e "$HOME/.hushlogin" ]']
     if kind == 'bash': tests.insert(0, '[ -n "${BASH_VERSION-}" ]')
     elif kind == 'zsh':
         tests.insert(0, ('{ [ -n "${ZSH_VERSION-}" ] || case "${VERSION-}" in '
                          "'zsh v2.'*) true ;; *) false ;; esac; }"))
-    elif kind != 'sh': raise MotdError('This helper supports Bash, Zsh and POSIX sh startup files')
+    elif kind != 'sh': raise MotdError('This helper supports Bash, Zsh, fish and POSIX sh startup files')
     if c['audience'] == 'ssh': tests.append('[ -n "${SSH_CONNECTION-}${SSH_TTY-}" ]')
     if c['audience'] == 'local': tests.append('[ -z "${SSH_CONNECTION-}${SSH_TTY-}" ]')
     frequency = ':'
@@ -662,8 +870,8 @@ def installation_plan(config, artifact, *, scope='user', destination=None,
         raise MotdError('Installation currently supports Linux; build/export is separate')
     c = validate_config(config); name = c['name']; target = c['target']
     kind = c['shell']
-    if target == 'shell' and kind == 'powershell':
-        raise MotdError('Native PowerShell output can be built and previewed; profile installation is not implemented. Export the .ps1 and attach it explicitly in the intended $PROFILE.')
+    if target == 'shell' and kind in ('powershell', 'cmd'):
+        raise MotdError('Windows output can be built and previewed; automatic profile/CMD startup installation is not implemented. Export it and attach it explicitly in the intended host.')
     if scope == 'system' and os.geteuid() != 0:
         raise MotdError('System installation/planning requires root; export first and run the reviewed installer as root')
     state_dir = absolute(state_dir or default_state(scope))
@@ -676,7 +884,7 @@ def installation_plan(config, artifact, *, scope='user', destination=None,
         output = absolute(destination)
     elif target == 'shell':
         output = f'/usr/local/bin/motd-{name}' if scope == 'system' else str(Path.home() / (f'.motd-{name}' + artifact_suffix(c)))
-    elif target == 'text':
+    elif target in ('text', 'batch-text'):
         raise MotdError('Generic text needs an explicit --destination; consumer paths and formatting are not guessed')
     elif scope != 'system':
         raise MotdError('Static user installs require --destination; use --scope system for system paths')
@@ -704,8 +912,8 @@ def installation_plan(config, artifact, *, scope='user', destination=None,
         if shell_file:
             hook_paths = [absolute(shell_file)]
         elif scope == 'system':
-            if kind == 'zsh':
-                raise MotdError('System Zsh startup paths vary; choose an explicit --shell-file')
+            if kind in ('zsh', 'fish'):
+                raise MotdError('System Zsh/fish startup paths vary; choose an explicit --shell-file')
             if c['frequency'] == 'interactive':
                 raise MotdError('System non-login startup needs an explicit --shell-file')
             hook_paths = [f'/etc/profile.d/70-motd-{name}.sh']
@@ -714,6 +922,11 @@ def installation_plan(config, artifact, *, scope='user', destination=None,
             if not zdotdir or not Path(zdotdir).is_absolute():
                 raise MotdError('ZDOTDIR must be an absolute existing directory, or unset')
             hook_paths = [str(Path(zdotdir) / '.zshrc'), str(Path(zdotdir) / '.zprofile')]
+        elif kind == 'fish':
+            base = os.environ.get('XDG_CONFIG_HOME') or str(Path.home() / '.config')
+            if not Path(base).is_absolute():
+                raise MotdError('XDG_CONFIG_HOME must be absolute for fish installation')
+            hook_paths = [str(Path(base) / 'fish' / 'config.fish')]
         elif kind == 'sh':
             if c['frequency'] == 'interactive':
                 raise MotdError('POSIX sh interactive startup needs an explicit --shell-file; ENV is not changed automatically')
@@ -874,7 +1087,7 @@ def apply_reviewed(plan, yes=False):
 
 
 # ====================== 4. TRANSACTIONS (DISK WRITES) ======================
-# Transaction support: standard-library Python 3.11+, POSIX only.
+# Transaction support: standard-library Python 3.8+, managed Linux installation.
 # Target parents must already exist. The state tree may be created privately.
 # File replacement is atomic; a transaction spanning several files is not.
 import base64 as _tx_base64
@@ -891,6 +1104,7 @@ import stat as _tx_stat
 import uuid as _tx_uuid
 
 _TX_FORMAT = "motd-transactions-v1"
+_TX_MAX_FILE_BYTES = 16 * 1024 * 1024  # A MOTD/profile is not an unbounded backup input.
 _TX_PENDING = {"staging", "applying", "compensating", "needs_recovery", "recovering"}
 _TX_DANGEROUS_STATE = {
     "/", "/etc", "/usr", "/usr/local", "/var", "/var/lib", "/var/cache",
@@ -942,6 +1156,8 @@ def _tx_path(path, *, state=False):
         raise TxError("unsupported_platform", "Journalled file operations require Linux/POSIX; generate on a supported host or use build --output -")
     if not isinstance(path, str) or not path or "\x00" in path or not path.startswith("/"):
         raise TxError("invalid_path", "Paths must be nonempty absolute paths without NUL bytes.")
+    if any(ord(ch) < 32 or 0x7f <= ord(ch) < 0xa0 for ch in path):
+        raise TxError("invalid_path", "File paths cannot contain terminal controls or newlines.")
     if any(part in (".", "..") for part in path.split("/")):
         raise TxError("invalid_path", "Dot and traversal components are not accepted: " + path)
     path = _tx_os.path.normpath(path)
@@ -993,6 +1209,8 @@ def _tx_read_at(parent_fd, name, path):
         return {"exists": False}, None
     if not _tx_stat.S_ISREG(initial.st_mode) or initial.st_nlink != 1:
         raise TxError("unsafe_target", "Expected one ordinary, non-hardlinked file: " + path)
+    if initial.st_size > _TX_MAX_FILE_BYTES:
+        raise TxError("target_too_large", "Managed files are limited to 16 MiB; choose another destination: " + path)
     try:
         fd = _tx_os.open(name, _tx_os.O_RDONLY | _tx_os.O_NOFOLLOW | _tx_os.O_NONBLOCK,
                          dir_fd=parent_fd)
@@ -1003,11 +1221,14 @@ def _tx_read_at(parent_fd, name, path):
         start = _tx_os.fstat(fd)
         if not _tx_stat.S_ISREG(start.st_mode) or start.st_nlink != 1:
             raise TxError("unsafe_target", "Target changed type while reading: " + path)
-        chunks = []
+        chunks = []; total = 0
         while True:
-            chunk = _tx_os.read(fd, 1024 * 1024)
+            chunk = _tx_os.read(fd, min(1024 * 1024, _TX_MAX_FILE_BYTES - total + 1))
             if not chunk:
                 break
+            total += len(chunk)
+            if total > _TX_MAX_FILE_BYTES:
+                raise TxError("target_too_large", "Managed file grew beyond the 16 MiB limit: " + path)
             chunks.append(chunk)
         data = b"".join(chunks)
         end = _tx_os.fstat(fd)
@@ -1791,6 +2012,27 @@ def tx_repair(state_dir, transaction_id):
 
 # ============================= 5. CLI AND WIZARD =============================
 
+def apply_display_options(config, args, *, imported=False):
+    """Apply CLI choices to recipe data only; imported code retains exact bytes."""
+    fields = ('design', 'density', 'detail', 'padding', 'section_gap', 'color_emphasis',
+              'width', 'rows', 'charset', 'color')
+    present = any(getattr(args, key, None) is not None for key in fields + ('sections', 'priority', 'section_detail'))
+    if imported and present:
+        raise MotdError('Recover the recipe and rebuild to change an imported output design or layout')
+    display = config['display']
+    for key in fields:
+        value = getattr(args, key, None)
+        if value is not None: display[key] = value
+    for key in ('sections', 'priority'):
+        value = getattr(args, key, None)
+        if value is not None: display[key] = [item.strip() for item in value.split(',') if item.strip()]
+    for item in getattr(args, 'section_detail', None) or []:
+        if '=' not in item:
+            raise MotdError('--section-detail needs SECTION=brief|normal|full')
+        section, detail = item.split('=', 1)
+        display['section_detail'][section] = detail
+
+
 def resolve_input(args):
     """Return configuration plus bytes. Importing does not execute those bytes."""
     imported = bool(getattr(args, 'artifact', None))
@@ -1805,6 +2047,8 @@ def resolve_input(args):
             config = preset_config('workshop')
             if not getattr(args, 'target', None):
                 raise MotdError('Unrecognized artifact: choose --target explicitly; inspection never guesses execution type')
+            if args.target == 'shell' and not getattr(args, 'shell', None):
+                raise MotdError('Unrecognized executable: choose --shell explicitly; its interpreter cannot be inferred safely')
         if getattr(args, 'target', None) and args.target != config['target']:
             if '# MOTD-BODY-BEGIN' in artifact:
                 raise MotdError('Recover the recipe and rebuild to change the type of a generated artifact')
@@ -1819,6 +2063,7 @@ def resolve_input(args):
         if getattr(args, key, None) is not None:
             if key == 'shell': select_shell(config, args.shell)
             else: config[key] = getattr(args, key)
+    apply_display_options(config, args, imported=imported)
     config = validate_config(config)
     if imported and config['target'] == 'shell' and args.command in ('install', 'upgrade', 'reconfigure'):
         if not args.trust_artifact:
@@ -1826,7 +2071,138 @@ def resolve_input(args):
     return config, artifact if artifact is not None else generate_artifact(config)
 
 
-def export_files(config, artifact, output, recipe_path=None, *, state_dir=None, replace=False, opaque_artifact=False):
+def _export_regular(stat_result):
+    return (stat.S_ISREG(stat_result.st_mode) and stat_result.st_nlink == 1
+            and not (getattr(stat_result, 'st_file_attributes', 0) & 0x400))
+
+
+def _export_identity(stat_result):
+    # A filesystem without usable IDs cannot support conservative compensation.
+    if not stat_result.st_ino:
+        raise MotdError('Create-only export needs stable file identities on this filesystem')
+    return stat_result.st_dev, stat_result.st_ino
+
+
+def _export_parent_state(path):
+    state = []
+    for parent in reversed(Path(path).parents):
+        info = parent.lstat()
+        if (not stat.S_ISDIR(info.st_mode) or stat.S_ISLNK(info.st_mode)
+                or getattr(info, 'st_file_attributes', 0) & 0x400):
+            raise MotdError('Export parent is not an ordinary directory: ' + str(parent))
+        state.append((str(parent), _export_identity(info)))
+    return tuple(state)
+
+
+def _export_matches_created(record):
+    path = Path(record['path'])
+    try:
+        if _export_parent_state(path) != record['parents']:
+            return False
+        before = path.lstat()
+        if not _export_regular(before) or _export_identity(before) != record['identity']:
+            return False
+        flags = os.O_RDONLY | getattr(os, 'O_BINARY', 0) | getattr(os, 'O_NOFOLLOW', 0)
+        fd = os.open(str(path), flags)
+        try:
+            opened = os.fstat(fd)
+            if not _export_regular(opened) or _export_identity(opened) != record['identity']:
+                return False
+            digest = hashlib.sha256(); size = 0
+            while True:
+                block = os.read(fd, 65536)
+                if not block: break
+                size += len(block)
+                if size > record['bytes']: return False
+                digest.update(block)
+            after = os.fstat(fd)
+            named = path.lstat()
+            return (_export_regular(after) and _export_regular(named)
+                    and _export_identity(named) == record['identity']
+                    and _export_identity(after) == record['identity']
+                    and after.st_size == record['bytes'] and size == record['bytes']
+                    and digest.hexdigest() == record['sha256'])
+        finally:
+            os.close(fd)
+    except (OSError, MotdError):
+        return False
+
+
+def portable_export_new_files(files, manifest_path, metadata=None):
+    """Create new UTF-8 files and a hash manifest; never overwrite existing paths.
+
+    No permission/ACL restoration, install ownership, rollback journal, crash
+    recovery or hostile-directory race guarantee is provided. On an ordinary
+    error remove only newly created files that still have their captured identity
+    and exact bytes. Otherwise preserve them and report their paths.
+    """
+    prepared = []; seen = set()
+    for item in files:
+        path = absolute(item['path'])
+        key = os.path.normcase(path)
+        if key in seen: raise MotdError('Duplicate export destination: ' + path)
+        seen.add(key)
+        data = item['content'].encode('utf-8') if isinstance(item['content'], str) else bytes(item['content'])
+        prepared.append({'path': path, 'data': data})
+    manifest_path = absolute(manifest_path)
+    if os.path.normcase(manifest_path) in seen:
+        raise MotdError('Manifest must have a separate export destination')
+    manifest = {'format': 'motd-create-only-export-v1',
+                'created_at_utc': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
+                'metadata': metadata or {},
+                'files': [{'path': item['path'], 'sha256': hashlib.sha256(item['data']).hexdigest(),
+                           'bytes': len(item['data'])} for item in prepared],
+                'boundary': 'Create-only export. No installation or rollback journal; preserve these files yourself.'}
+    prepared.append({'path': manifest_path,
+                     'data': (json.dumps(manifest, ensure_ascii=False, indent=2, allow_nan=False) + '\n').encode('utf-8')})
+    for item in prepared:
+        item['parents'] = _export_parent_state(item['path'])
+        if os.path.lexists(item['path']):
+            raise MotdError('Create-only export refuses an existing destination: ' + item['path'])
+    created = []
+    try:
+        for item in prepared:
+            if _export_parent_state(item['path']) != item['parents']:
+                raise MotdError('Export parent changed before creation: ' + item['path'])
+            flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, 'O_BINARY', 0) | getattr(os, 'O_NOFOLLOW', 0)
+            fd = os.open(item['path'], flags, 0o600)
+            record = {'path': item['path'], 'identity': None,
+                      'parents': item['parents'], 'bytes': 0,
+                      'sha256': hashlib.sha256(b'').hexdigest()}
+            created.append(record)
+            try:
+                info = os.fstat(fd)
+                if not _export_regular(info): raise MotdError('New export is not an ordinary file')
+                record['identity'] = _export_identity(info)
+                offset = 0; digest = hashlib.sha256()
+                while offset < len(item['data']):
+                    written = os.write(fd, item['data'][offset:])
+                    if not written: raise OSError('Export write made no progress')
+                    digest.update(item['data'][offset:offset + written])
+                    offset += written
+                    record['bytes'] = offset
+                    record['sha256'] = digest.hexdigest()
+                os.fsync(fd)
+            finally:
+                os.close(fd)
+            if not _export_matches_created(record):
+                raise MotdError('New export changed during creation: ' + item['path'])
+    except BaseException as exc:
+        preserved = []
+        for record in reversed(created):
+            if _export_matches_created(record):
+                try: os.unlink(record['path'])
+                except OSError: preserved.append(record['path'])
+            else:
+                preserved.append(record['path'])
+        if preserved:
+            raise MotdError('Export did not complete; preserved changed or inaccessible new files: '
+                            + ', '.join(preserved)) from exc
+        raise
+    return {'status': 'exported', 'manifest': manifest_path, 'files': manifest['files']}
+
+
+def export_files(config, artifact, output, recipe_path=None, *, state_dir=None, replace=False, opaque_artifact=False, create_only=False):
     if opaque_artifact and recipe_path:
         raise MotdError('An opaque output has no reconstructable recipe; retain the exact archived output')
     changes = []
@@ -1837,11 +2213,23 @@ def export_files(config, artifact, output, recipe_path=None, *, state_dir=None, 
                         'mode': 0o755 if config['target'] == 'shell' else 0o644})
     if recipe_path:
         changes.append({'path': absolute(recipe_path), 'content': dump_config(config), 'mode': 0o600})
+    if not changes: return None
+    if create_only or os.name == 'nt':
+        if replace:
+            raise MotdError('Create-only export cannot replace files; choose new output names')
+        manifest_path = changes[0]['path'] + '.export.json'
+        result = portable_export_new_files(changes, manifest_path,
+                 {'operation': 'export', 'name': config['name'], 'generator_version': VERSION,
+                  'artifact_origin': 'opaque-import' if opaque_artifact else 'recipe'})
+        stream = sys.stderr if output == '-' else sys.stdout
+        for item in result['files']: print('Exported:', item['path'], file=stream)
+        print('Export manifest:', result['manifest'], file=stream)
+        print('Created new files only; no installation or rollback journal was changed.', file=stream)
+        return result
     for change in changes:
         old, _ = _file_text(change['path'])
         if old['exists'] and old['sha256'] != hashlib.sha256(change['content'].encode()).hexdigest() and not replace:
             raise MotdError(f'Output exists: {change["path"]}; choose another path or --replace (with backup)')
-    if not changes: return None
     metadata = {'operation': 'build', 'name': config['name'],
                 'artifact_text': artifact, 'artifact_suffix': artifact_suffix(config),
                 'artifact_origin': 'opaque-import' if opaque_artifact else 'recipe'}
@@ -1856,7 +2244,8 @@ def export_files(config, artifact, output, recipe_path=None, *, state_dir=None, 
 
 def preview(config, artifact, *, live=False, imported=False, trust=False):
     if config['target'] != 'shell':
-        print(artifact, end='')
+        print(config['display']['title'] + '\n\n' + config['public_text'].strip() + '\n'
+              if config['target'] == 'batch-text' and not imported else artifact, end='')
         return 0
     if imported:
         try:
@@ -1874,11 +2263,19 @@ def preview(config, artifact, *, live=False, imported=False, trust=False):
         script = Path(folder) / ('preview' + artifact_suffix(config)); script.write_text(artifact, encoding='utf-8')
         cmd = preview_command(config, script, live=live, no_hooks=not imported)
         budget = 8 + sum(h['timeout_seconds'] + 0.3 for phase in config['hooks'].values() for h in phase)
-        return subprocess.run(cmd, check=False, timeout=budget).returncode
+        return subprocess.run(cmd, check=False, timeout=budget,
+                              env=preview_environment(config, script)).returncode
 
 
 def save_recipe(config, path, state_dir, replace=False):
     path = absolute(path)
+    if os.name == 'nt':
+        if replace: raise MotdError('Windows recipe export creates new files only; choose another name')
+        result = portable_export_new_files([{'path': path, 'content': dump_config(config)}],
+                                          path + '.export.json', {'operation': 'save-config', 'name': config['name']})
+        print('Saved recipe:', path)
+        print('Export manifest:', result['manifest'])
+        return result
     existing, _ = _file_text(path)
     if existing['exists'] and not replace:
         raise MotdError('Recipe output exists; choose another path or --replace')
@@ -1915,23 +2312,37 @@ def preview_command(config, path, *, live=False, no_hooks=True, width=None, rows
     executable = (shutil.which('pwsh') or shutil.which('powershell')) if kind == 'powershell' else shutil.which(kind)
     if not executable:
         raise MotdError(f'{kind} is unavailable on this computer; build here and preview on a compatible host')
-    if kind == 'powershell':
-        command = [executable, '-NoLogo', '-NoProfile', '-File', str(path)]
+    if kind in ('powershell', 'cmd'):
+        command = ([] if kind == 'cmd' else
+                   [executable, '-NoLogo', '-NoProfile', '-File', str(path)])
         if not live: command.append('-Demo')
         if no_hooks: command.append('-NoHooks')
         if width: command += ['-Width', str(width)]
         if rows is not None: command += ['-Rows', str(rows)]
         if color and not live and 'NO_COLOR' not in os.environ: command.append('-Color')
         if color is False or 'NO_COLOR' in os.environ: command.append('-Plain')
+        if kind == 'cmd':
+            if width is not None: _number(width, 40, 240, 'preview width')
+            if rows is not None: _number(rows, 8, 200, 'preview rows')
+            # Windows CreateProcess needs cmd's own quoting, not shlex or a second
+            # list2cmdline pass. The pathname is expanded once from environment
+            # data, so literal %, &, ^ and ! in filenames cannot become commands.
+            return '"' + executable + '" /d /v:off /s /c ""%MOTD_PREVIEW_FILE%" ' + ' '.join(command) + '"'
     else:
         command = [executable, str(path)]
         if not live: command.append('--demo')
-        if no_hooks and (kind == 'sh' or any(config['hooks'].values())): command.append('--no-hooks')
+        if no_hooks and (kind in ('sh', 'fish') or any(config['hooks'].values())): command.append('--no-hooks')
         if width: command += ['--width', str(width)]
         if rows is not None: command += ['--rows', str(rows)]
         if color is False: command.append('--plain')
         elif color: command.append('--color')
     return command
+
+
+def preview_environment(config, path):
+    environment = os.environ.copy()
+    if config['shell'] == 'cmd': environment['MOTD_PREVIEW_FILE'] = str(path)
+    return environment
 
 
 def demo_text(config, width=None, *, rows=None, color=False):
@@ -1951,7 +2362,7 @@ def demo_text(config, width=None, *, rows=None, color=False):
         path.write_text(artifact, encoding='utf-8')
         command = preview_command(c, path, width=width, rows=rows, color=color)
         result = subprocess.run(command, capture_output=True, text=True, timeout=8,
-                                encoding='utf-8', errors='replace')
+                                encoding='utf-8', errors='replace', env=preview_environment(c, path))
     if result.returncode:
         raise MotdError('Preview failed: ' + (result.stderr.strip() or str(result.returncode))[:500])
     return result.stdout
@@ -2002,6 +2413,8 @@ def hook_preview_lines(config, phase):
         lines.append(f'{phase.upper()} {index} | {argv[0]} [sample]')
         if 'preview_text' in hook:
             lines.extend(hook['preview_text'].splitlines() or ['(empty sample)'])
+        elif name == 'motd:print':
+            lines.extend(argv[1:] or [''])
         elif name == 'fastfetch':
             lines.extend(['     /\\     demo@workshop', '    /  \\    OS: Example Linux x86_64',
                           '   /____\\   Host: Workshop PC', '            CPU: Example 8-core CPU',
@@ -2040,6 +2453,37 @@ class WizardUI:
         self._prompt = ''
         self._input_scrolled = False
         self._used_screen = False
+        self._last_frame = []
+        self._last_geometry = None
+        self._selection_input = False
+        self._windows_console_checked = False
+        self._windows_output_mode = None
+        self._context_help = ''
+
+    def _windows_console(self):
+        """Enable VT output only when the real Windows console supports it.
+
+        The original output mode is restored on exit. Unsupported old console
+        hosts keep the ordinary line interface; no escape-code soup is printed.
+        """
+        if self._windows_console_checked: return self._windows_output_mode is not None
+        self._windows_console_checked = True
+        try:
+            import ctypes
+            from ctypes import wintypes
+            kernel = ctypes.windll.kernel32
+            kernel.GetStdHandle.restype = wintypes.HANDLE
+            kernel.GetStdHandle.argtypes = [wintypes.DWORD]
+            kernel.GetConsoleMode.argtypes = [wintypes.HANDLE, ctypes.POINTER(wintypes.DWORD)]
+            kernel.SetConsoleMode.argtypes = [wintypes.HANDLE, wintypes.DWORD]
+            handle = kernel.GetStdHandle(wintypes.DWORD(-11))
+            mode = wintypes.DWORD()
+            if not kernel.GetConsoleMode(handle, ctypes.byref(mode)): return False
+            if not kernel.SetConsoleMode(handle, mode.value | 0x0004): return False
+            self._windows_output_mode = (kernel, handle, mode.value)
+            return True
+        except (AttributeError, OSError, ValueError):
+            return False
 
     @property
     def screen(self):
@@ -2047,6 +2491,7 @@ class WizardUI:
         if not (sys.stdin.isatty() and sys.stdout.isatty()): return False
         size = terminal_size()
         if size.columns < 40 or size.lines < self.CONTROL_ROWS + 8: return False
+        if os.name == 'nt': return self._windows_console()
         term = os.environ.get('TERM', '')
         supported = term.startswith(('xterm', 'screen', 'tmux', 'linux', 'vt', 'ansi', 'rxvt', 'alacritty', 'foot', 'wezterm', 'kitty'))
         return self.mode == 'screen' or supported
@@ -2126,6 +2571,7 @@ class WizardUI:
             # restore the normal frame when enlarged, and never discard input.
             output = terminal_line('Resize to at least 40x18; Enter keeps working.', max(1, size.columns), color=False)
             sys.stdout.write('\x1b[2J\x1b[H' + output)
+            self._last_frame = []; self._last_geometry = None
             sys.stdout.flush(); return
         self._used_screen = True
         before_cursor = self._prompt + self._answer[:self._cursor]
@@ -2144,14 +2590,24 @@ class WizardUI:
                            prompt=prompt, answer=visible_answer)
         # No newline after the final row: even a full-height preview cannot scroll
         # the control panel offscreen. Cursor positioning ends pending autowrap.
-        sys.stdout.write('\x1b[2J\x1b[H' + '\r\n'.join(frame))
-        sys.stdout.write(f'\x1b[{self.PROMPT_ROW};{min(size.columns, max(1, cells + 1))}H')
+        # One buffered write updates only changed rows. Ordinary choices do not
+        # repeatedly clear the screen or paint a blank frame between previews.
+        chunks = ['\x1b[?25l']
+        if self._last_geometry != size or not self._last_frame:
+            chunks.append('\x1b[2J')
+        for row, line in enumerate(frame, 1):
+            if self._last_geometry != size or row > len(self._last_frame) or self._last_frame[row - 1] != line:
+                chunks.extend([f'\x1b[{row};1H', line, '\x1b[K'])
+        chunks.append(f'\x1b[{self.PROMPT_ROW};{min(size.columns, max(1, cells + 1))}H\x1b[?25h')
+        sys.stdout.write(''.join(chunks))
+        self._last_frame = frame; self._last_geometry = size
         sys.stdout.flush()
 
-    def read(self, prompt, *, navigation=False):
+    def read(self, prompt, *, navigation=False, selection=False):
         """Read a line, preserving edits through resize and restoring tty state."""
         while True:
             self._prompt = prompt; self._answer = ''; self._cursor = 0
+            self._selection_input = selection
             if not self.screen:
                 raw = input(prompt)
             else:
@@ -2160,9 +2616,13 @@ class WizardUI:
                     fd = sys.stdin.fileno()
                     native = os.isatty(fd)
                 except (AttributeError, OSError, ValueError): native = False
-                raw = self._read_terminal(fd) if native and os.name == 'posix' else input(prompt)
+                if native and os.name == 'posix': raw = self._read_terminal(fd)
+                elif native and os.name == 'nt': raw = self._read_windows()
+                else: raw = input(prompt)
             command = raw.strip().lower()
-            if navigation and command == 'h' and self._page and self._page[2] is not None:
+            if navigation and command == '?':
+                self.help(self._context_help, config=self._page[2] if self._page else None)
+            elif navigation and command == 'h' and self._page and self._page[2] is not None:
                 self.show_calls = not self.show_calls; self.preview_offset = 0
             elif navigation and command in ('j', 'k') and self._page and self._page[2] is not None:
                 step = max(1, terminal_size().lines - self.CONTROL_ROWS)
@@ -2205,6 +2665,8 @@ class WizardUI:
                         escape = ''; continue
                     if escape in ('\x1b[D', '\x1bOD'): self._cursor = max(0, self._cursor - 1)
                     elif escape in ('\x1b[C', '\x1bOC'): self._cursor = min(len(self._answer), self._cursor + 1)
+                    elif escape in ('\x1b[A', '\x1bOA') and self._selection_input and not self._answer: return '@up'
+                    elif escape in ('\x1b[B', '\x1bOB') and self._selection_input and not self._answer: return '@down'
                     elif escape in ('\x1b[H', '\x1bOH', '\x1b[1~'): self._cursor = 0
                     elif escape in ('\x1b[F', '\x1bOF', '\x1b[4~'): self._cursor = len(self._answer)
                     elif escape == '\x1b[3~': self._answer = self._answer[:self._cursor] + self._answer[self._cursor + 1:]
@@ -2227,6 +2689,40 @@ class WizardUI:
         finally:
             termios.tcsetattr(fd, termios.TCSANOW, saved)
 
+    def _read_windows(self):
+        """Read native console keys while checking size; no POSIX-only imports."""
+        import msvcrt
+        geometry = terminal_size()
+        while True:
+            current = terminal_size()
+            if current != geometry:
+                geometry = current; self._redraw()
+            if not msvcrt.kbhit():
+                time.sleep(0.05)
+                continue
+            char = msvcrt.getwch()
+            if char in ('\x00', '\xe0'):
+                key = msvcrt.getwch()
+                if key == 'K': self._cursor = max(0, self._cursor - 1)
+                elif key == 'M': self._cursor = min(len(self._answer), self._cursor + 1)
+                elif key == 'G': self._cursor = 0
+                elif key == 'O': self._cursor = len(self._answer)
+                elif key == 'S': self._answer = self._answer[:self._cursor] + self._answer[self._cursor + 1:]
+                elif key in ('H', 'P') and self._selection_input and not self._answer:
+                    return '@up' if key == 'H' else '@down'
+            elif char in ('\r', '\n'): return self._answer
+            elif char == '\x03': raise KeyboardInterrupt()
+            elif char in ('\x04', '\x1a') and not self._answer: raise EOFError()
+            elif char in ('\x7f', '\b'):
+                if self._cursor:
+                    self._answer = self._answer[:self._cursor - 1] + self._answer[self._cursor:]; self._cursor -= 1
+            elif char == '\x15': self._answer = ''; self._cursor = 0
+            elif char == '\x01': self._cursor = 0
+            elif char == '\x05': self._cursor = len(self._answer)
+            elif char.isprintable() and len(self._answer) < 16384:
+                self._answer = self._answer[:self._cursor] + char + self._answer[self._cursor:]; self._cursor += 1
+            self._draw_answer()
+
     def _draw_answer(self):
         """Update just the input row while typing; resize alone redraws the grid."""
         size = terminal_size()
@@ -2238,18 +2734,30 @@ class WizardUI:
         visible = terminal_line(self._answer, size.columns - prefix, color=False)
         sys.stdout.write(f'\x1b[{self.PROMPT_ROW};{prefix + 1}H' + visible + '\x1b[K' +
                          f'\x1b[{self.PROMPT_ROW};{prefix + cells + 1}H')
+        if len(self._last_frame) >= self.PROMPT_ROW:
+            self._last_frame[self.PROMPT_ROW - 1] = terminal_line(
+                self._prompt + self._answer, size.columns,
+                color=self.screen and 'NO_COLOR' not in os.environ)
         sys.stdout.flush()
 
     def ask(self, label, default='', *, config=None, help_text='Blank keeps the value; - clears text.'):
-        if not self.screen: return _ask(label, default)
-        self.page(label, [str(default).replace('\n', ' / ')], config=config,
-                  notice=help_text, footer='Enter accepts | Ctrl-U clears the answer')
-        answer = self.read(f'{label}: ').strip()
-        return answer if answer else default
+        while True:
+            if not self.screen:
+                print(help_text)
+                answer = _ask(label, default)
+            else:
+                self.page(label, [str(default).replace('\n', ' / ')], config=config,
+                          notice=help_text, footer='Enter accepts | Ctrl-U clears | ? help')
+                answer = self.read(f'{label}: ').strip()
+            if answer == '?':
+                self.help(help_text, config=config)
+                continue
+            return answer if answer else default
 
-    def select(self, title, choices, default=0, *, preview_factory=None, config=None):
+    def select(self, title, choices, default=0, *, preview_factory=None, config=None, help_text=''):
         selected = default; offset = (default // self.QUESTION_ROWS) * self.QUESTION_ROWS
         while True:
+            self._context_help = help_text or ('Available choices: ' + '; '.join(label for label, _ in choices))
             current = preview_factory(choices[selected][1]) if preview_factory else config
             paginate = self.mode != 'line'
             end = min(len(choices), offset + self.QUESTION_ROWS) if paginate else len(choices)
@@ -2257,8 +2765,9 @@ class WizardUI:
             notice = f'Choices {first + 1}-{end}/{len(choices)} | [ / ] more' if end - first < len(choices) else ''
             self.page(title, [f' {i + 1}. {label}' + (' [selected]' if i == selected and preview_factory else '')
                               for i, (label, _) in enumerate(choices) if first <= i < end], config=current,
-                      notice=notice, footer='Number chooses | Enter accepts | P H Q')
-            raw = self.read(f'Choice [{selected + 1}]: ', navigation=True).strip().lower()
+                      notice=notice or 'Choose a number, then Enter. ? explains the keys.',
+                      footer='Enter accepts | P preview | ? help | Q quit')
+            raw = self.read(f'Choice [{selected + 1}]: ', navigation=True, selection=True).strip().lower()
             if raw == 'q': raise WizardCancelled()
             if raw == 'p' and current is not None: self.full_preview(current); continue
             if raw in ('[', ']'):
@@ -2266,6 +2775,10 @@ class WizardUI:
                                     offset + (self.QUESTION_ROWS if raw == ']' else -self.QUESTION_ROWS)))
                 continue
             if not raw: return choices[selected][1]
+            if raw in ('@up', '@down'):
+                selected = (selected + (-1 if raw == '@up' else 1)) % len(choices)
+                offset = (selected // self.QUESTION_ROWS) * self.QUESTION_ROWS
+                continue
             if raw.isdigit() and 1 <= int(raw) <= len(choices):
                 selected = int(raw) - 1; offset = (selected // self.QUESTION_ROWS) * self.QUESTION_ROWS
                 if not (preview_factory and self.screen): return choices[selected][1]
@@ -2284,14 +2797,35 @@ class WizardUI:
             if not raw: return
             if raw == 'q': raise WizardCancelled()
 
+    def help(self, text='', *, config=None):
+        """Explain controls/choices without exposing implementation terminology."""
+        previous = self._page
+        paragraphs = ([text] if text else []) + [
+            'Type a number and press Enter to choose. In menus, Up/Down moves the selection and Enter accepts it.',
+            'N or Enter continues; B goes back. P opens the preview. Q cancels the draft.',
+            'H toggles sample output before and after the message. Configured commands never run in a preview.',
+            '[ and ] show more choices. J and K scroll long call samples. Resize the window at any time.',
+        ]
+        width = max(20, terminal_size().columns - 2)
+        lines = [line for paragraph in paragraphs for line in textwrap.wrap(paragraph, width) + ['']]
+        for offset in range(0, len(lines), self.QUESTION_ROWS):
+            self.page('Help', lines[offset:offset + self.QUESTION_ROWS], config=config,
+                      footer='Enter continues | Q cancels the draft')
+            if self.read('Help: ').strip().lower() == 'q': raise WizardCancelled()
+        self._page = previous
+
     def pause(self):
         if self.screen: input('Press Enter to return to the wizard: ')
 
     def finish(self):
         """Leave the next shell prompt below the last grid, with normal colour."""
         if self._used_screen and sys.stdout.isatty():
-            sys.stdout.write(f'\x1b[0m\x1b[{max(1, terminal_size().lines)};1H\n')
+            sys.stdout.write(f'\x1b[?25h\x1b[0m\x1b[{max(1, terminal_size().lines)};1H\n')
             sys.stdout.flush()
+        if self._windows_output_mode is not None:
+            kernel, handle, original = self._windows_output_mode
+            kernel.SetConsoleMode(handle, original)
+            self._windows_output_mode = None
 
 
 def _get_setting(config, path):
@@ -2316,11 +2850,18 @@ def _configuration_pages(config):
     appearance = [('Heading', 'display.title', 'text')]
     pages = [('Destination', destination), ('Appearance', appearance)]
     if config['target'] == 'shell':
+        pages.insert(1, ('Design and readability', [
+            ('Design', 'display.design', 'choice'), ('Spacing bias', 'display.density', 'choice'),
+            ('Information detail', 'display.detail', 'choice'), ('Colour emphasis', 'display.color_emphasis', 'choice'),
+            ('Protect first', 'display.priority', 'priority')]))
         appearance += [('Site label', 'display.site', 'text'), ('Theme', 'display.theme', 'choice'),
                        ('Maximum columns', 'display.width', 'int'), ('Row budget', 'display.rows', 'int')]
         pages.append(('Characters and colour', [('Character set', 'display.charset', 'choice'),
-                                                ('Colour mode', 'display.color', 'choice')]))
-        pages.append(('Sections', [(name, name, 'section') for name in SECTION_IDS]))
+                                                ('Colour mode', 'display.color', 'choice'),
+                                                ('Inside padding', 'display.padding', 'int'),
+                                                ('Blank rows between sections', 'display.section_gap', 'int')]))
+        pages.append(('Sections', [(SECTION_LABELS[name], name, 'section') for name in SECTION_IDS]))
+        pages.append(('Detail per section', [(SECTION_LABELS[name], name, 'section_detail') for name in SECTION_IDS]))
         pages.append(('Content', [('Required services', 'services.required', 'list'),
                                   ('Excluded service patterns', 'services.exclude', 'list'),
                                   ('Displayed notices', 'messages', 'messages')]))
@@ -2343,16 +2884,25 @@ def _configure(config, ui=None):
     ui = ui or WizardUI()
     c = validate_config(config); page_index = 0; notice = ''
     choices = {
-        'target': [('Authenticated shell greeting', 'shell'), ('agetty pre-login issue text', 'issue'),
-                   ('SSH pre-authentication banner file', 'ssh-banner'), ('Generic static text', 'text')],
+        'target': [('Greeting after sign-in', 'shell'), ('Console notice before sign-in (agetty)', 'issue'),
+                   ('SSH notice before sign-in', 'ssh-banner'), ('Plain text for another program', 'text'),
+                   ('Windows batch notice (no PowerShell)', 'batch-text')],
         'shell': [('Bash: adaptive Unix dashboard', 'bash'), ('Zsh: shared Unix dashboard', 'zsh'),
-                  ('POSIX sh: portable Unix display', 'sh'), ('PowerShell: native, legacy-aware', 'powershell')],
+                  ('POSIX sh: portable Unix display', 'sh'), ('Fish: shared portable Unix display', 'fish'),
+                  ('PowerShell: native Windows/Unix', 'powershell'), ('CMD: launches embedded PowerShell', 'cmd')],
         'audience': [('All eligible sessions', 'all'), ('SSH environment markers present', 'ssh'),
                      ('Non-SSH sessions (not proof of a physical console)', 'local')],
         'frequency': [('Login startup', 'login'), ('Every interactive shell', 'interactive')],
         'display.theme': [(x.title(), x) for x in ('cyan', 'green', 'amber', 'mono')],
         'display.charset': [('Automatic', 'auto'), ('ASCII', 'ascii'), ('Unicode borders', 'unicode')],
         'display.color': [('Automatic', 'auto'), ('Always (unless NO_COLOR)', 'always'), ('Never', 'never')],
+        'display.design': [(DESIGN_DESCRIPTIONS[x], x) for x in DESIGNS],
+        'display.density': [('Compact: fit more on screen', 'compact'), ('Balanced spacing', 'balanced'),
+                            ('Comfortable: more breathing room', 'comfortable')],
+        'display.detail': [('Brief: essential facts', 'brief'), ('Normal detail', 'normal'),
+                           ('Full: expand when there is space', 'full')],
+        'display.color_emphasis': [('Quiet: less visual noise', 'quiet'), ('Balanced emphasis', 'balanced'),
+                                   ('Vivid: stronger colour emphasis', 'vivid')],
     }
     while True:
         pages = _configuration_pages(c); page_index = min(page_index, len(pages) - 1)
@@ -2360,6 +2910,7 @@ def _configure(config, ui=None):
         lines = []
         for number, (label, path, kind) in enumerate(fields, 1):
             if kind == 'section': value = '[x]' if path in c['display']['sections'] else '[ ]'
+            elif kind == 'section_detail': value = c['display']['section_detail'].get(path, 'use overall setting')
             elif kind in ('hook', 'clear'): value = f'{len(c["hooks"][path])} configured'
             else:
                 value = _get_setting(c, path)
@@ -2367,7 +2918,10 @@ def _configure(config, ui=None):
                 value = str(value).replace('\n', ' / ')
             lines.append(f' {number}. {label}: {value}')
         ui.page(f'{title} | page {page_index + 1}/{len(pages)}', lines, config=c, notice=notice,
-                footer='Num edit | N next B back P view H calls Q')
+                footer='N next B back P preview ? help Q quit')
+        ui._context_help = (notice + ' ' if notice else '') + '\n'.join(
+            label + ': ' + SETTING_HELP.get(path, 'Choose this field to edit it; the preview shows the draft.')
+            for label, path, kind in fields)
         notice = ''; raw = ui.read('Page choice: ', navigation=True).strip().lower()
         if raw == 'q': raise WizardCancelled()
         if raw == 'p': ui.full_preview(c); continue
@@ -2383,18 +2937,57 @@ def _configure(config, ui=None):
                 selected = candidate['display']['sections']
                 if path in selected: selected.remove(path)
                 else: selected.append(path)
+            elif kind == 'section_detail':
+                values = [('Use overall detail preference', 'auto')] + [(x.title(), x) for x in DETAILS]
+                selected = c['display']['section_detail'].get(path, 'auto')
+                value = ui.select('Detail: ' + label, values, [v for _, v in values].index(selected), config=c)
+                if value == 'auto': candidate['display']['section_detail'].pop(path, None)
+                else: candidate['display']['section_detail'][path] = value
+            elif kind == 'priority':
+                values = [('Warnings and resources first', list(DEFAULT_PRIORITY)),
+                          ('Memory, storage and disk I/O first', ['resources', 'io', 'attention', 'processes']),
+                          ('Programs and signed-in users first', ['processes', 'sessions', 'connections', 'attention']),
+                          ('Use current section display order', list(c['display']['sections'])),
+                          ('Custom order of section IDs', None)]
+                value = ui.select('Protect and expand first', values, config=c)
+                if value is None:
+                    raw_order = ui.ask('Priority order', ','.join(c['display']['priority']), config=c,
+                                       help_text='IDs: ' + ', '.join(SECTION_IDS))
+                    value = [item.strip() for item in raw_order.split(',') if item.strip()]
+                candidate['display']['priority'] = value
             elif kind == 'choice':
                 values = choices[path]; current = _get_setting(c, path)
                 def variation(value):
                     result = copy.deepcopy(c); _set_setting(result, path, value)
                     if path == 'target' and value != 'shell': result['hooks'] = {'before': [], 'after': []}
                     return result
-                value = ui.select(label, values, [v for _, v in values].index(current), preview_factory=variation)
+                value = ui.select(label, values, [v for _, v in values].index(current),
+                                  preview_factory=variation, help_text=SETTING_HELP.get(path, ''))
                 _set_setting(candidate, path, value)
                 if path == 'target' and value != 'shell': candidate['hooks'] = {'before': [], 'after': []}
             elif kind == 'hook':
-                argv = json.loads(ui.ask('Arguments', '["fastfetch"]', config=c,
-                                        help_text='Explicit argv JSON; e.g. ["echo","Ready"]'))
+                call_type = ui.select('What should this call do?', [
+                    ('Show Fastfetch (if installed)', 'fastfetch'), ('Display a line of text', 'text'),
+                    ('Run a program or script', 'program'), ('Advanced: argument array', 'argv')], config=c)
+                if call_type == 'fastfetch': argv = ['fastfetch']
+                elif call_type == 'text':
+                    value = ui.ask('Text to display', 'Session ready', config=c)
+                    # A reserved, data-only action prints literal text in every
+                    # backend. It needs neither shell syntax nor another program.
+                    argv = ['motd:print', value]
+                elif call_type == 'program':
+                    command = ui.ask('Program name or path', '', config=c,
+                                     help_text='Executable only; add its arguments on the next screen.')
+                    if not command: raise MotdError('Enter a program name or choose another call type')
+                    argv = [command]
+                    for index in range(63):
+                        value = ui.ask('Argument ' + str(index + 1), '', config=c,
+                                       help_text='One literal argument, including spaces. Blank finishes.')
+                        if not value: break
+                        argv.append(value)
+                else:
+                    argv = json.loads(ui.ask('Arguments', '["fastfetch"]', config=c,
+                                            help_text='Explicit argv JSON; e.g. ["printf","%s\\\\n","Ready"]'))
                 seconds = float(ui.ask('Timeout seconds', '1', config=c))
                 policy = ui.select('On call failure', [('Continue the display', 'continue'), ('Stop this display', 'stop')], config=c)
                 sample = ui.ask('Sample output', '', config=c,
@@ -2411,7 +3004,7 @@ def _configure(config, ui=None):
                 elif kind == 'messages': default = '\\n'.join(current)
                 else: default = str(current).replace('\n', '\\n')
                 value = ui.ask(label, default, config=c,
-                    help_text='Blank keeps; - clears; \\n separates lines.' if kind != 'int' else 'Whole number; blank keeps the value.')
+                    help_text=SETTING_HELP.get(path, 'Blank keeps; - clears; \\n separates lines.' if kind != 'int' else 'Whole number; blank keeps the value.'))
                 if kind != 'int' and value == '-': value = ''
                 if kind == 'int': value = int(value)
                 elif kind == 'list': value = [v.strip() for v in value.split(',') if v.strip()]
@@ -2483,14 +3076,20 @@ def wizard(args):
 
 
 def _wizard_session(args, ui):
-    action = ui.select('What do you want to do?', [
-        ('Create/customise a message', 'create'), ('Install existing recipe or output', 'existing'),
-        ('Reconfigure/upgrade an installed message', 'reconfigure'), ('Inspect/audit', 'audit'),
-        ('Repair missing files', 'repair'), ('Recover interrupted changes', 'recover'),
-        ('Roll back a transaction', 'rollback'), ('Uninstall', 'uninstall'), ('Exit', 'exit')])
+    can_install = os.name == 'posix' and sys.platform.startswith('linux')
+    actions = [('Create/customise a message', 'create'), ('Open an existing recipe or output', 'existing')]
+    if can_install:
+        actions += [('Reconfigure/upgrade an installed message', 'reconfigure'), ('Inspect/audit installations', 'audit'),
+                    ('Repair missing files', 'repair'), ('Recover interrupted changes', 'recover'),
+                    ('Roll back a transaction', 'rollback'), ('Uninstall', 'uninstall')]
+    actions += [('Exit', 'exit')]
+    action = ui.select('What do you want to do?', actions,
+                       help_text='Create and open edit a draft. Nothing is installed while choosing settings. '
+                                 'Save a recipe to reuse it; build a standalone output to copy elsewhere. '
+                                 'Installation management is available on supported Linux hosts.')
     if action == 'exit': return 0
-    scope = ui.select('Installation scope', [('This user', 'user'), ('System-wide', 'system')],
-                      1 if args.scope == 'system' else 0)
+    scope = (ui.select('Installation scope', [('This user', 'user'), ('System-wide', 'system')],
+                       1 if args.scope == 'system' else 0) if can_install else 'user')
     state_dir = absolute(args.state_dir or default_state(scope))
     if action == 'audit':
         print(json.dumps(tx_audit(state_dir), indent=2)); return 0
@@ -2526,20 +3125,23 @@ def _wizard_session(args, ui):
                 if config['target'] == 'shell': config['shell'] = ui.select('Output interpreter', [(x, x) for x in SHELLS])
                 config['name'] = ui.ask('Installation name', 'imported')
             print('File SHA256:', hashlib.sha256(artifact.encode()).hexdigest())
-            if config['target'] == 'shell':
-                trusted = confirm('I have inspected this executable file and want to install its exact bytes')
-                if not trusted: print('Cancelled.'); return 0
     else:
-        name = ui.select('Start with a preset', [(x, x) for x in PRESET_NAMES], preview_factory=preset_config)
-        config = _configure(preset_config(name), ui)
+        starting_shell = 'powershell' if os.name == 'nt' else 'bash'
+        def starting_preset(name): return preset_config(name, shell=starting_shell)
+        name = ui.select('Start with a preset', [(x, x) for x in PRESET_NAMES], preview_factory=starting_preset)
+        config = _configure(starting_preset(name), ui)
     config = validate_config(config)
     artifact = artifact if artifact is not None else generate_artifact(config)
     while True:
-        choice = ui.select('Review and finish', [('Preview (synthetic; no configured calls)', 'preview'),
-            ('Show install plan / dry run', 'plan'), ('Save TOML recipe', 'save'),
-            ('Build portable output', 'build'), ('Install', 'install'),
-            ('Change draft settings', 'settings'), ('Cancel', 'cancel')],
-            config=None if opaque else config)
+        choices = [('Preview (synthetic; calls do not run)', 'preview')]
+        installable = can_install and not (config['target'] == 'shell' and config['shell'] in ('powershell', 'cmd'))
+        if installable: choices.append(('Show install plan / dry run', 'plan'))
+        choices += [('Save TOML recipe', 'save'), ('Build portable output', 'build')]
+        if installable: choices.append(('Install', 'install'))
+        choices += [('Change draft settings', 'settings'), ('Cancel', 'cancel')]
+        choice = ui.select('Review and finish', choices, config=None if opaque else config,
+                           help_text='Preview uses sample values. Save keeps editable settings. Build writes the standalone '
+                                     'output. Install, where available, shows exact file changes before confirmation.')
         if choice == 'cancel': print('Cancelled. Previously requested exports remain.'); return 0
         try:
             if choice == 'preview':
@@ -2563,10 +3165,10 @@ def _wizard_session(args, ui):
                 path = absolute(ui.ask('Output path', config['name'] + artifact_suffix(config), config=config))
                 export_files(config, artifact, path, state_dir=state_dir, opaque_artifact=opaque)
             else:
-                if config['target'] != 'shell' and (scope == 'user' or config['target'] == 'text') and 'destination' not in install_options:
+                if config['target'] != 'shell' and (scope == 'user' or config['target'] in ('text', 'batch-text')) and 'destination' not in install_options:
                     install_options['destination'] = absolute(ui.ask('Destination file', str(Path.home() / (config['name'] + '.txt')), config=config, help_text='The parent directory must already exist.'))
                 explicit_startup = config['target'] == 'shell' and (
-                    (scope == 'system' and config['shell'] == 'zsh') or
+                    (scope == 'system' and config['shell'] in ('zsh', 'fish')) or
                     (config['frequency'] == 'interactive' and (scope == 'system' or config['shell'] == 'sh')))
                 if explicit_startup and 'shell_file' not in install_options:
                     selected = ui.ask('Startup file path', config=config, help_text='Explicit startup file; parent must exist.').strip()
@@ -2575,6 +3177,10 @@ def _wizard_session(args, ui):
                 plan = installation_plan(config, artifact, scope=scope, state_dir=state_dir,
                                          opaque_artifact=opaque, **install_options)
                 if choice == 'plan': describe_plan(plan)
+                elif imported and config['target'] == 'shell':
+                    describe_plan(plan)
+                    if confirm('Install these exact imported executable bytes to run at login?'):
+                        if apply_reviewed(plan, yes=True): return 0
                 elif apply_reviewed(plan): return 0
         except (MotdError, ValueError) as exc:
             print('Draft retained:', exc)
@@ -2602,6 +3208,20 @@ def parser():
             source.add_argument('--artifact')
             p.add_argument('--target', choices=TARGETS)
             p.add_argument('--shell', choices=SHELLS)
+            p.add_argument('--design', choices=DESIGNS, help='Presentation structure; collection stays the same')
+            p.add_argument('--density', choices=('compact', 'balanced', 'comfortable'))
+            p.add_argument('--detail', choices=DETAILS, help='Amount of information, independently of spacing')
+            p.add_argument('--padding', type=int, help='Horizontal inside padding, 0–3 cells')
+            p.add_argument('--section-gap', type=int, help='Preferred blank rows between sections, 0–2')
+            p.add_argument('--color-emphasis', choices=('quiet', 'balanced', 'vivid'))
+            p.add_argument('--width', type=int, help='Maximum columns, 40–240')
+            p.add_argument('--rows', type=int, help='Maximum rows, 8–200, including the shell prompt')
+            p.add_argument('--charset', choices=('auto', 'ascii', 'unicode'))
+            p.add_argument('--color', choices=('auto', 'always', 'never'))
+            p.add_argument('--sections', help='Comma-separated visible sections, in display order')
+            p.add_argument('--priority', help='Comma-separated sections to retain/expand first')
+            p.add_argument('--section-detail', action='append', metavar='SECTION=LEVEL',
+                           help='Override one section: brief, normal or full; repeatable')
             p.add_argument('--audience', choices=('all', 'ssh', 'local'))
             p.add_argument('--trust-artifact', action='store_true')
             p.add_argument('--replace', action='store_true')
@@ -2609,6 +3229,9 @@ def parser():
             p.add_argument('--shell-file')
         if name in ('build', 'config'): p.add_argument('--output', required=True)
         if name == 'build': p.add_argument('--save-config')
+        if name in ('build', 'config'):
+            p.add_argument('--create-only', action='store_true',
+                           help='Export new files plus a hash manifest; no replacement or install journal')
         if name == 'preview': p.add_argument('--live', action='store_true')
     return root
 
@@ -2645,6 +3268,13 @@ def main(argv=None):
     if args.command == 'config':
         if not args.artifact: raise MotdError('config requires --artifact')
         artifact = _source_text(args.artifact); c = extract_config(artifact)
+        if args.output == '-':
+            print(dump_config(c), end=''); return 0
+        if args.create_only or os.name == 'nt':
+            if args.replace: raise MotdError('Create-only recovery needs a new output filename')
+            result = portable_export_new_files([{'path': absolute(args.output), 'content': dump_config(c)}],
+                    absolute(args.output) + '.export.json', {'operation': 'recover-config', 'name': c['name']})
+            print('Recovered:', absolute(args.output)); print('Export manifest:', result['manifest']); return 0
         plan = tx_plan([{'path': absolute(args.output), 'content': dump_config(c), 'mode': 0o600}], state_dir,
                        {'operation': 'recover-config', 'name': c['name'], 'config_toml': dump_config(c)})
         if Path(args.output).exists() and not args.replace: raise MotdError('Recipe output exists; choose another path or --replace')
@@ -2661,6 +3291,7 @@ def main(argv=None):
             if getattr(args, key, None) is not None:
                 if key == 'shell': select_shell(c, args.shell)
                 else: c[key] = getattr(args, key)
+        apply_display_options(c, args)
         c = validate_config(c)
         artifact = generate_artifact(c)
         if args.destination and absolute(args.destination) != prior['metadata']['artifact_path']:
@@ -2671,7 +3302,7 @@ def main(argv=None):
     else: c, artifact = resolve_input(args)
     if args.command == 'build':
         export_files(c, artifact, args.output, args.save_config, state_dir=state_dir, replace=args.replace,
-                     opaque_artifact=getattr(args, 'opaque_artifact', False)); return 0
+                     opaque_artifact=getattr(args, 'opaque_artifact', False), create_only=args.create_only); return 0
     if args.command == 'preview':
         return preview(c, artifact, live=args.live, imported=bool(args.artifact), trust=args.trust_artifact)
     plan = installation_plan(c, artifact, scope=args.scope, destination=args.destination,
@@ -2700,9 +3331,402 @@ def entrypoint():
 
 
 
+# BEGIN EMBEDDED DESIGNS — regenerated by tools/embed_runtime.py
+DESIGNS_TEMPLATE = r'''# Shared presentation engine for generated Unix outputs.
+#
+# This file only defines POSIX-shell functions. It is embedded once, before the
+# chosen Unix backend. It never collects machine data, invokes a configured
+# command, evaluates configuration as code, or writes persistent files.
+#
+# Backend adapters supply already-collected observations through
+# motd_view_capture(section, content_columns, content_rows, flavour). The
+# callback emits printable ASCII data rows; this engine owns framing, spacing,
+# colour and Unicode borders. motd_view_detail(section) emits its detail policy.
+# Keeping these policies here makes old Bash, dash and delegated Zsh layouts
+# obey the same geometry rather than maintaining separate render algorithms.
+
+motd_view_clean() {
+    mv_clean_rest=$1; MV_CLEAN=''; mv_clean_count=0
+    while [ -n "$mv_clean_rest" ] && [ "$mv_clean_count" -lt "$2" ]; do
+        mv_clean_ch=${mv_clean_rest%"${mv_clean_rest#?}"}; mv_clean_rest=${mv_clean_rest#?}
+        case "$mv_clean_ch" in [\ -~]) : ;; *) mv_clean_ch='?' ;; esac
+        MV_CLEAN=$MV_CLEAN$mv_clean_ch; mv_clean_count=$((mv_clean_count + 1))
+    done
+    if [ -n "$mv_clean_rest" ] && [ "$2" -gt 0 ]; then MV_CLEAN=${MV_CLEAN%?}'~'; fi
+}
+
+motd_view_repeat() {
+    MV_REPEAT=''; mv_repeat_left=$2
+    while [ "$mv_repeat_left" -gt 0 ]; do
+        MV_REPEAT=$MV_REPEAT$1; mv_repeat_left=$((mv_repeat_left - 1))
+    done
+}
+
+motd_view_get() {
+    MV_ALLOCATED=0
+    for mv_get_record in $MV_PLAN; do
+        if [ "${mv_get_record%%:*}" = "$1" ]; then MV_ALLOCATED=${mv_get_record#*:}; break; fi
+    done
+}
+
+motd_view_set() {
+    mv_set_result=''
+    for mv_set_record in $MV_PLAN; do
+        if [ "${mv_set_record%%:*}" = "$1" ]; then
+            if [ "$2" -gt 0 ]; then mv_set_result="$mv_set_result $1:$2"; fi
+        else mv_set_result="$mv_set_result $mv_set_record"; fi
+    done
+    MV_PLAN=$mv_set_result
+}
+
+motd_view_caption() {
+    case "$1" in
+        system) MV_CAPTION=SYSTEM; MV_HEADLINE='System' ;;
+        resources) MV_CAPTION=RESOURCES; MV_HEADLINE='Capacity' ;;
+        services) MV_CAPTION=SERVICES; MV_HEADLINE='Services' ;;
+        processes) MV_CAPTION=PROCESSES; MV_HEADLINE='Top workloads' ;;
+        sessions) MV_CAPTION=SESSIONS; MV_HEADLINE='People online' ;;
+        connections) MV_CAPTION=CONNECTIONS; MV_HEADLINE='Connections' ;;
+        attention) MV_CAPTION=ATTENTION; MV_HEADLINE='Attention' ;;
+        hints) MV_CAPTION=HINTS; MV_HEADLINE='Useful commands' ;;
+        io) MV_CAPTION='DISK I/O'; MV_HEADLINE='Disk activity' ;;
+    esac
+}
+
+motd_view_content_width() {
+    # Each backend formats at its final data width. We do not create a larger
+    # table and crop it afterwards, including the headings in a briefing.
+    MV_CONTENT_WIDTH=$((MV_PANEL_WIDTH - 2 - 2 * PADDING))
+    case "$DESIGN" in
+        ledger)
+            mv_content_label=12; [ "$MV_COLUMNS" -ge 60 ] || mv_content_label=10
+            MV_CONTENT_WIDTH=$((MV_COLUMNS - PADDING - mv_content_label - 3)) ;;
+        briefing)
+            motd_view_caption "$1"; mv_content_prefix=${#MV_HEADLINE}
+            MV_CONTENT_WIDTH=$((MV_COLUMNS - mv_content_prefix - 2)) ;;
+    esac
+}
+
+motd_view_footer() {
+    MV_FOOTER=''; MV_FOOTER_COUNT=0
+    [ -n "$MV_OMITTED" ] || return 0
+    mv_footer_row='Hidden:'
+    for mv_footer_id in $MV_OMITTED; do
+        mv_footer_next="$mv_footer_row $mv_footer_id"; mv_footer_length=${#mv_footer_next}
+        if [ "$mv_footer_length" -gt "$MV_FOOTER_WIDTH" ]; then
+            MV_FOOTER="$MV_FOOTER$mv_footer_row
+"; MV_FOOTER_COUNT=$((MV_FOOTER_COUNT + 1)); mv_footer_row=$mv_footer_id
+        else mv_footer_row=$mv_footer_next; fi
+    done
+    MV_FOOTER="$MV_FOOTER$mv_footer_row
+"; MV_FOOTER_COUNT=$((MV_FOOTER_COUNT + 1))
+}
+
+motd_view_cost() {
+    # A dashboard pair costs the taller card, not the sum of its two cards.
+    # Gaps, interior blank rows, borders, headers and omission text all count.
+    motd_view_footer
+    MV_COST=$((MV_HEADER_ROWS + MV_FOOTER_COUNT)); mv_cost_groups=0; mv_cost_pending=0
+    for mv_cost_record in $MV_PLAN; do
+        mv_cost_rows=${mv_cost_record#*:}
+        case "$DESIGN" in
+            classic) mv_cost_rows=$((mv_cost_rows + 1 + MV_INSET)) ;;
+            cards|dashboard) mv_cost_rows=$((mv_cost_rows + 2 + MV_INSET)) ;;
+            ledger|briefing) mv_cost_rows=$((mv_cost_rows + MV_INSET)) ;;
+        esac
+        if [ "$MV_COLUMNS_PER_ROW" -eq 2 ]; then
+            if [ "$mv_cost_pending" -eq 0 ]; then mv_cost_pending=$mv_cost_rows; continue; fi
+            if [ "$mv_cost_pending" -gt "$mv_cost_rows" ]; then mv_cost_rows=$mv_cost_pending; fi
+            mv_cost_pending=0
+        fi
+        MV_COST=$((MV_COST + mv_cost_rows)); mv_cost_groups=$((mv_cost_groups + 1))
+    done
+    if [ "$mv_cost_pending" -gt 0 ]; then
+        MV_COST=$((MV_COST + mv_cost_pending)); mv_cost_groups=$((mv_cost_groups + 1))
+    fi
+    if [ "$mv_cost_groups" -gt 1 ]; then MV_COST=$((MV_COST + (mv_cost_groups - 1) * MV_GAP)); fi
+}
+
+motd_view_plan() {
+    MV_PLAN=''; MV_OMITTED=''; MV_REVERSE_PRIORITY=''; MV_ORDER=$MV_SECTION_IDS
+    # Briefing explicitly leads with attention. Other layouts preserve the
+    # configured display order. Priority influences allocation, not ordering.
+    if [ "$DESIGN" = briefing ]; then
+        MV_ORDER=''
+        case " $MV_SECTION_IDS " in *' attention '*) MV_ORDER=attention ;; esac
+        for mv_order_id in $MV_SECTION_IDS; do
+            [ "$mv_order_id" = attention ] || MV_ORDER="$MV_ORDER $mv_order_id"
+        done
+    fi
+    MV_PRIORITY_ORDER=''
+    for mv_order_id in $MV_PRIORITY $MV_SECTION_IDS; do
+        case " $MV_PRIORITY_ORDER " in *" $mv_order_id "*) continue ;; esac
+        case " $MV_SECTION_IDS " in *" $mv_order_id "*)
+            MV_PRIORITY_ORDER="$MV_PRIORITY_ORDER $mv_order_id"
+            MV_REVERSE_PRIORITY="$mv_order_id $MV_REVERSE_PRIORITY" ;;
+        esac
+    done
+    for mv_plan_id in $MV_ORDER; do
+        mv_plan_detail=$(motd_view_detail "$mv_plan_id")
+        case "$mv_plan_detail" in brief) mv_plan_rows=1 ;;
+            full)
+                case "$mv_plan_id" in system) mv_plan_rows=4 ;; resources) mv_plan_rows=7 ;;
+                    services|sessions) mv_plan_rows=6 ;; processes|attention|io) mv_plan_rows=8 ;;
+                    connections) mv_plan_rows=4 ;; hints) mv_plan_rows=5 ;; esac ;;
+            *)
+                case "$mv_plan_id" in resources|io) mv_plan_rows=3 ;; processes) mv_plan_rows=4 ;;
+                    *) mv_plan_rows=2 ;; esac ;;
+        esac
+        # Charge populated rows, not an arbitrary rectangle of empty space.
+        # This is formatting of the existing model, never a second collection.
+        # A short section can therefore leave room for another complete panel.
+        motd_view_content_width "$mv_plan_id"
+        mv_plan_text=$(motd_view_capture "$mv_plan_id" "$MV_CONTENT_WIDTH" "$mv_plan_rows" "$DESIGN")
+        mv_plan_count=0
+        while [ -n "$mv_plan_text" ]; do
+            mv_plan_count=$((mv_plan_count + 1))
+            case "$mv_plan_text" in *'
+'*) mv_plan_text=${mv_plan_text#*'
+'} ;; *) mv_plan_text='' ;; esac
+        done
+        [ "$mv_plan_count" -gt 0 ] || mv_plan_count=1
+        if [ "$mv_plan_count" -lt "$mv_plan_rows" ]; then mv_plan_rows=$mv_plan_count; fi
+        MV_PLAN="$MV_PLAN $mv_plan_id:$mv_plan_rows"
+    done
+    motd_view_cost
+    # Trim meaningful detail from low-priority sections before removing one.
+    for mv_plan_id in $MV_REVERSE_PRIORITY; do
+        motd_view_get "$mv_plan_id"
+        while [ "$MV_COST" -gt "$MV_LIMIT" ] && [ "$MV_ALLOCATED" -gt 1 ]; do
+            mv_plan_next=$((MV_ALLOCATED - 1)); motd_view_set "$mv_plan_id" "$mv_plan_next"
+            motd_view_cost; motd_view_get "$mv_plan_id"
+        done
+    done
+    for mv_plan_id in $MV_REVERSE_PRIORITY; do
+        [ "$MV_COST" -gt "$MV_LIMIT" ] || break
+        motd_view_get "$mv_plan_id"; [ "$MV_ALLOCATED" -gt 0 ] || continue
+        # At an eight-row preview, decoration yields before the final useful
+        # section. Spacing is always charged, never silently allowed to scroll.
+        mv_plan_remaining=0
+        for mv_plan_record in $MV_PLAN; do mv_plan_remaining=$((mv_plan_remaining + 1)); done
+        if [ "$mv_plan_remaining" -eq 1 ]; then
+            MV_GAP=0; MV_INSET=0; MV_SHORT_HEADER=1
+            if [ "$DESIGN" = classic ]; then MV_HEADER_ROWS=2; else MV_HEADER_ROWS=1; fi
+            motd_view_cost
+            [ "$MV_COST" -gt "$MV_LIMIT" ] || break
+        fi
+        motd_view_set "$mv_plan_id" 0; MV_OMITTED="$MV_OMITTED $mv_plan_id"
+        motd_view_cost
+    done
+}
+
+motd_view_colors() {
+    MV_ACCENT=''; MV_TITLE_COLOR=''; MV_MUTED=''; MV_WARN=''; MV_RESET=''
+    [ "$MV_COLOR" -eq 1 ] || return 0
+    case "$THEME" in green) mv_color_code=32 ;; amber) mv_color_code=33 ;; *) mv_color_code=36 ;; esac
+    MV_RESET=$(printf '\033[0m'); MV_WARN=$(printf '\033[1;31m')
+    MV_TITLE_COLOR=$(printf '\033[1;%sm' "$mv_color_code")
+    case "$COLOR_EMPHASIS" in
+        quiet) MV_TITLE_COLOR=$(printf '\033[%sm' "$mv_color_code") ;;
+        vivid) MV_ACCENT=$(printf '\033[1;%sm' "$mv_color_code"); MV_MUTED=$(printf '\033[36m') ;;
+        *) MV_ACCENT=$(printf '\033[%sm' "$mv_color_code"); MV_MUTED=$(printf '\033[90m') ;;
+    esac
+}
+
+motd_view_plain_row() {
+    motd_view_clean "$1" "$MV_COLUMNS"
+    motd_view_tint "$1"
+    printf '%s%s%s\n' "${MV_ROW_COLOR:-${2-}}" "$MV_CLEAN" "$MV_RESET"
+}
+
+motd_view_tint() {
+    MV_ROW_COLOR=''
+    # A phrase such as "0 failed" is not an alert. Colour explicit failing
+    # states or severity labels rather than merely finding the word "failed".
+    case "$1" in *ERROR:*|*WARNING:*|*WARN:*|*': failed'*|*' FAIL'*) MV_ROW_COLOR=$MV_WARN ;; esac
+}
+
+motd_view_rule() {
+    # Results are already cell-padded before adding ANSI colour or Unicode.
+    mv_rule_width=$1; mv_rule_left=$2; mv_rule_right=$3; mv_rule_title=$4
+    if [ -n "$mv_rule_title" ]; then
+        motd_view_clean "$mv_rule_title" "$((mv_rule_width - 4))"; mv_rule_title=$MV_CLEAN
+        mv_rule_length=${#mv_rule_title}
+        motd_view_repeat "$MV_H" "$((mv_rule_width - mv_rule_length - 4))"
+        printf '%s%s %s %s%s%s\n' "$MV_ACCENT" "$mv_rule_left" "$mv_rule_title" "$MV_REPEAT" "$mv_rule_right" "$MV_RESET"
+    else
+        motd_view_repeat "$MV_H" "$((mv_rule_width - 2))"
+        printf '%s%s%s%s%s\n' "$MV_ACCENT" "$mv_rule_left" "$MV_REPEAT" "$mv_rule_right" "$MV_RESET"
+    fi
+}
+
+motd_view_box_row() {
+    mv_box_width=$1; mv_box_text=$2; mv_box_inner=$((mv_box_width - 2 - 2 * PADDING))
+    motd_view_clean "$mv_box_text" "$mv_box_inner"
+    motd_view_tint "$mv_box_text"; mv_box_color=$MV_ROW_COLOR
+    printf '%s%s%s%*s%s%-*s%s%*s%s%s%s\n' "$MV_ACCENT" "$MV_V" "$MV_RESET" "$PADDING" '' \
+        "$mv_box_color" "$mv_box_inner" "$MV_CLEAN" "$MV_RESET" "$PADDING" '' "$MV_ACCENT" "$MV_V" "$MV_RESET"
+}
+
+motd_view_take_line() {
+    # Parameter expansion keeps both old-shell execution and FIFO-free capture
+    # deterministic. MV_TEXT is a newline-separated list of already-safe rows.
+    MV_LINE=${MV_TEXT%%'
+'*}
+    case "$MV_TEXT" in *'
+'*) MV_TEXT=${MV_TEXT#*'
+'} ;; *) MV_TEXT='' ;; esac
+}
+
+motd_view_card() {
+    mv_card_id=$1; mv_card_rows=$2; mv_card_width=$3; mv_card_height=${4-$2}
+    motd_view_caption "$mv_card_id"
+    motd_view_rule "$mv_card_width" "$MV_TL" "$MV_TR" "$MV_CAPTION"
+    if [ "$MV_INSET" -gt 0 ]; then motd_view_box_row "$mv_card_width" ''; fi
+    MV_TEXT=$(motd_view_capture "$mv_card_id" "$((mv_card_width - 2 - 2 * PADDING))" "$mv_card_rows" card)
+    mv_card_index=0
+    while [ "$mv_card_index" -lt "$mv_card_height" ]; do
+        motd_view_take_line; motd_view_box_row "$mv_card_width" "$MV_LINE"
+        mv_card_index=$((mv_card_index + 1))
+    done
+    motd_view_rule "$mv_card_width" "$MV_BL" "$MV_BR" ''
+}
+
+motd_view_gap() {
+    mv_gap_left=$MV_GAP
+    while [ "$mv_gap_left" -gt 0 ]; do
+        if [ "$DESIGN" = classic ]; then motd_view_box_row "$MV_COLUMNS" ''; else printf '\n'; fi
+        mv_gap_left=$((mv_gap_left - 1))
+    done
+}
+
+motd_design_render() {
+    MV_LIMIT=$((MV_ROWS_LIMIT - 1)); MV_SHORT_HEADER=0
+    MV_HEADER_ROWS=2; MV_GAP=$SECTION_GAP; MV_INSET=0; MV_COLUMNS_PER_ROW=1
+    [ "$DESIGN" != classic ] || MV_HEADER_ROWS=3
+    case "$DENSITY" in
+        comfortable) MV_GAP=$((MV_GAP + 1)); MV_INSET=1 ;;
+        balanced) case "$DESIGN" in cards|briefing|dashboard) MV_GAP=$((MV_GAP + 1)) ;; esac ;;
+    esac
+    if [ "$DESIGN" = dashboard ] && [ "$MV_COLUMNS" -ge 80 ]; then MV_COLUMNS_PER_ROW=2; fi
+    MV_PANEL_WIDTH=$MV_COLUMNS
+    if [ "$MV_COLUMNS_PER_ROW" -eq 2 ]; then MV_PANEL_WIDTH=$(((MV_COLUMNS - 2) / 2)); fi
+    MV_FOOTER_WIDTH=$MV_COLUMNS
+    [ "$DESIGN" != classic ] || MV_FOOTER_WIDTH=$((MV_COLUMNS - 2 - 2 * PADDING))
+    MV_H='-'; MV_V='|'; MV_TL='+'; MV_TR='+'; MV_ML='+'; MV_MR='+'; MV_BL='+'; MV_BR='+'
+    if [ "$MV_UNICODE" -eq 1 ]; then
+        MV_H='─'; MV_V='│'; MV_TL='┌'; MV_TR='┐'; MV_ML='├'; MV_MR='┤'; MV_BL='└'; MV_BR='┘'
+    fi
+    motd_view_colors; motd_view_plan
+    case "$DESIGN" in
+        classic)
+            motd_view_rule "$MV_COLUMNS" "$MV_TL" "$MV_TR" "$MV_TITLE"
+            [ "$MV_SHORT_HEADER" -eq 1 ] || motd_view_box_row "$MV_COLUMNS" "$MV_SUBTITLE" ;;
+        briefing)
+            motd_view_plain_row "$MV_TITLE / BRIEFING" "$MV_TITLE_COLOR"
+            [ "$MV_SHORT_HEADER" -eq 1 ] || motd_view_plain_row "$MV_SUBTITLE" "$MV_MUTED" ;;
+        dashboard)
+            motd_view_plain_row "$MV_TITLE / DASHBOARD" "$MV_TITLE_COLOR"
+            [ "$MV_SHORT_HEADER" -eq 1 ] || motd_view_plain_row "$MV_METRICS" "$MV_MUTED" ;;
+        ledger)
+            motd_view_plain_row "$MV_TITLE / LEDGER" "$MV_TITLE_COLOR"
+            [ "$MV_SHORT_HEADER" -eq 1 ] || motd_view_plain_row 'SECTION       OBSERVATIONS' "$MV_MUTED" ;;
+        cards)
+            motd_view_plain_row "$MV_TITLE / CARDS" "$MV_TITLE_COLOR"
+            [ "$MV_SHORT_HEADER" -eq 1 ] || motd_view_plain_row "$MV_SUBTITLE" "$MV_MUTED" ;;
+    esac
+    mv_render_first=1; mv_render_pending=''
+    for mv_render_record in $MV_PLAN; do
+        mv_render_id=${mv_render_record%%:*}; mv_render_rows=${mv_render_record#*:}
+        if [ "$MV_COLUMNS_PER_ROW" -eq 2 ]; then
+            if [ -z "$mv_render_pending" ]; then mv_render_pending=$mv_render_record; continue; fi
+            [ "$mv_render_first" -eq 1 ] || motd_view_gap
+            mv_render_height=${mv_render_pending#*:}
+            if [ "$mv_render_rows" -gt "$mv_render_height" ]; then mv_render_height=$mv_render_rows; fi
+            mv_render_left=$(motd_view_card "${mv_render_pending%%:*}" "${mv_render_pending#*:}" "$MV_PANEL_WIDTH" "$mv_render_height")
+            mv_render_right=$(motd_view_card "$mv_render_id" "$mv_render_rows" "$MV_PANEL_WIDTH" "$mv_render_height")
+            while [ -n "$mv_render_left" ] || [ -n "$mv_render_right" ]; do
+                MV_TEXT=$mv_render_left; motd_view_take_line; mv_render_cell_left=$MV_LINE; mv_render_left=$MV_TEXT
+                MV_TEXT=$mv_render_right; motd_view_take_line; mv_render_cell_right=$MV_LINE; mv_render_right=$MV_TEXT
+                [ -n "$mv_render_cell_left" ] || mv_render_cell_left=$(printf '%*s' "$MV_PANEL_WIDTH" '')
+                printf '%s  %s\n' "$mv_render_cell_left" "$mv_render_cell_right"
+            done
+            mv_render_pending=''; mv_render_first=0; continue
+        fi
+        [ "$mv_render_first" -eq 1 ] || motd_view_gap
+        mv_render_first=0
+        case "$DESIGN" in
+            cards|dashboard) motd_view_card "$mv_render_id" "$mv_render_rows" "$MV_COLUMNS" ;;
+            classic)
+                motd_view_caption "$mv_render_id"
+                motd_view_rule "$MV_COLUMNS" "$MV_ML" "$MV_MR" "$MV_CAPTION"
+                [ "$MV_INSET" -eq 0 ] || motd_view_box_row "$MV_COLUMNS" ''
+                MV_TEXT=$(motd_view_capture "$mv_render_id" "$((MV_COLUMNS - 2 - 2 * PADDING))" "$mv_render_rows" card)
+                mv_render_index=0
+                while [ "$mv_render_index" -lt "$mv_render_rows" ]; do
+                    motd_view_take_line; motd_view_box_row "$MV_COLUMNS" "$MV_LINE"
+                    mv_render_index=$((mv_render_index + 1))
+                done ;;
+            ledger|briefing)
+                motd_view_caption "$mv_render_id"; mv_render_caption=$MV_CAPTION; mv_render_headline=$MV_HEADLINE
+                mv_render_label_width=12; [ "$MV_COLUMNS" -ge 60 ] || mv_render_label_width=10
+                motd_view_content_width "$mv_render_id"; mv_render_content_width=$MV_CONTENT_WIDTH
+                MV_TEXT=$(motd_view_capture "$mv_render_id" "$mv_render_content_width" "$mv_render_rows" "$DESIGN")
+                if [ "$DESIGN" = briefing ]; then
+                    # A concise first sentence comes from the same one-row
+                    # section adapter. Keep the first actual observation: it
+                    # may be a service, address or session, not a heading.
+                    # Only an identical summary or known table heading can
+                    # be replaced. The row budget still bounds the result.
+                    mv_render_head=$(motd_view_capture "$mv_render_id" "$mv_render_content_width" 1 briefing)
+                    mv_render_first_line=${MV_TEXT%%'
+'*}
+                    if [ "$mv_render_first_line" = "$mv_render_head" ]; then
+                        motd_view_take_line
+                    else
+                        case "$mv_render_id:$mv_render_first_line" in
+                            processes:'CPU avg / PID name'*|io:'Disk I/O / '*) motd_view_take_line ;;
+                        esac
+                    fi
+                    MV_TEXT="$mv_render_head
+$MV_TEXT"
+                fi
+                mv_render_index=0
+                [ "$MV_INSET" -eq 0 ] || printf '\n'
+                while [ "$mv_render_index" -lt "$mv_render_rows" ]; do
+                    motd_view_take_line
+                    if [ "$DESIGN" = briefing ]; then
+                        if [ "$mv_render_index" -eq 0 ]; then motd_view_plain_row "$mv_render_headline: $MV_LINE" "$MV_TITLE_COLOR"
+                        else printf '%*s' "$((PADDING + 2))" ''; motd_view_clean "$MV_LINE" "$mv_render_content_width"; printf '%s\n' "$MV_CLEAN"; fi
+                    else
+                        motd_view_clean "$mv_render_caption" "$mv_render_label_width"; mv_render_label=$MV_CLEAN
+                        motd_view_clean "$MV_LINE" "$mv_render_content_width"
+                        motd_view_tint "$MV_LINE"
+                        printf '%*s%s%-*s%s | %s%-*s%s\n' "$PADDING" '' "$MV_TITLE_COLOR" "$mv_render_label_width" "$mv_render_label" "$MV_RESET" "$MV_ROW_COLOR" "$mv_render_content_width" "$MV_CLEAN" "$MV_RESET"
+                        mv_render_caption=''
+                    fi
+                    mv_render_index=$((mv_render_index + 1))
+                done ;;
+        esac
+    done
+    if [ -n "$mv_render_pending" ]; then
+        [ "$mv_render_first" -eq 1 ] || motd_view_gap
+        motd_view_card "${mv_render_pending%%:*}" "${mv_render_pending#*:}" "$MV_PANEL_WIDTH"
+    fi
+    MV_TEXT=$MV_FOOTER
+    while [ -n "$MV_TEXT" ]; do
+        motd_view_take_line; [ -n "$MV_LINE" ] || continue
+        if [ "$DESIGN" = classic ]; then motd_view_box_row "$MV_COLUMNS" "$MV_LINE"
+        else motd_view_plain_row "$MV_LINE" "$MV_MUTED"; fi
+    done
+    [ "$DESIGN" != classic ] || motd_view_rule "$MV_COLUMNS" "$MV_BL" "$MV_BR" ''
+}
+'''
+# END EMBEDDED DESIGNS
+
 # BEGIN EMBEDDED BASH — regenerated by tools/embed_runtime.py
 BASH_TEMPLATE = r'''#!/bin/bash
-# MOTD Bash runtime 0.3.0 | derived from Workshop MOTD 1.2.0, 2026-11-16.
+# MOTD Bash runtime 0.4.0 | derived from Workshop MOTD 1.2.0, 2026-11-16.
 # Bash 4.3+ and GNU timeout; optional GNU df, procps ps, iproute2, systemd.
 # Standalone output: generate settings with motd.py, then use --demo or --help.
 # No daemon, installation side effects, network requests, recursive disk scans,
@@ -2744,6 +3768,13 @@ MAX_WIDTH=132                   # Use available width up to this cap.
 THEME=cyan                     # cyan | amber | mono
 CHARSET=auto                    # auto | ascii | unicode; CLI flags override.
 COLOR_MODE=auto                 # auto | always | never; NO_COLOR still wins.
+DESIGN=classic                  # classic | cards | ledger | briefing | dashboard
+DENSITY=balanced                # compact | balanced | comfortable
+DETAIL=normal                   # brief | normal | full; independent of spacing
+PADDING=1 SECTION_GAP=0
+COLOR_EMPHASIS=balanced          # quiet | balanced | vivid
+SECTION_PRIORITY=(attention resources system services processes io sessions connections hints)
+declare -A SECTION_DETAIL=()
 MOTD_FASTFETCH=0                # External before/after hooks are owned by motd.py.
 FASTFETCH_TIMEOUT=1s
 STORAGE_TIMEOUT=0.4s
@@ -2878,7 +3909,7 @@ if [[ ${BASH_SOURCE[0]} == "$0" ]]; then
     ws_guard=1; ws_guard_worker=0
     for ws_arg in "$@"; do
         case $ws_arg in
-            --demo|--demo-alerts|--help|-h|--version|--list-sections|--list-items) ws_guard=0 ;;
+            --demo|--demo-alerts|--help|-h|--version|--list-sections|--list-items|--_validate-options) ws_guard=0 ;;
             --_worker) ws_guard=0; ws_guard_worker=1 ;;
         esac
     done
@@ -2919,7 +3950,7 @@ fi
 
 
 # ===================== 2. CORE COLLECTION / CONTROL ==========================
-ROWS_OVERRIDE='' TTY_SIZE_OVERRIDE='' WORKER=0
+ROWS_OVERRIDE='' TTY_SIZE_OVERRIDE='' WORKER=0 VALIDATE_ONLY=0
 BUDGET_START_MS=0 BUDGET_ACTIVE=0 LOCAL_ONLY=0
 budget_clock() {
     # /proc/uptime is monotonic and available on Bash4.3; centisecond resolution.
@@ -2969,13 +4000,16 @@ FASTFETCH_TEXT='' OUTPUT='' REPLY=''
 DEMO=0 PLAIN=0 ASCII=0 FORCE_COLOR=0 WIDTH_OVERRIDE='' FETCH_OVERRIDE='' THEME_OVERRIDE=''
 [[ $CHARSET != ascii ]] || ASCII=1
 PROC_ROOT=/proc SYS_ROOT=/sys ETC_ROOT=/etc RUN_ROOT=/run
-VERSION=0.3.0
+VERSION=0.4.0
 
 usage() {
     printf '%s\n' \
-      'MOTD adaptive runtime 0.3.0 - standalone Linux status display.' \
+      'MOTD adaptive runtime 0.4.0 - standalone Linux status display.' \
       'Usage: motd.bash [--rows 8..200]' \
       '       [--width 24..240] [--theme cyan|amber|green|mono] [--plain|--color] [--ascii|--unicode]' \
+      '       [--design classic|cards|ledger|briefing|dashboard] [--detail brief|normal|full]' \
+      '       [--density compact|balanced|comfortable] [--padding 0..3] [--section-gap 0..2]' \
+      '       [--color-emphasis quiet|balanced|vivid]' \
       '       [--sections system,resources,services,processes,sessions,connections,attention,hints]' \
       '       [--hide SECTION,...] [--show SECTION,...]' \
       '       [--hide-item SECTION.ITEM,...] [--show-item SECTION.ITEM,...]' \
@@ -2999,6 +4033,7 @@ parse_options() {
     while (($#)); do
         case $1 in
             --_worker) WORKER=1; shift ;;
+            --_validate-options) VALIDATE_ONLY=1; shift ;;
             --_tty-size)
                 (($#>=2)) || return 2
                 [[ -z $2 || $2 =~ ^[0-9]{1,3}[[:space:]][0-9]{1,3}$ ]] || return 2
@@ -3006,9 +4041,22 @@ parse_options() {
             --demo) DEMO=1; shift ;;
             --demo-alerts) DEMO=2; shift ;;
             --plain) PLAIN=1; shift ;;
+            --no-hooks) shift ;; # The generated wrapper owns hook suppression.
             --color) FORCE_COLOR=1; shift ;;
             --ascii) ASCII=1; shift ;;
             --unicode) ASCII=0; shift ;;
+            --design)
+                case ${2-} in classic|cards|ledger|briefing|dashboard) DESIGN=$2 ;; *) return 2 ;; esac; shift 2 ;;
+            --density)
+                case ${2-} in compact|balanced|comfortable) DENSITY=$2 ;; *) return 2 ;; esac; shift 2 ;;
+            --detail)
+                case ${2-} in brief|normal|full) DETAIL=$2 ;; *) return 2 ;; esac; shift 2 ;;
+            --color-emphasis)
+                case ${2-} in quiet|balanced|vivid) COLOR_EMPHASIS=$2 ;; *) return 2 ;; esac; shift 2 ;;
+            --padding)
+                case ${2-} in 0|1|2|3) PADDING=$2 ;; *) return 2 ;; esac; shift 2 ;;
+            --section-gap)
+                case ${2-} in 0|1|2) SECTION_GAP=$2 ;; *) return 2 ;; esac; shift 2 ;;
             --no-fastfetch) FETCH_OVERRIDE=0; shift ;;
             --journal) SHOW_JOURNAL=1; shift ;;
             --no-journal) SHOW_JOURNAL=0; shift ;;
@@ -3394,6 +4442,7 @@ main() {
         return 2
     fi
     ui_plan_layout || return $?
+    ((VALIDATE_ONLY==0)) || return 0
     collect_all; prepare_view
     render_adaptive || return $?
     printf '%s' "$OUTPUT"
@@ -4618,6 +5667,14 @@ ui_value_cell() {
 }
 ui_emit() {
     ((UI_REMAIN>0)) || return 0
+    if ((${UI_DESIGN_CAPTURE:-0})); then
+        strip_ansi "$1"
+        # Remove right-padding before a plain-language heading is added. The
+        # shared engine repads the final cell to its own measured width.
+        REPLY=${REPLY%"${REPLY##*[! ]}"}
+        UI_CAPTURE_LINES+=("$REPLY")
+        ((UI_REMAIN-=1)); ((UI_EMITTED+=1)); return 0
+    fi
     line "$BORDER$V$RST $1 $BORDER$V$RST"
     ((UI_REMAIN-=1)); ((UI_EMITTED+=1)); return 0
 }
@@ -4662,6 +5719,9 @@ ui_heading() {
 ui_begin() {
     UI_SECTION_ID=$1; UI_REMAIN=${2:-0}; UI_EMITTED=0
     local title=${UI_SECTION_TITLE:-${SECTION_TITLE[$1]:-$1}}
+    if ((${UI_DESIGN_CAPTURE:-0})); then
+        UI_CAPTURE_SUMMARY=${3-}; ((UI_REMAIN-=1)); return 0
+    fi
     ui_heading "$title" "${3-}" "${4-${COLOR[muted]}}"
 }
 ui_top() {
@@ -5420,9 +6480,98 @@ ui_render_sections() {
     ui_bottom
 }
 
-# Legacy branches within individual components remain private during this
-# bounded migration. All public entry points use the same adaptive dispatcher.
-render_adaptive() { local MODE=concise; ui_render_sections; }
+# The design engine consumes the same section callbacks and validated model.
+# It changes presentation only: collection, ranking and metric formulas still
+# have exactly one owner. Capturing happens in the engine's command-substitution
+# subshell, so temporary widths and glyph choices cannot leak into other cards.
+motd_view_detail() { printf '%s\n' "${SECTION_DETAIL[$1]:-$DETAIL}"; }
+
+motd_view_capture() {
+    local id=$1 rows=$3 flavour=$4 TEXT_WIDTH=$2 INNER=$(($2 + 2)) COLS=$(($2 + 4))
+    local UI_DESIGN_CAPTURE=1 UI_CAPTURE_SUMMARY='' UI_SECTION_TITLE=${SECTION_TITLE[$1]}
+    local GLYPH_USED='#' GLYPH_FREE='.' kind pid memory disk summary=''
+    local -a UI_CAPTURE_LINES=() UI_TASK_IDS=()
+    MODEL[unicode]=0
+    # A one-row section must contain an observation, never only a table header.
+    if ((rows==1)); then
+        case $id in
+            system)
+                if ui_enabled system identity; then summary="${MODEL[host]:-?} | up ${MODEL[uptime]:-?}"; fi
+                if ui_enabled system platform; then summary+="${summary:+ | }${MODEL[os]:-?}"; fi
+                if [[ -n $summary ]]; then printf '%s\n' "$summary"; return; fi ;;
+            resources)
+                if ui_enabled resources memory; then
+                    summary='RAM unavailable'
+                    ((${MODEL[mem_valid]:-0}==0)) || summary="RAM ${VIEW[mem_used]:-?}/${VIEW[mem_total]:-?}"
+                fi
+                if ui_enabled resources storage; then
+                    disk="Disk ${MODEL[storage_state]:-unavailable}"
+                    [[ ${MODEL[storage_state]-} != ok ]] || disk="Disk ${VIEW[storage_used]:-?}/${VIEW[storage_total]:-?}"
+                    summary+="${summary:+ | }$disk"
+                fi
+                if [[ -n $summary ]]; then printf '%s\n' "$summary"; return; fi ;;
+            services)
+                if ui_enabled services summary; then
+                    if [[ ${MODEL[svc_runtime_state]-} == ok ]]; then printf '%s\n' "${MODEL[svc_running]:-?} running; ${MODEL[svc_failed]:-?} failed"
+                    else printf '%s\n' "Service state: ${MODEL[svc_runtime_state]:-unavailable}"; fi; return
+                fi ;;
+            processes|io)
+                for kind in cpu rss io; do
+                    if [[ $id == io ]]; then [[ $kind == io ]] || continue
+                    else ui_enabled processes "$kind" || continue; fi
+                    ui_task_ids "$kind"; pid=${UI_TASK_IDS[0]-}; ui_process_value "$kind" "$pid"
+                    if [[ -n $pid ]]; then printf '%s\n' "$kind: $UI_PROCESS_LABEL $UI_PROCESS_VALUE"
+                    else printf '%s\n' 'Process observation unavailable'; fi; return
+                done ;;
+            sessions)
+                case ${MODEL[session_state]-} in ok|partial|fallback) printf '%s\n' "${MODEL[session_count]:-?} sessions / ${MODEL[session_users]:-?} users" ;;
+                    *) printf '%s\n' "Sessions: ${MODEL[session_state]:-unavailable}" ;; esac; return ;;
+            connections)
+                case ${MODEL[connection_state]-} in ok|partial) printf '%s\n' "${MODEL[tcp_established]:-?} TCP / ${MODEL[tcp_admin]:-?} admin" ;;
+                    *) printf '%s\n' "Connections: ${MODEL[connection_state]:-unavailable}" ;; esac; return ;;
+        esac
+    fi
+    "${SECTION_RENDERER[$id]}" "$((rows + 1))"
+    if ((${#UI_CAPTURE_LINES[@]})); then printf '%s\n' "${UI_CAPTURE_LINES[@]}"
+    elif [[ -n $UI_CAPTURE_SUMMARY ]]; then printf '%s\n' "$UI_CAPTURE_SUMMARY"
+    else printf '%s\n' 'No additional observations in this section.'; fi
+}
+
+ui_classic_defaults() {
+    [[ $DESIGN == classic && $DENSITY == balanced && $DETAIL == normal && $PADDING == 1 &&
+       $SECTION_GAP == 0 && $COLOR_EMPHASIS == balanced && ${#SECTION_DETAIL[@]} == 0 &&
+       ${SECTION_PRIORITY[*]} == 'attention resources system services processes io sessions connections hints' ]]
+}
+
+render_adaptive() {
+    local MODE=concise id memory='RAM unavailable' storage="Disk ${MODEL[storage_state]:-unavailable}"
+    if ui_classic_defaults; then
+        ui_plan_layout || return $?
+        if ((UI_OMITTED_SECTIONS==0)); then ui_render_sections; return $?; fi
+    fi
+    MV_SECTION_IDS=''
+    for id in "${SECTIONS[@]}"; do ui_section_enabled "$id" && MV_SECTION_IDS+=" $id"; done
+    MV_COLUMNS=${MODEL[columns]}; MV_ROWS_LIMIT=$COMPACT_ROWS
+    MV_PRIORITY=${SECTION_PRIORITY[*]}; MV_COLOR=${MODEL[color]}; MV_UNICODE=${MODEL[unicode]}
+    MV_TITLE=''; MV_SUBTITLE=''; MV_METRICS=''
+    ui_enabled header title && MV_TITLE=$TITLE
+    if ui_enabled header host && ui_enabled system identity; then MV_SUBTITLE=${MODEL[host]:-?}; fi
+    if ui_enabled header site && [[ -n $SITE_LABEL ]]; then MV_SUBTITLE+="${MV_SUBTITLE:+ | }$SITE_LABEL"; fi
+    MV_SUBTITLE+="${MV_SUBTITLE:+ | }local observations"
+    ((DEMO==0)) || MV_SUBTITLE="DEMO | $MV_SUBTITLE"
+    ((${MODEL[mem_valid]:-0}==0)) || memory="RAM ${VIEW[mem_used]:-?}/${VIEW[mem_total]:-?}"
+    [[ ${MODEL[storage_state]-} != ok ]] || storage="DISK ${VIEW[storage_used]:-?}/${VIEW[storage_total]:-?}"
+    if [[ " $MV_SECTION_IDS " == *' resources '* ]]; then
+        ui_enabled resources memory && MV_METRICS=$memory
+        ui_enabled resources storage && MV_METRICS+="${MV_METRICS:+ | }$storage"
+    fi
+    if [[ " $MV_SECTION_IDS " == *' system '* ]] && ui_enabled system load; then
+        MV_METRICS+="${MV_METRICS:+ | }load ${MODEL[load1]:-?}"
+    fi
+    [[ -n $MV_METRICS ]] || MV_METRICS='Selected local observations'
+    OUTPUT=$(motd_design_render) || return $?
+    OUTPUT+=$'\n'
+}
 
 ui_section_list() {
     local id state
@@ -5538,6 +6687,13 @@ SITE_LABEL=''
 THEME=mono
 CHARSET=auto
 COLOR_MODE=auto
+DESIGN=classic
+DENSITY=balanced
+DETAIL=normal
+PADDING=1
+SECTION_GAP=0
+COLOR_EMPHASIS=balanced
+SECTION_PRIORITY='attention resources system services processes io sessions connections hints'
 MAX_WIDTH=80
 ROWS=25
 TOP_N=3
@@ -5552,6 +6708,7 @@ motd_required_services() { :; }
 motd_service_allowed() { return 0; }
 motd_before_hooks() { :; }
 motd_after_hooks() { :; }
+motd_section_detail() { printf '%s\n' "$DETAIL"; }
 
 # @MOTD_CONFIG@
 
@@ -5573,6 +6730,18 @@ while [ "$#" -gt 0 ]; do
         --color) MOTD_FORCE_COLOR=1 ;;
         --ascii) MOTD_ASCII=1 ;;
         --unicode) MOTD_ASCII=0 ;;
+        --design)
+            shift; case "${1-}" in classic|cards|ledger|briefing|dashboard) DESIGN=$1 ;; *) exit 2 ;; esac ;;
+        --density)
+            shift; case "${1-}" in compact|balanced|comfortable) DENSITY=$1 ;; *) exit 2 ;; esac ;;
+        --detail)
+            shift; case "${1-}" in brief|normal|full) DETAIL=$1 ;; *) exit 2 ;; esac ;;
+        --color-emphasis)
+            shift; case "${1-}" in quiet|balanced|vivid) COLOR_EMPHASIS=$1 ;; *) exit 2 ;; esac ;;
+        --padding)
+            shift; case "${1-}" in 0|1|2|3) PADDING=$1 ;; *) exit 2 ;; esac ;;
+        --section-gap)
+            shift; case "${1-}" in 0|1|2) SECTION_GAP=$1 ;; *) exit 2 ;; esac ;;
         --width|--rows)
             motd_option=$1; shift
             case "${1-}" in ''|*[!0-9]*) printf '%s\n' 'Width/rows require an integer.' >&2; exit 2 ;; esac
@@ -5592,6 +6761,9 @@ while [ "$#" -gt 0 ]; do
         --list-sections) printf '%s\n' 'system resources services processes sessions connections attention hints io'; exit 0 ;;
         --help|-h)
             printf '%s\n' 'MOTD: --demo --demo-alerts --plain --color --ascii --unicode --no-hooks --width N --rows N' \
+                '--design classic|cards|ledger|briefing|dashboard --detail brief|normal|full' \
+                '--density compact|balanced|comfortable --padding 0..3 --section-gap 0..2' \
+                '--color-emphasis quiet|balanced|vivid' \
                 'Portable Unix: identity, memory, storage, services, processes, sessions, connections, notices and hints.' \
                 'Missing OS facilities and inaccessible observations say unavailable.'
             exit 0 ;;
@@ -5964,6 +7136,7 @@ motd_clean_text() {
     if [ -n "$motd_rest" ] && [ "$2" -gt 0 ]; then motd_clean=${motd_clean%?}'~'; fi
 }
 motd_border() {
+    if [ "${motd_capture_mode-0}" -eq 1 ]; then return; fi
     if [ "$motd_budget" -le 0 ]; then return; fi
     motd_clean_text "$3" "$motd_inner"
     # Use the counted characters: old Bash ${#var} in arithmetic can apply
@@ -5977,6 +7150,10 @@ motd_border() {
 motd_line() {
     if [ "$motd_section_budget" -le 0 ] || [ "$motd_budget" -le 1 ]; then return; fi
     motd_clean_text "$1" "$motd_inner"
+    if [ "${motd_capture_mode-0}" -eq 1 ]; then
+        printf '%s\n' "$motd_clean"
+        motd_section_budget=$((motd_section_budget - 1)); return
+    fi
     printf '%s%s%s %-*s %s%s%s\n' "$motd_color" "$motd_v" "$motd_reset" "$motd_inner" "$motd_clean" "$motd_color" "$motd_v" "$motd_reset"
     motd_section_budget=$((motd_section_budget - 1)); motd_budget=$((motd_budget - 1))
 }
@@ -5992,14 +7169,11 @@ MOTD_ROWS_END
 motd_first() { motd_first_row=${1%%'
 '*}; }
 
-motd_border "$motd_tl" "$motd_tr" "$TITLE"
-motd_section_budget=1
-if [ -n "$SITE_LABEL" ]; then motd_line "$SITE_LABEL | Portable Unix"
-else motd_line 'Portable Unix | local observations'; fi
-for motd_section in $motd_visible_sections; do
-    motd_section_budget=$((1 + motd_share))
-    if [ "$motd_extra" -gt 0 ]; then motd_section_budget=$((motd_section_budget + 1)); motd_extra=$((motd_extra - 1)); fi
-    case "$motd_section" in
+# One set of section callbacks serves every design. The shared POSIX engine
+# captures these data rows in a subshell and owns all layout; no collector or
+# measurement formula is duplicated for a different presentation.
+motd_render_section() {
+    case "$1" in
         system)
             motd_border "$motd_ml" "$motd_mr" 'SYSTEM'
             motd_line "Host: $motd_host | $motd_os $motd_release"
@@ -6039,20 +7213,78 @@ MOTD_SERVICES_END
             motd_border "$motd_ml" "$motd_mr" 'CONNECTIONS'; motd_line "$motd_connections"; motd_rows "$motd_connection_rows" ;;
         attention)
             motd_border "$motd_ml" "$motd_mr" 'ATTENTION'
-            case "$motd_attention" in 'DEMO WARNING:'*|'Required service:'*) motd_line "$motd_attention" ;; esac
+            motd_attention_first=0
+            case "$motd_attention" in 'DEMO WARNING:'*|'Required service:'*)
+                motd_line "$motd_attention"; motd_attention_first=1 ;; esac
             motd_messages
-            motd_line "$motd_attention" ;;
+            if [ "${motd_capture_mode-0}" -eq 0 ] || [ "$motd_attention_first" -eq 0 ]; then
+                motd_line "$motd_attention"
+            fi ;;
         hints)
             motd_border "$motd_ml" "$motd_mr" 'HINTS'; motd_hints; motd_line 'Inspect: ps | df -Pk / | who' ;;
         io)
             motd_border "$motd_ml" "$motd_mr" 'I/O (cumulative; visible sample)'; motd_line "$motd_disk_io"; motd_rows "$motd_io_rows" ;;
     esac
+}
+
+motd_view_detail() { motd_section_detail "$1"; }
+
+motd_view_capture() {
+    motd_capture_mode=1; motd_section_budget=$3; motd_inner=$2; motd_budget=10000
+    motd_process_extra=0; motd_resource_extra=0
+    if [ "$3" -eq 1 ]; then
+        case "$1" in
+            system) motd_line "$motd_host | up $motd_uptime s | $motd_os"; return ;;
+            resources)
+                if [ "$motd_available" != unavailable ]; then motd_line "RAM $motd_available KiB available | $motd_disk"
+                elif [ "$motd_free" != unavailable ]; then motd_line "RAM $motd_free KiB free | $motd_disk"
+                else motd_line "RAM unavailable | $motd_disk"; fi; return ;;
+            processes) motd_first "$motd_cpu_rows"; motd_line "CPU: $motd_first_row"; return ;;
+            io) motd_first "$motd_io_rows"; motd_line "I/O bytes: $motd_first_row"; return ;;
+        esac
+    fi
+    motd_render_section "$1"
+}
+
+motd_classic_defaults() {
+    [ "$DESIGN" = classic ] && [ "$DENSITY" = balanced ] && [ "$DETAIL" = normal ] &&
+    [ "$PADDING" = 1 ] && [ "$SECTION_GAP" = 0 ] && [ "$COLOR_EMPHASIS" = balanced ] &&
+    [ "$SECTION_PRIORITY" = 'attention resources system services processes io sessions connections hints' ] || return 1
+    for motd_default_id in $SECTIONS; do
+        [ "$(motd_section_detail "$motd_default_id")" = normal ] || return 1
+    done
+    return 0
+}
+
+if motd_classic_defaults && [ "$motd_omitted_sections" -eq 0 ]; then
+motd_border "$motd_tl" "$motd_tr" "$TITLE"
+motd_section_budget=1
+if [ -n "$SITE_LABEL" ]; then motd_line "$SITE_LABEL | Portable Unix"
+else motd_line 'Portable Unix | local observations'; fi
+for motd_section in $motd_visible_sections; do
+    motd_section_budget=$((1 + motd_share))
+    if [ "$motd_extra" -gt 0 ]; then motd_section_budget=$((motd_section_budget + 1)); motd_extra=$((motd_extra - 1)); fi
+    motd_render_section "$motd_section"
 done
 if [ "$motd_omitted_sections" -gt 0 ]; then
     motd_section_budget=1
     motd_line "+$motd_omitted_sections sections; resize for more."
 fi
 motd_border "$motd_bl" "$motd_br" ''
+else
+    MV_COLUMNS=$MAX_WIDTH; MV_ROWS_LIMIT=$ROWS; MV_SECTION_IDS=$SECTIONS
+    MV_PRIORITY=$SECTION_PRIORITY; MV_UNICODE=$((1 - MOTD_ASCII)); MV_COLOR=0
+    [ -z "$motd_color" ] || MV_COLOR=1
+    MV_TITLE=$TITLE; MV_SUBTITLE="$motd_host | $SITE_LABEL | Portable Unix"
+    [ "$MOTD_DEMO" -eq 0 ] || MV_SUBTITLE="DEMO | $MV_SUBTITLE"
+    MV_METRICS='Selected local observations'
+    case " $MV_SECTION_IDS " in *' resources '*)
+        if [ "$motd_available" != unavailable ]; then MV_METRICS="RAM $motd_available KiB available | $motd_disk"
+        elif [ "$motd_free" != unavailable ]; then MV_METRICS="RAM $motd_free KiB free | $motd_disk"
+        else MV_METRICS="RAM unavailable | $motd_disk"; fi ;;
+    esac
+    motd_design_render || exit "$?"
+fi
 motd_after_hooks || exit "$?"
 '''
 # END EMBEDDED SH
@@ -6182,11 +7414,18 @@ function Format-MotdShortBytes([double] $Bytes) {
 function Format-MotdBar([double] $Used, [double] $Total) {
     if ($Total -le 0 -or $Used -lt 0) { return '[unavailable]' }
     $length = 12
-    if ($MotdWidth -lt 60) { $length = 8 }
+    if ((Get-MotdResourceWidth) -lt 60) { $length = 8 }
     $filled = [int][Math]::Round($length * [Math]::Max(0.0, [Math]::Min(1.0, $Used / $Total)))
     $full = '#'; $empty = '-'
     if ($Unicode -and -not $Ascii) { $full = [string][char]0x2588; $empty = [string][char]0x2591 }
     return '[' + ($full * $filled) + ($empty * ($length - $filled)) + ']'
+}
+
+function Get-MotdResourceWidth {
+    if ($MotdConfig['display']['design'] -eq 'dashboard' -and $MotdWidth -ge 80) {
+        return [int][Math]::Floor(($MotdWidth - 2) / 2)
+    }
+    return $MotdWidth
 }
 
 function ConvertTo-MotdWindowsArgument([string] $Argument) {
@@ -6217,6 +7456,12 @@ function Invoke-MotdHooks([string] $Phase) {
     $number = 0
     foreach ($hook in @($MotdConfig['hooks'][$Phase])) {
         $number++
+        if ($hook.argv[0] -ceq 'motd:print') {
+            # A built-in literal line action shares the phase/demo gate above.
+            # It invokes no process, parser, expression evaluator or shell.
+            for ($i = 1; $i -lt $hook.argv.Count; $i++) { Write-Output (ConvertTo-MotdText $hook.argv[$i]) }
+            continue
+        }
         $state = @{ Process = (New-Object Diagnostics.Process); Status = 127 }
         $read = Read-MotdObservation {
             $info = New-Object Diagnostics.ProcessStartInfo
@@ -6354,7 +7599,7 @@ function Add-MotdResources {
             if ($size.Ok -and $size.Value.Count -eq 2) { $diskTotal = [double]$size.Value[0]; $diskUsed = $diskTotal - [double]$size.Value[1] }
         }
     }
-    if ($MotdWidth -lt 60) {
+    if ((Get-MotdResourceWidth) -lt 60) {
         Add-MotdLine ('MEM ' + (Format-MotdShortBytes $used) + '/' + (Format-MotdShortBytes $total) + ' ' + (Format-MotdBar $used $total)) 'accent'
         Add-MotdLine ('DISK ' + (Format-MotdShortBytes $diskUsed) + '/' + (Format-MotdShortBytes $diskTotal) + ' ' + (Format-MotdBar $diskUsed $diskTotal))
     } else {
@@ -6614,12 +7859,275 @@ function Format-MotdCell([string] $Text, [int] $Length) {
 
 function Write-MotdRow([string] $Text, [string] $Tone = 'normal') {
     $line = $MotdVertical + ' ' + (Format-MotdCell $Text ($MotdWidth - 4)) + ' ' + $MotdVertical
-    if ($MotdColor -and $Tone -ne 'normal') {
+    if ($MotdColor -and $Tone -ne 'normal' -and ($MotdConfig['display']['color_emphasis'] -ne 'quiet' -or $Tone -eq 'warning')) {
         $code = $MotdAccent
         switch ($Tone) { 'warning' { $code = '33' } 'good' { $code = '32' } 'muted' { $code = '90' } }
+        if ($MotdConfig['display']['color_emphasis'] -eq 'vivid' -and $Tone -ne 'muted') { $code = '1;' + $code }
         $line = $MotdEscape + '[' + $code + 'm' + $line + $MotdEscape + '[0m'
     }
     Write-Output $line
+}
+
+# Presentation is a pure transformation of the section rows collected above.
+# These helpers never call a provider or execute a hook. The planner accounts
+# for every border, gap and omission row before writing anything to the terminal.
+function Get-MotdDisplaySetting([string] $Name, $Default) {
+    if ($MotdConfig['display'].ContainsKey($Name)) { return $MotdConfig['display'][$Name] }
+    return $Default
+}
+
+function Get-MotdSectionCaption([string] $Id) {
+    switch ($Id) {
+        'io' { return 'I/O' }
+        default { return $Id.ToUpper() }
+    }
+}
+
+function Get-MotdPresentationOrder([string] $Design) {
+    $order = New-MotdList
+    $leading = @()
+    if ($Design -eq 'briefing') { $leading = @('attention') }
+    if ($Design -eq 'dashboard') { $leading = @('resources', 'system', 'attention') }
+    foreach ($id in $leading) { if ($MotdSectionOrder -contains $id) { [void]$order.Add($id) } }
+    foreach ($id in $MotdSectionOrder) { if (-not $order.Contains($id)) { [void]$order.Add($id) } }
+    return ,$order
+}
+
+function Get-MotdPresentationRows([string] $Id, [string] $Design) {
+    $rows = New-MotdList
+    $source = $MotdSections[$Id].Lines
+    if ($Id -eq 'attention' -and $source.Count -gt 1) {
+        # Put actual warnings before routine messages in compact presentations.
+        [void]$rows.Add($source[0])
+        foreach ($row in $source) { if ($row.Tone -eq 'warning') { [void]$rows.Add($row) } }
+        for ($i = 1; $i -lt $source.Count; $i++) { if ($source[$i].Tone -ne 'warning') { [void]$rows.Add($source[$i]) } }
+    } else { foreach ($row in $source) { [void]$rows.Add($row) } }
+    if ($Design -eq 'briefing' -and $rows.Count -gt 0) {
+        $brief = New-MotdList
+        $caption = (Get-MotdSectionCaption $Id).ToLower()
+        $caption = $caption.Substring(0, 1).ToUpper() + $caption.Substring(1)
+        if ($Id -eq 'io') { $caption = 'I/O' }
+        $start = 1; $first = $rows[0]
+        $text = [regex]::Replace($first.Text, ('^' + [regex]::Escape((Get-MotdSectionCaption $Id)) + '(?:\s+|$)'), '')
+        # Heading-only sections use their first observation as the headline;
+        # brief detail must not spend its entire allocation on an empty label.
+        if ($text -eq '' -and $rows.Count -gt 1) { $first = $rows[1]; $text = $first.Text; $start = 2 }
+        if ($text -eq '') { $text = 'No configured items.' }
+        [void]$brief.Add(@{ Text = ($caption + ': ' + $text); Tone = $first.Tone })
+        for ($i = $start; $i -lt $rows.Count; $i++) { [void]$brief.Add(@{ Text = ('  ' + $rows[$i].Text); Tone = $rows[$i].Tone }) }
+        return ,$brief
+    }
+    if (($Design -eq 'cards' -or $Design -eq 'dashboard') -and $rows.Count -gt 0) {
+        # The section caption is already in the card border. Keep its first
+        # observation, removing only the duplicated fixed label.
+        $cards = New-MotdList
+        $first = [regex]::Replace($rows[0].Text, ('^' + [regex]::Escape((Get-MotdSectionCaption $Id)) + '(?:\s+|$)'), '')
+        if ($first -ne '') { [void]$cards.Add(@{ Text = $first; Tone = $rows[0].Tone }) }
+        for ($i = 1; $i -lt $rows.Count; $i++) { [void]$cards.Add($rows[$i]) }
+        return ,$cards
+    }
+    return ,$rows
+}
+
+function Get-MotdPresentationMinimum([string] $Id, [int] $Count, [string] $Design) {
+    $minimum = 1
+    if ($Id -eq 'resources' -or $Id -eq 'system' -or $Id -eq 'attention') { $minimum = 2 }
+    if ($Id -eq 'processes') { $minimum = 3 }
+    if ($Design -eq 'briefing' -and $Id -eq 'attention') { $minimum = 1 }
+    return [Math]::Min($minimum, $Count)
+}
+
+function Get-MotdPresentationGroups($Selected, [string] $Design) {
+    $groups = New-MotdList
+    $columns = 1
+    if ($Design -eq 'dashboard' -and $MotdWidth -ge 80) { $columns = 2 }
+    for ($i = 0; $i -lt $Selected.Count; $i += $columns) {
+        $ids = New-MotdList
+        [void]$ids.Add($Selected[$i])
+        if ($columns -eq 2 -and $i + 1 -lt $Selected.Count) { [void]$ids.Add($Selected[$i + 1]) }
+        [void]$groups.Add(@{ Ids = $ids })
+    }
+    return ,$groups
+}
+
+function Measure-MotdPresentation($Selected, $Allocated, [string] $Design, [int] $Gap) {
+    $groups = Get-MotdPresentationGroups $Selected $Design
+    $height = 0
+    foreach ($group in $groups) {
+        $band = 0
+        foreach ($id in $group.Ids) { $band = [Math]::Max($band, [int]$Allocated[$id]) }
+        if ($Design -eq 'cards' -or $Design -eq 'dashboard') { $band += 2 }
+        $height += $band
+    }
+    if ($groups.Count -gt 1) { $height += $Gap * ($groups.Count - 1) }
+    return $height
+}
+
+function Get-MotdPresentationPlan([string] $Design) {
+    $order = Get-MotdPresentationOrder $Design
+    $selected = New-MotdList
+    $priority = New-MotdList
+    foreach ($id in @(Get-MotdDisplaySetting 'priority' @('attention', 'resources', 'system', 'services', 'processes', 'io', 'sessions', 'connections', 'hints'))) {
+        if (-not $priority.Contains($id)) { [void]$priority.Add($id) }
+    }
+    foreach ($id in $order) { if (-not $priority.Contains($id)) { [void]$priority.Add($id) } }
+    $density = Get-MotdDisplaySetting 'density' 'balanced'
+    $detail = Get-MotdDisplaySetting 'detail' 'normal'
+    $sectionDetail = Get-MotdDisplaySetting 'section_detail' @{}
+    $gap = [int](Get-MotdDisplaySetting 'section_gap' 0)
+    if ($density -eq 'comfortable') { $gap = [Math]::Min(2, $gap + 1) }
+    if ($density -eq 'compact') { $gap = [Math]::Max(0, $gap - 1) }
+    $rows = @{}; $allocated = @{}; $maximum = @{}
+    foreach ($id in $order) {
+        $rows[$id] = Get-MotdPresentationRows $id $Design
+        if ($rows[$id].Count -eq 0) { continue }
+        [void]$selected.Add($id)
+        $minimum = Get-MotdPresentationMinimum $id $rows[$id].Count $Design
+        $selectedDetail = $detail
+        if ($sectionDetail.ContainsKey($id)) { $selectedDetail = $sectionDetail[$id] }
+        $limit = $rows[$id].Count
+        if ($selectedDetail -eq 'brief') { $limit = $minimum }
+        elseif ($selectedDetail -eq 'normal') {
+            $limit = 6
+            if ($density -eq 'compact') { $limit = 3 }
+            if ($density -eq 'comfortable') { $limit = 4 }
+            $limit = [Math]::Max($minimum, [Math]::Min($limit, $rows[$id].Count))
+        }
+        $allocated[$id] = $minimum; $maximum[$id] = $limit
+    }
+    $capacity = $MotdHeight - 3
+    if ($Design -eq 'classic') { $capacity = $MotdHeight - 4 }
+    $omitted = 0
+    for ($i = $priority.Count - 1; $i -ge 0; $i--) {
+        $reserved = 0; if ($omitted -gt 0) { $reserved = 1 }
+        if ((Measure-MotdPresentation $selected $allocated $Design $gap) + $reserved -le $capacity) { break }
+        $id = $priority[$i]
+        if ($selected.Contains($id)) { [void]$selected.Remove($id); $allocated[$id] = 0; $omitted++ }
+    }
+    $changed = $true
+    while ($changed) {
+        $changed = $false
+        foreach ($id in $priority) {
+            if (-not $selected.Contains($id) -or $allocated[$id] -ge $maximum[$id]) { continue }
+            $allocated[$id]++
+            $reserved = 0; if ($omitted -gt 0) { $reserved = 1 }
+            if ((Measure-MotdPresentation $selected $allocated $Design $gap) + $reserved -le $capacity) { $changed = $true }
+            else { $allocated[$id]-- }
+        }
+    }
+    return @{ Selected = $selected; Rows = $rows; Allocated = $allocated; Gap = $gap; Omitted = $omitted }
+}
+
+function Format-MotdDesignTone([string] $Text, [string] $Tone) {
+    $emphasis = Get-MotdDisplaySetting 'color_emphasis' 'balanced'
+    if (-not $MotdColor -or $Tone -eq 'normal' -or ($emphasis -eq 'quiet' -and $Tone -ne 'warning')) { return $Text }
+    $code = $MotdAccent
+    switch ($Tone) { 'warning' { $code = '33' } 'good' { $code = '32' } 'muted' { $code = '90' } }
+    if ($emphasis -eq 'vivid' -and $Tone -ne 'muted') { $code = '1;' + $code }
+    return $MotdEscape + '[' + $code + 'm' + $Text + $MotdEscape + '[0m'
+}
+
+function Get-MotdBoxCharacters {
+    if ($Unicode -and -not $Ascii) {
+        return @{ H = [string][char]0x2500; V = [string][char]0x2502; TL = [string][char]0x250C; TR = [string][char]0x2510; BL = [string][char]0x2514; BR = [string][char]0x2518 }
+    }
+    return @{ H = '-'; V = '|'; TL = '+'; TR = '+'; BL = '+'; BR = '+' }
+}
+
+function Format-MotdDesignCell([string] $Text, [int] $Width, [int] $Padding, [bool] $Framed) {
+    $characters = Get-MotdBoxCharacters
+    $inner = $Width - 2 * $Padding
+    if ($Framed) { $inner -= 2 }
+    $body = (' ' * $Padding) + (Format-MotdCell $Text $inner) + (' ' * $Padding)
+    if ($Framed) { return $characters.V + $body + $characters.V }
+    return $body
+}
+
+function Get-MotdCardRows([string] $Id, $Rows, [int] $Count, [int] $Width, [int] $Padding, [int] $BandHeight) {
+    $characters = Get-MotdBoxCharacters
+    $output = New-MotdList
+    $label = ' ' + (Get-MotdSectionCaption $Id) + ' '
+    $top = $characters.TL + $label + ($characters.H * ($Width - 2 - $label.Length)) + $characters.TR
+    [void]$output.Add((Format-MotdDesignTone $top 'accent'))
+    for ($i = 0; $i -lt $BandHeight; $i++) {
+        $text = ''; $tone = 'normal'
+        if ($i -lt $Count) { $text = $Rows[$i].Text; $tone = $Rows[$i].Tone }
+        [void]$output.Add((Format-MotdDesignTone (Format-MotdDesignCell $text $Width $Padding $true) $tone))
+    }
+    [void]$output.Add((Format-MotdDesignTone ($characters.BL + ($characters.H * ($Width - 2)) + $characters.BR) 'accent'))
+    return ,$output
+}
+
+function Write-MotdPresentation {
+    $design = Get-MotdDisplaySetting 'design' 'classic'
+    $padding = [int](Get-MotdDisplaySetting 'padding' 1)
+    $defaultPriority = Join-MotdText @('attention', 'resources', 'system', 'services', 'processes', 'io', 'sessions', 'connections', 'hints') ','
+    $configuredPriority = Join-MotdText @(Get-MotdDisplaySetting 'priority' @('attention', 'resources', 'system', 'services', 'processes', 'io', 'sessions', 'connections', 'hints')) ','
+    if ($design -eq 'classic' -and $padding -eq 1 -and (Get-MotdDisplaySetting 'density' 'balanced') -eq 'balanced' -and (Get-MotdDisplaySetting 'detail' 'normal') -eq 'normal' -and (Get-MotdDisplaySetting 'section_gap' 0) -eq 0 -and (Get-MotdDisplaySetting 'section_detail' @{}).Count -eq 0 -and $defaultPriority -eq $configuredPriority) {
+        Write-MotdFrame
+        return
+    }
+    $plan = Get-MotdPresentationPlan $design
+    $output = New-MotdList
+    $characters = Get-MotdBoxCharacters
+    $title = [string]$MotdConfig['display']['title']
+    if ($Demo) { $title += ' | DEMO' }
+    if ($design -eq 'classic') {
+        [void]$output.Add($characters.TL + ($characters.H * ($MotdWidth - 2)) + $characters.TR)
+        [void]$output.Add((Format-MotdDesignTone (Format-MotdDesignCell $title $MotdWidth $padding $true) 'accent'))
+    } else {
+        [void]$output.Add((Format-MotdDesignTone (Format-MotdDesignCell ($title + ' | ' + $design.ToUpper()) $MotdWidth $padding $false) 'accent'))
+        [void]$output.Add((Format-MotdDesignTone ($characters.H * $MotdWidth) 'muted'))
+    }
+    $groups = Get-MotdPresentationGroups $plan.Selected $design
+    $groupNumber = 0
+    foreach ($group in $groups) {
+        if ($groupNumber -gt 0) {
+            for ($gap = 0; $gap -lt $plan.Gap; $gap++) {
+                [void]$output.Add((Format-MotdDesignCell '' $MotdWidth $padding ($design -eq 'classic')))
+            }
+        }
+        $groupNumber++
+        if ($design -eq 'cards' -or $design -eq 'dashboard') {
+            $bandHeight = 0
+            foreach ($id in $group.Ids) { $bandHeight = [Math]::Max($bandHeight, [int]$plan.Allocated[$id]) }
+            $leftWidth = $MotdWidth; $rightWidth = 0
+            if ($group.Ids.Count -eq 2) { $leftWidth = [int][Math]::Floor(($MotdWidth - 2) / 2); $rightWidth = $MotdWidth - 2 - $leftWidth }
+            $id = $group.Ids[0]
+            $left = Get-MotdCardRows $id $plan.Rows[$id] $plan.Allocated[$id] $leftWidth $padding $bandHeight
+            $right = $null
+            if ($group.Ids.Count -eq 2) {
+                $id = $group.Ids[1]
+                $right = Get-MotdCardRows $id $plan.Rows[$id] $plan.Allocated[$id] $rightWidth $padding $bandHeight
+            }
+            for ($i = 0; $i -lt $left.Count; $i++) {
+                $line = $left[$i]
+                if ($null -ne $right) { $line += '  ' + $right[$i] }
+                [void]$output.Add($line)
+            }
+        } else {
+            $id = $group.Ids[0]
+            for ($i = 0; $i -lt $plan.Allocated[$id]; $i++) {
+                $row = $plan.Rows[$id][$i]; $text = $row.Text
+                if ($design -eq 'ledger') {
+                    if ($MotdWidth -lt 60) {
+                        # Keep resource values and alert quantities visible on
+                        # a narrow terminal instead of spending 12 cells on labels.
+                        if ($i -gt 0) { $text = '  ' + $text }
+                    } else {
+                        $label = ''; if ($i -eq 0) { $label = Get-MotdSectionCaption $id }
+                        if ($i -eq 0) { $text = [regex]::Replace($text, ('^' + [regex]::Escape($label) + '(?:\s+|$)'), '') }
+                        $text = $label.PadRight(12) + $text
+                    }
+                }
+                [void]$output.Add((Format-MotdDesignTone (Format-MotdDesignCell $text $MotdWidth $padding ($design -eq 'classic')) $row.Tone))
+            }
+        }
+    }
+    if ($plan.Omitted -gt 0) { [void]$output.Add((Format-MotdDesignTone (Format-MotdDesignCell ('... ' + $plan.Omitted + ' sections omitted; enlarge terminal') $MotdWidth $padding ($design -eq 'classic')) 'muted')) }
+    if ($design -eq 'classic') { [void]$output.Add($characters.BL + ($characters.H * ($MotdWidth - 2)) + $characters.BR) }
+    if ($output.Count -gt $MotdHeight - 1) { throw 'Internal presentation plan exceeds the terminal row budget.' }
+    foreach ($line in $output) { Write-Output $line }
 }
 
 function Write-MotdFrame {
@@ -6697,10 +8205,961 @@ if ($MotdSections.ContainsKey('attention')) {
     $MotdCurrentSection = 'attention'
     Add-MotdAttention
 }
-Write-MotdFrame
+Write-MotdPresentation
 Invoke-MotdHooks 'after'
 '''
 # END EMBEDDED PS
+
+# BEGIN EMBEDDED TOMLI
+# Generated by tools/embed_toml.py from pinned Tomli 2.3.2.
+# Canonical files: vendor/tomli/. No encoded or dynamically executed Python.
+# MIT License
+#
+# Copyright (c) 2021 Taneli Hukkinen
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+def _motd_vendored_tomli():
+    """Create the bundled TOML 1.0 parser for Python versions without tomllib."""
+    from types import SimpleNamespace
+
+    # ----- Canonical upstream source: vendor/tomli/_types.py -----
+    # SPDX-License-Identifier: MIT
+    # SPDX-FileCopyrightText: 2021 Taneli Hukkinen
+    # Licensed to PSF under a Contributor Agreement.
+
+    from typing import Any, Callable, Tuple
+
+    # Type annotations
+    ParseFloat = Callable[[str], Any]
+    Key = Tuple[str, ...]
+    Pos = int
+
+    # ----- Canonical upstream source: vendor/tomli/_re.py -----
+    # SPDX-License-Identifier: MIT
+    # SPDX-FileCopyrightText: 2021 Taneli Hukkinen
+    # Licensed to PSF under a Contributor Agreement.
+
+
+    from datetime import date, datetime, time, timedelta, timezone, tzinfo
+    from functools import lru_cache
+    import re
+
+    TYPE_CHECKING = False
+    if TYPE_CHECKING:
+        from typing import Any, Final
+
+
+    # E.g.
+    # - 00:32:00.999999
+    # - 00:32:00
+    _TIME_RE_STR: Final = (
+        r"([01][0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])(?:\.([0-9]{1,6})[0-9]*)?"
+    )
+
+    RE_NUMBER: Final = re.compile(
+        r"""
+    0
+    (?:
+        x[0-9A-Fa-f](?:_?[0-9A-Fa-f])*   # hex
+        |
+        b[01](?:_?[01])*                 # bin
+        |
+        o[0-7](?:_?[0-7])*               # oct
+    )
+    |
+    [+-]?(?:0|[1-9](?:_?[0-9])*)         # dec, integer part
+    (?P<floatpart>
+        (?:\.[0-9](?:_?[0-9])*)?         # optional fractional part
+        (?:[eE][+-]?[0-9](?:_?[0-9])*)?  # optional exponent part
+    )
+    """,
+        flags=re.VERBOSE,
+    )
+    RE_LOCALTIME: Final = re.compile(_TIME_RE_STR)
+    RE_DATETIME: Final = re.compile(
+        rf"""
+    ([0-9]{{4}})-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])  # date, e.g. 1988-10-27
+    (?:
+        [Tt ]
+        {_TIME_RE_STR}
+        (?:([Zz])|([+-])([01][0-9]|2[0-3]):([0-5][0-9]))?  # optional time offset
+    )?
+    """,
+        flags=re.VERBOSE,
+    )
+
+
+    def match_to_datetime(match: re.Match[str]) -> datetime | date:
+        """Convert a `RE_DATETIME` match to `datetime.datetime` or `datetime.date`.
+
+        Raises ValueError if the match does not correspond to a valid date
+        or datetime.
+        """
+        (
+            year_str,
+            month_str,
+            day_str,
+            hour_str,
+            minute_str,
+            sec_str,
+            micros_str,
+            zulu_time,
+            offset_sign_str,
+            offset_hour_str,
+            offset_minute_str,
+        ) = match.groups()
+        year, month, day = int(year_str), int(month_str), int(day_str)
+        if hour_str is None:
+            return date(year, month, day)
+        hour, minute, sec = int(hour_str), int(minute_str), int(sec_str)
+        micros = int(micros_str.ljust(6, "0")) if micros_str else 0
+        if offset_sign_str:
+            tz: tzinfo | None = cached_tz(
+                offset_hour_str, offset_minute_str, offset_sign_str
+            )
+        elif zulu_time:
+            tz = timezone.utc
+        else:  # local date-time
+            tz = None
+        return datetime(year, month, day, hour, minute, sec, micros, tzinfo=tz)
+
+
+    # No need to limit cache size. This is only ever called on input
+    # that matched RE_DATETIME, so there is an implicit bound of
+    # 24 (hours) * 60 (minutes) * 2 (offset direction) = 2880.
+    @lru_cache(maxsize=None)
+    def cached_tz(hour_str: str, minute_str: str, sign_str: str) -> timezone:
+        sign = 1 if sign_str == "+" else -1
+        return timezone(
+            timedelta(
+                hours=sign * int(hour_str),
+                minutes=sign * int(minute_str),
+            )
+        )
+
+
+    def match_to_localtime(match: re.Match[str]) -> time:
+        hour_str, minute_str, sec_str, micros_str = match.groups()
+        micros = int(micros_str.ljust(6, "0")) if micros_str else 0
+        return time(int(hour_str), int(minute_str), int(sec_str), micros)
+
+
+    def match_to_number(match: re.Match[str], parse_float: ParseFloat) -> Any:
+        if match.group("floatpart"):
+            return parse_float(match.group())
+        return int(match.group(), 0)
+
+    # ----- Canonical upstream source: vendor/tomli/_parser.py -----
+    # SPDX-License-Identifier: MIT
+    # SPDX-FileCopyrightText: 2021 Taneli Hukkinen
+    # Licensed to PSF under a Contributor Agreement.
+
+
+    # Defer loading regular expressions until we actually need them in
+    # parse_value().
+    __lazy_modules__ = ["tomli._re", "tomllib._re"]
+
+    import sys
+
+
+    if sys.version_info < (3, 15):  # pragma: no cover
+        from types import MappingProxyType as frozendict
+
+    TYPE_CHECKING = False
+    if TYPE_CHECKING:
+        from collections.abc import Iterable
+        from typing import IO, Any, Final
+
+
+    # Inline tables/arrays are implemented using recursion. Pathologically
+    # nested documents cause pure Python to raise RecursionError (which is OK),
+    # but mypyc binary wheels will crash unrecoverably (not OK). According to
+    # mypyc docs this will be fixed in the future:
+    # https://mypyc.readthedocs.io/en/latest/differences_from_python.html#stack-overflows
+    # Before mypyc's fix is in, recursion needs to be limited by this library.
+    # Choosing 400 as maximum inline table/array nesting level, as it's 4x the
+    # spec recommended minimum (https://github.com/toml-lang/toml/pull/1087)
+    # (unreleased at the time of writing) and less than half of what causes an
+    # unrecoverable crash in a worker (not main) thread on a python:3.13-alpine
+    # image.
+    MAX_INLINE_NESTING: Final = 400
+
+    # Pathologically excessive number of parts in a key runs into quadratic
+    # behavior (e.g. in Flags.is_).
+    # Even if keys aren't currently parsed using recursion, they name a
+    # recursive structure, so it makes sense to limit it using getrecursionlimit()
+    # and RecursionError.
+    MAX_KEY_PARTS: Final = sys.getrecursionlimit()
+
+    ASCII_CTRL: Final = frozenset(chr(i) for i in range(32)) | frozenset(chr(127))
+
+    # Neither of these sets include quotation mark or backslash. They are
+    # currently handled as separate cases in the parser functions.
+    ILLEGAL_BASIC_STR_CHARS: Final = ASCII_CTRL - frozenset("\t")
+    ILLEGAL_MULTILINE_BASIC_STR_CHARS: Final = ASCII_CTRL - frozenset("\t\n")
+
+    ILLEGAL_LITERAL_STR_CHARS: Final = ILLEGAL_BASIC_STR_CHARS
+    ILLEGAL_MULTILINE_LITERAL_STR_CHARS: Final = ILLEGAL_MULTILINE_BASIC_STR_CHARS
+
+    ILLEGAL_COMMENT_CHARS: Final = ILLEGAL_BASIC_STR_CHARS
+
+    TOML_WS: Final = frozenset(" \t")
+    TOML_WS_AND_NEWLINE: Final = TOML_WS | frozenset("\n")
+    BARE_KEY_CHARS: Final = frozenset(
+        "abcdefghijklmnopqrstuvwxyz" "ABCDEFGHIJKLMNOPQRSTUVWXYZ" "0123456789" "-_"
+    )
+    KEY_INITIAL_CHARS: Final = BARE_KEY_CHARS | frozenset("\"'")
+    HEXDIGIT_CHARS: Final = frozenset("abcdef" "ABCDEF" "0123456789")
+
+    BASIC_STR_ESCAPE_REPLACEMENTS: Final = frozendict(
+        {
+            "\\b": "\u0008",  # backspace
+            "\\t": "\u0009",  # tab
+            "\\n": "\u000a",  # linefeed
+            "\\f": "\u000c",  # form feed
+            "\\r": "\u000d",  # carriage return
+            '\\"': "\u0022",  # quote
+            "\\\\": "\u005c",  # backslash
+        }
+    )
+
+
+    class DEPRECATED_DEFAULT:
+        """Sentinel to be used as default arg during deprecation
+        period of TOMLDecodeError's free-form arguments."""
+
+
+    class TOMLDecodeError(ValueError):
+        """An error raised if a document is not valid TOML.
+
+        Adds the following attributes to ValueError:
+        msg: The unformatted error message
+        doc: The TOML document being parsed
+        pos: The index of doc where parsing failed
+        lineno: The line corresponding to pos
+        colno: The column corresponding to pos
+        """
+
+        def __init__(
+            self,
+            msg: str | type[DEPRECATED_DEFAULT] = DEPRECATED_DEFAULT,
+            doc: str | type[DEPRECATED_DEFAULT] = DEPRECATED_DEFAULT,
+            pos: Pos | type[DEPRECATED_DEFAULT] = DEPRECATED_DEFAULT,
+            *args: Any,
+        ):
+            if (
+                args
+                or not isinstance(msg, str)
+                or not isinstance(doc, str)
+                or not isinstance(pos, int)
+            ):
+                import warnings
+
+                warnings.warn(
+                    "Free-form arguments for TOMLDecodeError are deprecated. "
+                    "Please set 'msg' (str), 'doc' (str) and 'pos' (int) arguments only.",
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
+                if pos is not DEPRECATED_DEFAULT:
+                    args = pos, *args
+                if doc is not DEPRECATED_DEFAULT:
+                    args = doc, *args
+                if msg is not DEPRECATED_DEFAULT:
+                    args = msg, *args
+                ValueError.__init__(self, *args)
+                return
+
+            lineno = doc.count("\n", 0, pos) + 1
+            if lineno == 1:
+                colno = pos + 1
+            else:
+                colno = pos - doc.rindex("\n", 0, pos)
+
+            if pos >= len(doc):
+                coord_repr = "end of document"
+            else:
+                coord_repr = f"line {lineno}, column {colno}"
+            errmsg = f"{msg} (at {coord_repr})"
+            ValueError.__init__(self, errmsg)
+
+            self.msg = msg
+            self.doc = doc
+            self.pos = pos
+            self.lineno = lineno
+            self.colno = colno
+
+
+    def load(__fp: IO[bytes], *, parse_float: ParseFloat = float) -> dict[str, Any]:
+        """Parse TOML from a binary file object."""
+        b = __fp.read()
+        try:
+            s = b.decode()
+        except AttributeError:
+            raise TypeError(
+                "File must be opened in binary mode, e.g. use `open('foo.toml', 'rb')`"
+            ) from None
+        return loads(s, parse_float=parse_float)
+
+
+    def loads(__s: str, *, parse_float: ParseFloat = float) -> dict[str, Any]:
+        """Parse TOML from a string."""
+
+        # The spec allows converting "\r\n" to "\n", even in string
+        # literals. Let's do so to simplify parsing.
+        try:
+            src = __s.replace("\r\n", "\n")
+        except (AttributeError, TypeError):
+            raise TypeError(
+                f"Expected str object, not '{type(__s).__qualname__}'"
+            ) from None
+        pos = 0
+        out = Output()
+        header: Key = ()
+        parse_float = make_safe_parse_float(parse_float)
+
+        # Parse one statement at a time
+        # (typically means one line in TOML source)
+        while True:
+            # 1. Skip line leading whitespace
+            pos = skip_chars(src, pos, TOML_WS)
+
+            # 2. Parse rules. Expect one of the following:
+            #    - end of file
+            #    - end of line
+            #    - comment
+            #    - key/value pair
+            #    - append dict to list (and move to its namespace)
+            #    - create dict (and move to its namespace)
+            # Skip trailing whitespace when applicable.
+            try:
+                char = src[pos]
+            except IndexError:
+                break
+            if char == "\n":
+                pos += 1
+                continue
+            if char in KEY_INITIAL_CHARS:
+                pos = key_value_rule(src, pos, out, header, parse_float)
+                pos = skip_chars(src, pos, TOML_WS)
+            elif char == "[":
+                try:
+                    second_char: str | None = src[pos + 1]
+                except IndexError:
+                    second_char = None
+                out.flags.finalize_pending()
+                if second_char == "[":
+                    pos, header = create_list_rule(src, pos, out)
+                else:
+                    pos, header = create_dict_rule(src, pos, out)
+                pos = skip_chars(src, pos, TOML_WS)
+            elif char != "#":
+                raise TOMLDecodeError("Invalid statement", src, pos)
+
+            # 3. Skip comment
+            pos = skip_comment(src, pos)
+
+            # 4. Expect end of line or end of file
+            try:
+                char = src[pos]
+            except IndexError:
+                break
+            if char != "\n":
+                raise TOMLDecodeError(
+                    "Expected newline or end of document after a statement", src, pos
+                )
+            pos += 1
+
+        return out.data.dict
+
+
+    class Flags:
+        """Flags that map to parsed keys/namespaces."""
+
+        # Marks an immutable namespace (inline array or inline table).
+        FROZEN: Final = 0
+        # Marks a nest that has been explicitly created and can no longer
+        # be opened using the "[table]" syntax.
+        EXPLICIT_NEST: Final = 1
+
+        def __init__(self) -> None:
+            self._flags: dict[str, dict[Any, Any]] = {}
+            self._pending_flags: set[tuple[Key, int]] = set()
+
+        def add_pending(self, key: Key, flag: int) -> None:
+            self._pending_flags.add((key, flag))
+
+        def finalize_pending(self) -> None:
+            for key, flag in self._pending_flags:
+                self.set(key, flag, recursive=False)
+            self._pending_flags.clear()
+
+        def unset_all(self, key: Key) -> None:
+            cont = self._flags
+            for k in key[:-1]:
+                if k not in cont:
+                    return
+                cont = cont[k]["nested"]
+            cont.pop(key[-1], None)
+
+        def set(self, key: Key, flag: int, *, recursive: bool) -> None:  # noqa: A003
+            cont = self._flags
+            key_parent, key_stem = key[:-1], key[-1]
+            for k in key_parent:
+                if k not in cont:
+                    cont[k] = {"flags": set(), "recursive_flags": set(), "nested": {}}
+                cont = cont[k]["nested"]
+            if key_stem not in cont:
+                cont[key_stem] = {"flags": set(), "recursive_flags": set(), "nested": {}}
+            cont[key_stem]["recursive_flags" if recursive else "flags"].add(flag)
+
+        def is_(self, key: Key, flag: int) -> bool:
+            if not key:
+                return False  # document root has no flags
+            cont = self._flags
+            for k in key[:-1]:
+                if k not in cont:
+                    return False
+                inner_cont = cont[k]
+                if flag in inner_cont["recursive_flags"]:
+                    return True
+                cont = inner_cont["nested"]
+            key_stem = key[-1]
+            if key_stem in cont:
+                inner_cont = cont[key_stem]
+                return flag in inner_cont["flags"] or flag in inner_cont["recursive_flags"]
+            return False
+
+
+    class NestedDict:
+        def __init__(self) -> None:
+            # The parsed content of the TOML document
+            self.dict: dict[str, Any] = {}
+
+        def get_or_create_nest(
+            self,
+            key: Key,
+            *,
+            access_lists: bool = True,
+        ) -> dict[str, Any]:
+            cont: Any = self.dict
+            for k in key:
+                if k not in cont:
+                    cont[k] = {}
+                cont = cont[k]
+                if access_lists and isinstance(cont, list):
+                    cont = cont[-1]
+                if not isinstance(cont, dict):
+                    raise KeyError("There is no nest behind this key")
+            return cont  # type: ignore[no-any-return]
+
+        def append_nest_to_list(self, key: Key) -> None:
+            cont = self.get_or_create_nest(key[:-1])
+            last_key = key[-1]
+            if last_key in cont:
+                list_ = cont[last_key]
+                if not isinstance(list_, list):
+                    raise KeyError("An object other than list found behind this key")
+                list_.append({})
+            else:
+                cont[last_key] = [{}]
+
+
+    class Output:
+        def __init__(self) -> None:
+            self.data = NestedDict()
+            self.flags = Flags()
+
+
+    def skip_chars(src: str, pos: Pos, chars: Iterable[str]) -> Pos:
+        try:
+            while src[pos] in chars:
+                pos += 1
+        except IndexError:
+            pass
+        return pos
+
+
+    def skip_until(
+        src: str,
+        pos: Pos,
+        expect: str,
+        *,
+        error_on: frozenset[str],
+        error_on_eof: bool,
+    ) -> Pos:
+        try:
+            new_pos = src.index(expect, pos)
+        except ValueError:
+            new_pos = len(src)
+            if error_on_eof:
+                raise TOMLDecodeError(f"Expected {expect!r}", src, new_pos) from None
+
+        if not error_on.isdisjoint(src[pos:new_pos]):
+            while src[pos] not in error_on:
+                pos += 1
+            raise TOMLDecodeError(f"Found invalid character {src[pos]!r}", src, pos)
+        return new_pos
+
+
+    def skip_comment(src: str, pos: Pos) -> Pos:
+        try:
+            char: str | None = src[pos]
+        except IndexError:
+            char = None
+        if char == "#":
+            return skip_until(
+                src, pos + 1, "\n", error_on=ILLEGAL_COMMENT_CHARS, error_on_eof=False
+            )
+        return pos
+
+
+    def skip_comments_and_array_ws(src: str, pos: Pos) -> Pos:
+        while True:
+            pos_before_skip = pos
+            pos = skip_chars(src, pos, TOML_WS_AND_NEWLINE)
+            pos = skip_comment(src, pos)
+            if pos == pos_before_skip:
+                return pos
+
+
+    def create_dict_rule(src: str, pos: Pos, out: Output) -> tuple[Pos, Key]:
+        pos += 1  # Skip "["
+        pos = skip_chars(src, pos, TOML_WS)
+        pos, key = parse_key(src, pos)
+
+        if out.flags.is_(key, Flags.EXPLICIT_NEST) or out.flags.is_(key, Flags.FROZEN):
+            raise TOMLDecodeError(f"Cannot declare {key} twice", src, pos)
+        out.flags.set(key, Flags.EXPLICIT_NEST, recursive=False)
+        try:
+            out.data.get_or_create_nest(key)
+        except KeyError:
+            raise TOMLDecodeError("Cannot overwrite a value", src, pos) from None
+
+        if not src.startswith("]", pos):
+            raise TOMLDecodeError(
+                "Expected ']' at the end of a table declaration", src, pos
+            )
+        return pos + 1, key
+
+
+    def create_list_rule(src: str, pos: Pos, out: Output) -> tuple[Pos, Key]:
+        pos += 2  # Skip "[["
+        pos = skip_chars(src, pos, TOML_WS)
+        pos, key = parse_key(src, pos)
+
+        if out.flags.is_(key, Flags.FROZEN):
+            raise TOMLDecodeError(f"Cannot mutate immutable namespace {key}", src, pos)
+        # Free the namespace now that it points to another empty list item...
+        out.flags.unset_all(key)
+        # ...but this key precisely is still prohibited from table declaration
+        out.flags.set(key, Flags.EXPLICIT_NEST, recursive=False)
+        try:
+            out.data.append_nest_to_list(key)
+        except KeyError:
+            raise TOMLDecodeError("Cannot overwrite a value", src, pos) from None
+
+        if not src.startswith("]]", pos):
+            raise TOMLDecodeError(
+                "Expected ']]' at the end of an array declaration", src, pos
+            )
+        return pos + 2, key
+
+
+    def key_value_rule(
+        src: str, pos: Pos, out: Output, header: Key, parse_float: ParseFloat
+    ) -> Pos:
+        pos, key, value = parse_key_value_pair(src, pos, parse_float, nest_lvl=0)
+        key_parent, key_stem = key[:-1], key[-1]
+        abs_key_parent = header + key_parent
+
+        relative_path_cont_keys = (header + key[:i] for i in range(1, len(key)))
+        for cont_key in relative_path_cont_keys:
+            # Check that dotted key syntax does not redefine an existing table
+            if out.flags.is_(cont_key, Flags.EXPLICIT_NEST):
+                raise TOMLDecodeError(f"Cannot redefine namespace {cont_key}", src, pos)
+            # Containers in the relative path can't be opened with the table syntax or
+            # dotted key/value syntax in following table sections.
+            out.flags.add_pending(cont_key, Flags.EXPLICIT_NEST)
+
+        if out.flags.is_(abs_key_parent, Flags.FROZEN):
+            raise TOMLDecodeError(
+                f"Cannot mutate immutable namespace {abs_key_parent}", src, pos
+            )
+
+        try:
+            nest = out.data.get_or_create_nest(abs_key_parent)
+        except KeyError:
+            raise TOMLDecodeError("Cannot overwrite a value", src, pos) from None
+        if key_stem in nest:
+            raise TOMLDecodeError("Cannot overwrite a value", src, pos)
+        # Mark inline table and array namespaces recursively immutable
+        if isinstance(value, (dict, list)):
+            out.flags.set(header + key, Flags.FROZEN, recursive=True)
+        nest[key_stem] = value
+        return pos
+
+
+    def parse_key_value_pair(
+        src: str, pos: Pos, parse_float: ParseFloat, nest_lvl: int
+    ) -> tuple[Pos, Key, Any]:
+        pos, key = parse_key(src, pos)
+        try:
+            char: str | None = src[pos]
+        except IndexError:
+            char = None
+        if char != "=":
+            raise TOMLDecodeError("Expected '=' after a key in a key/value pair", src, pos)
+        pos += 1
+        pos = skip_chars(src, pos, TOML_WS)
+        pos, value = parse_value(src, pos, parse_float, nest_lvl)
+        return pos, key, value
+
+
+    def parse_key(src: str, pos: Pos) -> tuple[Pos, Key]:
+        pos, key_part = parse_key_part(src, pos)
+        key: Key = (key_part,)
+        pos = skip_chars(src, pos, TOML_WS)
+        while True:
+            try:
+                char: str | None = src[pos]
+            except IndexError:
+                char = None
+            if char != ".":
+                return pos, key
+            pos += 1
+            pos = skip_chars(src, pos, TOML_WS)
+            pos, key_part = parse_key_part(src, pos)
+            key += (key_part,)
+            if len(key) > MAX_KEY_PARTS:
+                raise RecursionError(
+                    f"TOML key has more than the allowed {MAX_KEY_PARTS} parts"
+                )
+            pos = skip_chars(src, pos, TOML_WS)
+
+
+    def parse_key_part(src: str, pos: Pos) -> tuple[Pos, str]:
+        try:
+            char: str | None = src[pos]
+        except IndexError:
+            char = None
+        if char in BARE_KEY_CHARS:
+            start_pos = pos
+            pos = skip_chars(src, pos, BARE_KEY_CHARS)
+            return pos, src[start_pos:pos]
+        if char == "'":
+            return parse_literal_str(src, pos)
+        if char == '"':
+            return parse_one_line_basic_str(src, pos)
+        raise TOMLDecodeError("Invalid initial character for a key part", src, pos)
+
+
+    def parse_one_line_basic_str(src: str, pos: Pos) -> tuple[Pos, str]:
+        pos += 1
+        return parse_basic_str(src, pos, multiline=False)
+
+
+    def parse_array(
+        src: str, pos: Pos, parse_float: ParseFloat, nest_lvl: int
+    ) -> tuple[Pos, list[Any]]:
+        pos += 1
+        array: list[Any] = []
+
+        pos = skip_comments_and_array_ws(src, pos)
+        if src.startswith("]", pos):
+            return pos + 1, array
+        while True:
+            pos, val = parse_value(src, pos, parse_float, nest_lvl)
+            array.append(val)
+            pos = skip_comments_and_array_ws(src, pos)
+
+            c = src[pos : pos + 1]
+            if c == "]":
+                return pos + 1, array
+            if c != ",":
+                raise TOMLDecodeError("Unclosed array", src, pos)
+            pos += 1
+
+            pos = skip_comments_and_array_ws(src, pos)
+            if src.startswith("]", pos):
+                return pos + 1, array
+
+
+    def parse_inline_table(
+        src: str, pos: Pos, parse_float: ParseFloat, nest_lvl: int
+    ) -> tuple[Pos, dict[str, Any]]:
+        pos += 1
+        nested_dict = NestedDict()
+        flags = Flags()
+
+        pos = skip_chars(src, pos, TOML_WS)
+        if src.startswith("}", pos):
+            return pos + 1, nested_dict.dict
+        while True:
+            pos, key, value = parse_key_value_pair(src, pos, parse_float, nest_lvl)
+            key_parent, key_stem = key[:-1], key[-1]
+            if flags.is_(key, Flags.FROZEN):
+                raise TOMLDecodeError(f"Cannot mutate immutable namespace {key}", src, pos)
+            try:
+                nest = nested_dict.get_or_create_nest(key_parent, access_lists=False)
+            except KeyError:
+                raise TOMLDecodeError("Cannot overwrite a value", src, pos) from None
+            if key_stem in nest:
+                raise TOMLDecodeError(f"Duplicate inline table key {key_stem!r}", src, pos)
+            nest[key_stem] = value
+            pos = skip_chars(src, pos, TOML_WS)
+            c = src[pos : pos + 1]
+            if c == "}":
+                return pos + 1, nested_dict.dict
+            if c != ",":
+                raise TOMLDecodeError("Unclosed inline table", src, pos)
+            if isinstance(value, (dict, list)):
+                flags.set(key, Flags.FROZEN, recursive=True)
+            pos += 1
+            pos = skip_chars(src, pos, TOML_WS)
+
+
+    def parse_basic_str_escape(
+        src: str, pos: Pos, *, multiline: bool = False
+    ) -> tuple[Pos, str]:
+        escape_id = src[pos : pos + 2]
+        pos += 2
+        if multiline and escape_id in {"\\ ", "\\\t", "\\\n"}:
+            # Skip whitespace until next non-whitespace character or end of
+            # the doc. Error if non-whitespace is found before newline.
+            if escape_id != "\\\n":
+                pos = skip_chars(src, pos, TOML_WS)
+                try:
+                    char = src[pos]
+                except IndexError:
+                    return pos, ""
+                if char != "\n":
+                    raise TOMLDecodeError("Unescaped '\\' in a string", src, pos)
+                pos += 1
+            pos = skip_chars(src, pos, TOML_WS_AND_NEWLINE)
+            return pos, ""
+        if escape_id == "\\u":
+            return parse_hex_char(src, pos, 4)
+        if escape_id == "\\U":
+            return parse_hex_char(src, pos, 8)
+        try:
+            return pos, BASIC_STR_ESCAPE_REPLACEMENTS[escape_id]
+        except KeyError:
+            raise TOMLDecodeError("Unescaped '\\' in a string", src, pos) from None
+
+
+    def parse_basic_str_escape_multiline(src: str, pos: Pos) -> tuple[Pos, str]:
+        return parse_basic_str_escape(src, pos, multiline=True)
+
+
+    def parse_hex_char(src: str, pos: Pos, hex_len: int) -> tuple[Pos, str]:
+        hex_str = src[pos : pos + hex_len]
+        if len(hex_str) != hex_len or not HEXDIGIT_CHARS.issuperset(hex_str):
+            raise TOMLDecodeError("Invalid hex value", src, pos)
+        pos += hex_len
+        hex_int = int(hex_str, 16)
+        if not is_unicode_scalar_value(hex_int):
+            raise TOMLDecodeError(
+                "Escaped character is not a Unicode scalar value", src, pos
+            )
+        return pos, chr(hex_int)
+
+
+    def parse_literal_str(src: str, pos: Pos) -> tuple[Pos, str]:
+        pos += 1  # Skip starting apostrophe
+        start_pos = pos
+        pos = skip_until(
+            src, pos, "'", error_on=ILLEGAL_LITERAL_STR_CHARS, error_on_eof=True
+        )
+        return pos + 1, src[start_pos:pos]  # Skip ending apostrophe
+
+
+    def parse_multiline_str(src: str, pos: Pos, *, literal: bool) -> tuple[Pos, str]:
+        pos += 3
+        if src.startswith("\n", pos):
+            pos += 1
+
+        if literal:
+            delim = "'"
+            end_pos = skip_until(
+                src,
+                pos,
+                "'''",
+                error_on=ILLEGAL_MULTILINE_LITERAL_STR_CHARS,
+                error_on_eof=True,
+            )
+            result = src[pos:end_pos]
+            pos = end_pos + 3
+        else:
+            delim = '"'
+            pos, result = parse_basic_str(src, pos, multiline=True)
+
+        # Add at maximum two extra apostrophes/quotes if the end sequence
+        # is 4 or 5 chars long instead of just 3.
+        if not src.startswith(delim, pos):
+            return pos, result
+        pos += 1
+        if not src.startswith(delim, pos):
+            return pos, result + delim
+        pos += 1
+        return pos, result + (delim * 2)
+
+
+    def parse_basic_str(src: str, pos: Pos, *, multiline: bool) -> tuple[Pos, str]:
+        if multiline:
+            error_on = ILLEGAL_MULTILINE_BASIC_STR_CHARS
+            parse_escapes = parse_basic_str_escape_multiline
+        else:
+            error_on = ILLEGAL_BASIC_STR_CHARS
+            parse_escapes = parse_basic_str_escape
+        result = ""
+        start_pos = pos
+        while True:
+            try:
+                char = src[pos]
+            except IndexError:
+                raise TOMLDecodeError("Unterminated string", src, pos) from None
+            if char == '"':
+                if not multiline:
+                    return pos + 1, result + src[start_pos:pos]
+                if src.startswith('"""', pos):
+                    return pos + 3, result + src[start_pos:pos]
+                pos += 1
+                continue
+            if char == "\\":
+                result += src[start_pos:pos]
+                pos, parsed_escape = parse_escapes(src, pos)
+                result += parsed_escape
+                start_pos = pos
+                continue
+            if char in error_on:
+                raise TOMLDecodeError(f"Illegal character {char!r}", src, pos)
+            pos += 1
+
+
+    def parse_value(
+        src: str, pos: Pos, parse_float: ParseFloat, nest_lvl: int
+    ) -> tuple[Pos, Any]:
+        if nest_lvl > MAX_INLINE_NESTING:
+            # Pure Python should have raised RecursionError already.
+            # This ensures mypyc binaries eventually do the same.
+            raise RecursionError(  # pragma: no cover
+                "TOML inline arrays/tables are nested more than the allowed"
+                f" {MAX_INLINE_NESTING} levels"
+            )
+
+        try:
+            char: str | None = src[pos]
+        except IndexError:
+            char = None
+
+        # IMPORTANT: order conditions based on speed of checking and likelihood
+
+        # Basic strings
+        if char == '"':
+            if src.startswith('"""', pos):
+                return parse_multiline_str(src, pos, literal=False)
+            return parse_one_line_basic_str(src, pos)
+
+        # Literal strings
+        if char == "'":
+            if src.startswith("'''", pos):
+                return parse_multiline_str(src, pos, literal=True)
+            return parse_literal_str(src, pos)
+
+        # Booleans
+        if char == "t":
+            if src.startswith("true", pos):
+                return pos + 4, True
+        if char == "f":
+            if src.startswith("false", pos):
+                return pos + 5, False
+
+        # Arrays
+        if char == "[":
+            return parse_array(src, pos, parse_float, nest_lvl + 1)
+
+        # Inline tables
+        if char == "{":
+            return parse_inline_table(src, pos, parse_float, nest_lvl + 1)
+
+        # Dates and times
+        datetime_match = RE_DATETIME.match(src, pos)
+        if datetime_match:
+            try:
+                datetime_obj = match_to_datetime(datetime_match)
+            except ValueError as e:
+                raise TOMLDecodeError("Invalid date or datetime", src, pos) from e
+            return datetime_match.end(), datetime_obj
+        localtime_match = RE_LOCALTIME.match(src, pos)
+        if localtime_match:
+            return localtime_match.end(), match_to_localtime(localtime_match)
+
+        # Integers and "normal" floats.
+        # The regex will greedily match any type starting with a decimal
+        # char, so needs to be located after handling of dates and times.
+        number_match = RE_NUMBER.match(src, pos)
+        if number_match:
+            return number_match.end(), match_to_number(number_match, parse_float)
+
+        # Special floats
+        first_three = src[pos : pos + 3]
+        if first_three in {"inf", "nan"}:
+            return pos + 3, parse_float(first_three)
+        first_four = src[pos : pos + 4]
+        if first_four in {"-inf", "+inf", "-nan", "+nan"}:
+            return pos + 4, parse_float(first_four)
+
+        raise TOMLDecodeError("Invalid value", src, pos)
+
+
+    def is_unicode_scalar_value(codepoint: int) -> bool:
+        return (0 <= codepoint <= 55295) or (57344 <= codepoint <= 1114111)
+
+
+    def make_safe_parse_float(parse_float: ParseFloat) -> ParseFloat:
+        """A decorator to make `parse_float` safe.
+
+        `parse_float` must not return dicts or lists, because these types
+        would be mixed with parsed TOML tables and arrays, thus confusing
+        the parser. The returned decorated callable raises `ValueError`
+        instead of returning illegal types.
+        """
+        # The default `float` callable never returns illegal types. Optimize it.
+        if parse_float is float:
+            return float
+
+        def safe_parse_float(float_str: str) -> Any:
+            float_value = parse_float(float_str)
+            if isinstance(float_value, (dict, list)):
+                raise ValueError("parse_float must not return dicts or lists")
+            return float_value
+
+        return safe_parse_float
+
+    return SimpleNamespace(load=load, loads=loads, TOMLDecodeError=TOMLDecodeError,
+                           __version__='2.3.2')
+
+if tomllib is None:
+    tomllib = _motd_vendored_tomli()
+# END EMBEDDED TOMLI
 
 if __name__ == "__main__":
     raise SystemExit(entrypoint())

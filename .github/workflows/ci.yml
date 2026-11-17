@@ -2,6 +2,9 @@ name: Verify
 on: [push, pull_request]
 permissions:
   contents: read
+env:
+  POWERSHELL_TELEMETRY_OPTOUT: '1'
+  DOTNET_CLI_TELEMETRY_OPTOUT: '1'
 jobs:
   linux:
     runs-on: ubuntu-latest
@@ -11,10 +14,12 @@ jobs:
         with:
           python-version: '3.11'
       - run: python3 tools/embed_runtime.py --check
+      - run: python3 tools/embed_toml.py --check
       - run: bash -n runtime/motd.bash
       - run: sh -n runtime/motd.sh
-      - name: Install Zsh for interpreter and startup tests
-        run: sudo apt-get update && sudo apt-get install -y zsh
+      - run: sh -n runtime/designs.sh
+      - name: Install Unix shells for interpreter and startup tests
+        run: sudo apt-get update && sudo apt-get install -y zsh fish busybox mksh ksh
       - name: Require native PowerShell coverage
         run: pwsh -NoProfile -Command '$PSVersionTable.PSVersion.ToString()'
       - name: Install gallery verification dependencies
@@ -26,6 +31,24 @@ jobs:
       - run: git diff --exit-code -- examples presets
       - name: Verify complete retained terminal capture evidence
         run: python3 tools/build_gallery.py --verify --require-full
+      - name: Verify complete design sampler evidence
+        run: python3 tools/build_gallery.py --verify --require-sampler --output examples/designs
+  python-38:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.8'
+      - run: python3 tools/embed_runtime.py --check
+      - run: python3 tools/embed_toml.py --check
+      - name: Exercise bundled parser and generator on actual Python 3.8
+        run: |
+          MOTD_TEST_PYTHON38=python3 python3 -m unittest discover -s tests -p test_python_compatibility.py -v
+          python3 -m unittest discover -s tests -p test_generation.py -v
+          python3 -m unittest discover -s tests -p test_design_configuration.py -v
+          python3 -m unittest discover -s tests -p test_portable_export.py -v
+          python3 -m unittest discover -s tests -p test_transactions.py -v
   macos:
     runs-on: macos-latest
     steps:

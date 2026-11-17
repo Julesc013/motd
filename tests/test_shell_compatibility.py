@@ -97,10 +97,11 @@ class ShellCompatibilityTests(unittest.TestCase):
                     self.assertLessEqual(max(map(len, lines)), width)
                     self.assertIn('ATTENTION', result.stdout)
                     if rows < 20:
-                        self.assertIn('sections; resize for more.', result.stdout)
+                        self.assertIn('Hidden:', result.stdout)
+                        self.assertIn('hints', result.stdout)
                         self.assertTrue('DEMO WARNING:' in result.stdout or 'ERROR:' in result.stdout)
                     else:
-                        self.assertNotIn('sections; resize for more.', result.stdout)
+                        self.assertNotIn('Hidden:', result.stdout)
 
     def test_saved_charset_and_color_preferences_and_cli_overrides(self):
         for shell in ('bash', 'sh', 'zsh'):
@@ -258,7 +259,8 @@ class ShellCompatibilityTests(unittest.TestCase):
             found = True
             version = subprocess.run([interpreter, '-c', 'echo "${ZSH_VERSION:-$VERSION}"'],
                                      capture_output=True, text=True, timeout=5)
-            self.assertTrue(version.stdout.removeprefix('zsh v').startswith(prefix), version.stdout)
+            display_version = version.stdout[5:] if version.stdout.startswith('zsh v') else version.stdout
+            self.assertTrue(display_version.startswith(prefix), version.stdout)
             for candidate in (path, fallback):
                 with self.subTest(interpreter=version.stdout.strip(), fallback=candidate == fallback):
                     result = subprocess.run([interpreter, str(candidate), '--demo', '--plain',

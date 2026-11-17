@@ -1,5 +1,41 @@
 # Changelog
 
+## 0.4.0 - 2026-11-17
+
+- Add five genuinely different presentation structures: classic, cards, ledger,
+  briefing and dashboard. Separate density, detail, padding, section gaps, colour
+  emphasis, retention priority and per-section detail from theme selection.
+  Preserve classic defaults for older recipes, allow 8–200 saved rows, reserve
+  a prompt row and name whole sections omitted under space pressure.
+- Share the Unix presentation engine between enhanced Bash and portable sh;
+  keep native PowerShell on the same layout contract. Dashboard panels pair on
+  wider terminals and stack on narrow ones. Fix briefing summaries so they do
+  not discard the first meaningful service/network observation.
+- Add Fish and Windows CMD launch adapters over the existing renderers, plus
+  literal ASCII `batch-text` notices without PowerShell or live collection.
+  Add the data-only `motd:print` before/after operation.
+- Make wizard choices descriptive, add context help and arrow selection,
+  preserve ten control rows and live resize, and buffer only changed rows.
+  Add Windows console-input/VT capability handling and platform-aware menus.
+  Cold interpreter startup remains a documented performance boundary.
+- Lower the configurator floor to actual Python 3.8, using bundled readable,
+  MIT-licensed Tomli 2.3.2 on versions without standard-library `tomllib`.
+  Python 3.0 is not claimed. Add create-only exports and hash manifests for
+  Windows and other trusted-directory generation workflows.
+- Bound source reads to 2 MB and transaction snapshots to 16 MiB per file;
+  reject terminal-control/newline paths before writes; require an explicit
+  interpreter for opaque executable imports; validate runtime options before
+  invoking configured hooks.
+- Expand actual-engine and native-host verification, including a standalone
+  historical PowerShell harness and an exact-version PS2 CI probe. The evidence
+  records distinguish real passes, skips and blocked engines; PS1/3/4/5.0 and
+  untested OS releases are not certified by modern parser compatibility.
+- Refresh the original 524-case terminal gallery and add a fixed 140-case
+  design/density/detail sampler with retained PTY transcripts, source hashes,
+  original-pixel comparison sheets and lossless PNG verification.
+- Update the specification and compatibility contracts; add a dated audit,
+  decision record, implementation roadmap and concrete outstanding work.
+
 ## 0.3.0 - 2026-11-17
 
 - Keep wizard questions in ten fixed control rows and re-render the remaining

@@ -1,0 +1,14 @@
+{
+  "version": "2.3.2",
+  "metadata_url": "https://pypi.org/pypi/tomli/2.3.2/json",
+  "archive_url": "https://files.pythonhosted.org/packages/c6/df/055cc5e3cd4bdbbd6f1a53187b6a65033d6258f9dfc6ea21902fd1fed015/tomli-2.3.2.tar.gz",
+  "archive_sha256": "ba6f699836c403252ae4a41ddaae9a30333bdac3fbb57b6ea28a50fffbb14d77",
+  "requires_python": ">=3.8",
+  "files_sha256": {
+    "__init__.py": "d8678ce48a6a4b061d69b9be9b72a9449de5365222c316571b0c24b30b838409",
+    "_types.py": "f864c6d9552a929c7032ace654ee05ef26ca75d21b027b801d77e65907138b74",
+    "_re.py": "9fcf88a3c64ad54f85ea3ce583b3da6dce3484b149b1ac04dae34b287f70ee25",
+    "_parser.py": "6dcbfefc2500621671bc0f962e2f00ed7c3d9a71e4604d7ce2d438c6c0a09ff9",
+    "LICENSE": "b80816b0d530b8accb4c2211783790984a6e3b61922c2b5ee92f3372ab2742fe"
+  }
+}

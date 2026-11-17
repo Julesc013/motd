@@ -1,0 +1,1341 @@
+{
+  "schema": "motd-powershell-verification-v04-1",
+  "recorded_at_utc": "2026-11-17T01:25:38.049242+00:00",
+  "revision_scope": "v0.4.0 canonical PowerShell designs, literal-print hooks and exact-engine harness; local Linux evidence. Windows/macOS and actual PS2 CI must be recorded separately after execution.",
+  "status": "passed-local-native-contracts",
+  "source_at_recording": {
+    "configurator_sha256": "dbca3a9444bc855debb7054f7f3247cabec12592b09dea2860b3308a462ced5e",
+    "canonical_runtime_sha256": "82be3e5a357fcff2598966ddfb677bad93c21a678f1604b3654aec7dbfb3707f",
+    "generator_functions_ast_sha256": "b53f8e7ea347aab14b4c2ee19964b84ad9f4640954cb840dca5cd5f36793dfc8",
+    "version": "0.4.0"
+  },
+  "summary": {
+    "engines": 3,
+    "unit_tests_passed": 108,
+    "harness_cases_passed": 123,
+    "failures": 0,
+    "skips": 0
+  },
+  "scope": [
+    "Five designs: classic, cards, ledger, briefing, dashboard.",
+    "ASCII/Unicode and 40x25, 40x50, 80x25, 80x50 demonstrations; additional 8/15/200-row geometry cases.",
+    "Density, detail, per-section detail, padding, gaps, priorities, color emphasis, Unicode data and fixture content.",
+    "Native literal argv, timeout/failure behavior, no-hook previews, and data-only motd:print before/after actions.",
+    "Legacy harness rejects a different engine before executing the input; exact matching engine executes 40 synthetic cases plus one local live case per run."
+  ],
+  "provenance_notes": [
+    "Each final suite used integrated motd.py and its embedded canonical PowerShell runtime; no source or template overrides.",
+    "The full configurator changed during the 6.2.7 run and after the two PS7 runs while independent work continued. Generator-function AST, canonical PS runtime and test sources are checked against the recording state; all five exact generated harness artifacts match that state byte for byte.",
+    "Earlier isolated-template runs were provisional and are not counted as final integrated evidence."
+  ],
+  "runtimes": [
+    {
+      "engine": "PowerShell 6.2.7",
+      "edition": "Core",
+      "framework": ".NET Core 4.6.29017.01",
+      "os_description": "Linux 6.18.57 #1 SMP Tue Oct 20 21:56:04 UTC 2026",
+      "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+      "python": "3.12.14",
+      "tests_run": 36,
+      "passed": 36,
+      "failed": 0,
+      "skipped": 0,
+      "elapsed_seconds": 107.112,
+      "started_at_utc": "2026-11-17T01:22:01.837661+00:00",
+      "completed_at_utc": "2026-11-17T01:23:54.550601+00:00",
+      "test_command": "MOTD_TEST_POWERSHELL=<exact installed engine> python3 -m unittest discover -s tests -p test_*powershell.py -v",
+      "source_release": "https://github.com/PowerShell/PowerShell/releases/tag/v6.2.7",
+      "required_environment": {
+        "DOTNET_SYSTEM_GLOBALIZATION_INVARIANT": "1",
+        "LD_LIBRARY_PATH": "/workspace/scratch/c65930e4593e/work/powershell-6-libs/extracted/usr/lib/x86_64-linux-gnu"
+      },
+      "generation_mode": "Integrated motd.py generation with embedded canonical PowerShell runtime; no template or function overrides.",
+      "canonical_embed_matches": true,
+      "source_before": {
+        "generator_functions_ast_sha256": "b53f8e7ea347aab14b4c2ee19964b84ad9f4640954cb840dca5cd5f36793dfc8",
+        "inputs_sha256": {
+          "motd.py": "faa1ffb6213421a8e2a32f471d0df25ae74c4a2e6675754f82f15515adac01a1",
+          "runtime/motd.ps1": "82be3e5a357fcff2598966ddfb677bad93c21a678f1604b3654aec7dbfb3707f",
+          "tests/test_powershell.py": "d4547f5348e022a5e401d706d0603ddba780c15373b8040e805eea9e56b00329",
+          "tests/test_designs_powershell.py": "61290101eefc4e45f272d4fb9288204ac79534c3befc73cf1c56ab5f3187445c",
+          "tools/test_legacy_powershell.ps1": "373678b8592672c8d1c070f07eb0525cc4a9a5b973ff03328d147f5c89178301"
+        }
+      },
+      "source_after": {
+        "generator_functions_ast_sha256": "b53f8e7ea347aab14b4c2ee19964b84ad9f4640954cb840dca5cd5f36793dfc8",
+        "inputs_sha256": {
+          "motd.py": "dbca3a9444bc855debb7054f7f3247cabec12592b09dea2860b3308a462ced5e",
+          "runtime/motd.ps1": "82be3e5a357fcff2598966ddfb677bad93c21a678f1604b3654aec7dbfb3707f",
+          "tests/test_powershell.py": "d4547f5348e022a5e401d706d0603ddba780c15373b8040e805eea9e56b00329",
+          "tests/test_designs_powershell.py": "61290101eefc4e45f272d4fb9288204ac79534c3befc73cf1c56ab5f3187445c",
+          "tools/test_legacy_powershell.ps1": "373678b8592672c8d1c070f07eb0525cc4a9a5b973ff03328d147f5c89178301"
+        }
+      },
+      "failures": [],
+      "legacy_harness_same_engine_validation": {
+        "exit_code": 0,
+        "evidence": {
+          "schema-version": "1",
+          "started-at-utc": "2026-11-17T01:23:49.9307492Z",
+          "status": "passed",
+          "expected-major": "6",
+          "actual-version": "6.2.7",
+          "clr-version": "4.0.30319.42000",
+          "os-version": "Unix 6.18.57.0",
+          "process-bitness": "64",
+          "automation-assembly": "System.Management.Automation, Version=6.2.7.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35",
+          "scriptblock-create-available": "True",
+          "cases": "41",
+          "failed": "0",
+          "completed-at-utc": "2026-11-17T01:23:54.5246453Z"
+        },
+        "xml_sha256": "9a00244fcae13abc8b2b2529b2bd45d1ce9bfce5d7982662cf3696a1caf3e4e9",
+        "stderr": "",
+        "artifacts": [
+          {
+            "file": "briefing.ps1",
+            "sha256": "10560cc23a0bb1e634472182d0656857701111afca6f9c7937c19fe9121ed753",
+            "cases": [
+              {
+                "columns": "40",
+                "rows": "25",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "40",
+                "rows": "25",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "40",
+                "rows": "50",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "37"
+              },
+              {
+                "columns": "40",
+                "rows": "50",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "37"
+              },
+              {
+                "columns": "80",
+                "rows": "25",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "80",
+                "rows": "25",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "80",
+                "rows": "50",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "37"
+              },
+              {
+                "columns": "80",
+                "rows": "50",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "37"
+              }
+            ]
+          },
+          {
+            "file": "cards.ps1",
+            "sha256": "8341fac94b89f085fc43d916e898ef090357a5679d9616b8edb708fbfbcb047c",
+            "cases": [
+              {
+                "columns": "40",
+                "rows": "25",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "40",
+                "rows": "25",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "40",
+                "rows": "50",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "49"
+              },
+              {
+                "columns": "40",
+                "rows": "50",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "49"
+              },
+              {
+                "columns": "80",
+                "rows": "25",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "80",
+                "rows": "25",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "80",
+                "rows": "50",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "49"
+              },
+              {
+                "columns": "80",
+                "rows": "50",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "49"
+              }
+            ]
+          },
+          {
+            "file": "classic.ps1",
+            "sha256": "7d0ed1d79f2db80385156cc67c11eedf1ea33bae8575e0c7f317c09cf349449c",
+            "cases": [
+              {
+                "columns": "40",
+                "rows": "25",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "40",
+                "rows": "25",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "40",
+                "rows": "50",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "42"
+              },
+              {
+                "columns": "40",
+                "rows": "50",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "42"
+              },
+              {
+                "columns": "80",
+                "rows": "25",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "80",
+                "rows": "25",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "80",
+                "rows": "50",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "42"
+              },
+              {
+                "columns": "80",
+                "rows": "50",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "42"
+              }
+            ]
+          },
+          {
+            "file": "dashboard.ps1",
+            "sha256": "1f25c4ee34da9d28bc9f8055b95221e7e00861806c36662dc2aa3bdcf4fbe1c1",
+            "cases": [
+              {
+                "columns": "40",
+                "rows": "25",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "40",
+                "rows": "25",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "40",
+                "rows": "50",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "49"
+              },
+              {
+                "columns": "40",
+                "rows": "50",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "49"
+              },
+              {
+                "columns": "80",
+                "rows": "25",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "80",
+                "rows": "25",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "80",
+                "rows": "50",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "36"
+              },
+              {
+                "columns": "80",
+                "rows": "50",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "36"
+              }
+            ]
+          },
+          {
+            "file": "ledger.ps1",
+            "sha256": "1ebd4b7f9ddc71566f839e76e0a67a097345798578a254e2cd39c52e45fad4cc",
+            "cases": [
+              {
+                "columns": "40",
+                "rows": "25",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "40",
+                "rows": "25",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "40",
+                "rows": "50",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "39"
+              },
+              {
+                "columns": "40",
+                "rows": "50",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "39"
+              },
+              {
+                "columns": "80",
+                "rows": "25",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "80",
+                "rows": "25",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "80",
+                "rows": "50",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "39"
+              },
+              {
+                "columns": "80",
+                "rows": "50",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "39"
+              }
+            ]
+          }
+        ],
+        "live_cases": [
+          {
+            "kind": "live-local-no-hooks",
+            "passed": "True",
+            "rendered-rows": "32"
+          }
+        ]
+      },
+      "final_generation_confirmation": {
+        "generator_ast_matches_current": true,
+        "runtime_and_test_sources_match_current": true,
+        "all_five_generated_harness_artifacts_match_current": true
+      }
+    },
+    {
+      "engine": "PowerShell 7.6.10",
+      "edition": "Core",
+      "framework": ".NET 10.0.15",
+      "os_description": "Debian GNU/Linux 13 (trixie)",
+      "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+      "python": "3.12.14",
+      "tests_run": 36,
+      "passed": 36,
+      "failed": 0,
+      "skipped": 0,
+      "elapsed_seconds": 84.877,
+      "started_at_utc": "2026-11-17T01:22:01.803388+00:00",
+      "completed_at_utc": "2026-11-17T01:23:30.588610+00:00",
+      "test_command": "MOTD_TEST_POWERSHELL=<exact installed engine> python3 -m unittest discover -s tests -p test_*powershell.py -v",
+      "source_release": "https://github.com/PowerShell/PowerShell/releases/tag/v7.6.10",
+      "required_environment": {},
+      "generation_mode": "Integrated motd.py generation with embedded canonical PowerShell runtime; no template or function overrides.",
+      "canonical_embed_matches": true,
+      "source_before": {
+        "generator_functions_ast_sha256": "b53f8e7ea347aab14b4c2ee19964b84ad9f4640954cb840dca5cd5f36793dfc8",
+        "inputs_sha256": {
+          "motd.py": "faa1ffb6213421a8e2a32f471d0df25ae74c4a2e6675754f82f15515adac01a1",
+          "runtime/motd.ps1": "82be3e5a357fcff2598966ddfb677bad93c21a678f1604b3654aec7dbfb3707f",
+          "tests/test_powershell.py": "d4547f5348e022a5e401d706d0603ddba780c15373b8040e805eea9e56b00329",
+          "tests/test_designs_powershell.py": "61290101eefc4e45f272d4fb9288204ac79534c3befc73cf1c56ab5f3187445c",
+          "tools/test_legacy_powershell.ps1": "373678b8592672c8d1c070f07eb0525cc4a9a5b973ff03328d147f5c89178301"
+        }
+      },
+      "source_after": {
+        "generator_functions_ast_sha256": "b53f8e7ea347aab14b4c2ee19964b84ad9f4640954cb840dca5cd5f36793dfc8",
+        "inputs_sha256": {
+          "motd.py": "faa1ffb6213421a8e2a32f471d0df25ae74c4a2e6675754f82f15515adac01a1",
+          "runtime/motd.ps1": "82be3e5a357fcff2598966ddfb677bad93c21a678f1604b3654aec7dbfb3707f",
+          "tests/test_powershell.py": "d4547f5348e022a5e401d706d0603ddba780c15373b8040e805eea9e56b00329",
+          "tests/test_designs_powershell.py": "61290101eefc4e45f272d4fb9288204ac79534c3befc73cf1c56ab5f3187445c",
+          "tools/test_legacy_powershell.ps1": "373678b8592672c8d1c070f07eb0525cc4a9a5b973ff03328d147f5c89178301"
+        }
+      },
+      "failures": [],
+      "legacy_harness_same_engine_validation": {
+        "exit_code": 0,
+        "evidence": {
+          "schema-version": "1",
+          "started-at-utc": "2026-11-17T01:23:27.5347256Z",
+          "status": "passed",
+          "expected-major": "7",
+          "actual-version": "7.6.10",
+          "clr-version": "10.0.15",
+          "os-version": "Unix 6.18.57.0",
+          "process-bitness": "64",
+          "automation-assembly": "System.Management.Automation, Version=7.6.0.500, Culture=neutral, PublicKeyToken=31bf3856ad364e35",
+          "scriptblock-create-available": "True",
+          "cases": "41",
+          "failed": "0",
+          "completed-at-utc": "2026-11-17T01:23:30.5502733Z"
+        },
+        "xml_sha256": "0a910aec647db875898f1d7a94518665c87a3f8ebf31bae0efd1fc448481e4c0",
+        "stderr": "",
+        "artifacts": [
+          {
+            "file": "briefing.ps1",
+            "sha256": "10560cc23a0bb1e634472182d0656857701111afca6f9c7937c19fe9121ed753",
+            "cases": [
+              {
+                "columns": "40",
+                "rows": "25",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "40",
+                "rows": "25",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "40",
+                "rows": "50",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "37"
+              },
+              {
+                "columns": "40",
+                "rows": "50",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "37"
+              },
+              {
+                "columns": "80",
+                "rows": "25",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "80",
+                "rows": "25",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "80",
+                "rows": "50",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "37"
+              },
+              {
+                "columns": "80",
+                "rows": "50",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "37"
+              }
+            ]
+          },
+          {
+            "file": "cards.ps1",
+            "sha256": "8341fac94b89f085fc43d916e898ef090357a5679d9616b8edb708fbfbcb047c",
+            "cases": [
+              {
+                "columns": "40",
+                "rows": "25",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "40",
+                "rows": "25",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "40",
+                "rows": "50",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "49"
+              },
+              {
+                "columns": "40",
+                "rows": "50",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "49"
+              },
+              {
+                "columns": "80",
+                "rows": "25",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "80",
+                "rows": "25",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "80",
+                "rows": "50",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "49"
+              },
+              {
+                "columns": "80",
+                "rows": "50",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "49"
+              }
+            ]
+          },
+          {
+            "file": "classic.ps1",
+            "sha256": "7d0ed1d79f2db80385156cc67c11eedf1ea33bae8575e0c7f317c09cf349449c",
+            "cases": [
+              {
+                "columns": "40",
+                "rows": "25",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "40",
+                "rows": "25",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "40",
+                "rows": "50",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "42"
+              },
+              {
+                "columns": "40",
+                "rows": "50",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "42"
+              },
+              {
+                "columns": "80",
+                "rows": "25",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "80",
+                "rows": "25",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "80",
+                "rows": "50",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "42"
+              },
+              {
+                "columns": "80",
+                "rows": "50",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "42"
+              }
+            ]
+          },
+          {
+            "file": "dashboard.ps1",
+            "sha256": "1f25c4ee34da9d28bc9f8055b95221e7e00861806c36662dc2aa3bdcf4fbe1c1",
+            "cases": [
+              {
+                "columns": "40",
+                "rows": "25",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "40",
+                "rows": "25",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "40",
+                "rows": "50",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "49"
+              },
+              {
+                "columns": "40",
+                "rows": "50",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "49"
+              },
+              {
+                "columns": "80",
+                "rows": "25",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "80",
+                "rows": "25",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "80",
+                "rows": "50",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "36"
+              },
+              {
+                "columns": "80",
+                "rows": "50",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "36"
+              }
+            ]
+          },
+          {
+            "file": "ledger.ps1",
+            "sha256": "1ebd4b7f9ddc71566f839e76e0a67a097345798578a254e2cd39c52e45fad4cc",
+            "cases": [
+              {
+                "columns": "40",
+                "rows": "25",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "40",
+                "rows": "25",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "40",
+                "rows": "50",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "39"
+              },
+              {
+                "columns": "40",
+                "rows": "50",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "39"
+              },
+              {
+                "columns": "80",
+                "rows": "25",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "80",
+                "rows": "25",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "80",
+                "rows": "50",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "39"
+              },
+              {
+                "columns": "80",
+                "rows": "50",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "39"
+              }
+            ]
+          }
+        ],
+        "live_cases": [
+          {
+            "kind": "live-local-no-hooks",
+            "passed": "True",
+            "rendered-rows": "30"
+          }
+        ]
+      },
+      "final_generation_confirmation": {
+        "generator_ast_matches_current": true,
+        "runtime_and_test_sources_match_current": true,
+        "all_five_generated_harness_artifacts_match_current": true
+      }
+    },
+    {
+      "engine": "PowerShell 7.7.0",
+      "edition": "Core",
+      "framework": ".NET 11.0.0",
+      "os_description": "Debian GNU/Linux 13 (trixie)",
+      "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+      "python": "3.12.14",
+      "tests_run": 36,
+      "passed": 36,
+      "failed": 0,
+      "skipped": 0,
+      "elapsed_seconds": 79.122,
+      "started_at_utc": "2026-11-17T01:22:01.843232+00:00",
+      "completed_at_utc": "2026-11-17T01:23:25.354357+00:00",
+      "test_command": "MOTD_TEST_POWERSHELL=<exact installed engine> python3 -m unittest discover -s tests -p test_*powershell.py -v",
+      "source_release": "https://github.com/PowerShell/PowerShell/releases/tag/v7.7.0",
+      "required_environment": {},
+      "generation_mode": "Integrated motd.py generation with embedded canonical PowerShell runtime; no template or function overrides.",
+      "canonical_embed_matches": true,
+      "source_before": {
+        "generator_functions_ast_sha256": "b53f8e7ea347aab14b4c2ee19964b84ad9f4640954cb840dca5cd5f36793dfc8",
+        "inputs_sha256": {
+          "motd.py": "faa1ffb6213421a8e2a32f471d0df25ae74c4a2e6675754f82f15515adac01a1",
+          "runtime/motd.ps1": "82be3e5a357fcff2598966ddfb677bad93c21a678f1604b3654aec7dbfb3707f",
+          "tests/test_powershell.py": "d4547f5348e022a5e401d706d0603ddba780c15373b8040e805eea9e56b00329",
+          "tests/test_designs_powershell.py": "61290101eefc4e45f272d4fb9288204ac79534c3befc73cf1c56ab5f3187445c",
+          "tools/test_legacy_powershell.ps1": "373678b8592672c8d1c070f07eb0525cc4a9a5b973ff03328d147f5c89178301"
+        }
+      },
+      "source_after": {
+        "generator_functions_ast_sha256": "b53f8e7ea347aab14b4c2ee19964b84ad9f4640954cb840dca5cd5f36793dfc8",
+        "inputs_sha256": {
+          "motd.py": "faa1ffb6213421a8e2a32f471d0df25ae74c4a2e6675754f82f15515adac01a1",
+          "runtime/motd.ps1": "82be3e5a357fcff2598966ddfb677bad93c21a678f1604b3654aec7dbfb3707f",
+          "tests/test_powershell.py": "d4547f5348e022a5e401d706d0603ddba780c15373b8040e805eea9e56b00329",
+          "tests/test_designs_powershell.py": "61290101eefc4e45f272d4fb9288204ac79534c3befc73cf1c56ab5f3187445c",
+          "tools/test_legacy_powershell.ps1": "373678b8592672c8d1c070f07eb0525cc4a9a5b973ff03328d147f5c89178301"
+        }
+      },
+      "failures": [],
+      "legacy_harness_same_engine_validation": {
+        "exit_code": 0,
+        "evidence": {
+          "schema-version": "1",
+          "started-at-utc": "2026-11-17T01:23:22.0004843Z",
+          "status": "passed",
+          "expected-major": "7",
+          "actual-version": "7.7.0",
+          "clr-version": "11.0.0",
+          "os-version": "Unix 6.18.57.0",
+          "process-bitness": "64",
+          "automation-assembly": "System.Management.Automation, Version=7.7.0.500, Culture=neutral, PublicKeyToken=31bf3856ad364e35",
+          "scriptblock-create-available": "True",
+          "cases": "41",
+          "failed": "0",
+          "completed-at-utc": "2026-11-17T01:23:25.3137264Z"
+        },
+        "xml_sha256": "03c89272439ed462e60620200ba5880a2eb03e1b69cadfac35350807c3762f62",
+        "stderr": "",
+        "artifacts": [
+          {
+            "file": "briefing.ps1",
+            "sha256": "10560cc23a0bb1e634472182d0656857701111afca6f9c7937c19fe9121ed753",
+            "cases": [
+              {
+                "columns": "40",
+                "rows": "25",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "40",
+                "rows": "25",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "40",
+                "rows": "50",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "37"
+              },
+              {
+                "columns": "40",
+                "rows": "50",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "37"
+              },
+              {
+                "columns": "80",
+                "rows": "25",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "80",
+                "rows": "25",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "80",
+                "rows": "50",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "37"
+              },
+              {
+                "columns": "80",
+                "rows": "50",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "37"
+              }
+            ]
+          },
+          {
+            "file": "cards.ps1",
+            "sha256": "8341fac94b89f085fc43d916e898ef090357a5679d9616b8edb708fbfbcb047c",
+            "cases": [
+              {
+                "columns": "40",
+                "rows": "25",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "40",
+                "rows": "25",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "40",
+                "rows": "50",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "49"
+              },
+              {
+                "columns": "40",
+                "rows": "50",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "49"
+              },
+              {
+                "columns": "80",
+                "rows": "25",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "80",
+                "rows": "25",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "80",
+                "rows": "50",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "49"
+              },
+              {
+                "columns": "80",
+                "rows": "50",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "49"
+              }
+            ]
+          },
+          {
+            "file": "classic.ps1",
+            "sha256": "7d0ed1d79f2db80385156cc67c11eedf1ea33bae8575e0c7f317c09cf349449c",
+            "cases": [
+              {
+                "columns": "40",
+                "rows": "25",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "40",
+                "rows": "25",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "40",
+                "rows": "50",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "42"
+              },
+              {
+                "columns": "40",
+                "rows": "50",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "42"
+              },
+              {
+                "columns": "80",
+                "rows": "25",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "80",
+                "rows": "25",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "80",
+                "rows": "50",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "42"
+              },
+              {
+                "columns": "80",
+                "rows": "50",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "42"
+              }
+            ]
+          },
+          {
+            "file": "dashboard.ps1",
+            "sha256": "1f25c4ee34da9d28bc9f8055b95221e7e00861806c36662dc2aa3bdcf4fbe1c1",
+            "cases": [
+              {
+                "columns": "40",
+                "rows": "25",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "40",
+                "rows": "25",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "40",
+                "rows": "50",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "49"
+              },
+              {
+                "columns": "40",
+                "rows": "50",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "49"
+              },
+              {
+                "columns": "80",
+                "rows": "25",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "80",
+                "rows": "25",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "80",
+                "rows": "50",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "36"
+              },
+              {
+                "columns": "80",
+                "rows": "50",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "36"
+              }
+            ]
+          },
+          {
+            "file": "ledger.ps1",
+            "sha256": "1ebd4b7f9ddc71566f839e76e0a67a097345798578a254e2cd39c52e45fad4cc",
+            "cases": [
+              {
+                "columns": "40",
+                "rows": "25",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "40",
+                "rows": "25",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "40",
+                "rows": "50",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "39"
+              },
+              {
+                "columns": "40",
+                "rows": "50",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "39"
+              },
+              {
+                "columns": "80",
+                "rows": "25",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "80",
+                "rows": "25",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "24"
+              },
+              {
+                "columns": "80",
+                "rows": "50",
+                "unicode": "False",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "39"
+              },
+              {
+                "columns": "80",
+                "rows": "50",
+                "unicode": "True",
+                "kind": "synthetic-alerts",
+                "passed": "True",
+                "rendered-rows": "39"
+              }
+            ]
+          }
+        ],
+        "live_cases": [
+          {
+            "kind": "live-local-no-hooks",
+            "passed": "True",
+            "rendered-rows": "30"
+          }
+        ]
+      },
+      "final_generation_confirmation": {
+        "generator_ast_matches_current": true,
+        "runtime_and_test_sources_match_current": true,
+        "all_five_generated_harness_artifacts_match_current": true
+      }
+    }
+  ],
+  "powershell6_dependency": {
+    "initial_observation": "PowerShell 6.2.7 executed all 34 renderer/source contracts in the provisional 35-test snapshot, but the XML harness and its negative test aborted with No usable version of libssl was found. This was an old .NET runtime dependency failure, not a renderer exception.",
+    "resolution": "Extracted an official Debian package to a workspace-only directory and scoped LD_LIBRARY_PATH to the PS6 test process. No host package installation or generated runtime installer was added.",
+    "package": "libssl1.1_1.1.1w-0+deb11u8_amd64.deb",
+    "bytes": 1565888,
+    "sha256": "dcc68a543de6cb955a57077b66dcdb15f61d1e31e072f2c6cc4082c37da1b00d",
+    "hash_source": "https://packages.debian.org/bullseye/amd64/libssl1.1/download",
+    "download_source": "https://archive.debian.org/debian-archive/debian-security/pool/updates/main/o/openssl/libssl1.1_1.1.1w-0+deb11u8_amd64.deb",
+    "dotnet_reference": "https://learn.microsoft.com/en-us/dotnet/core/compatibility/3.0#net-core-30-prefers-openssl-11x-to-openssl-10x"
+  },
+  "historical_windows": {
+    "powershell_1_3_4_5_0": "UNVERIFIED: no actual engine/host executed during this work. PS1-era grammar and API selection are compatibility targets, not execution evidence.",
+    "powershell_2": "PENDING CI: windows-2022 exact -Version 2 probe and optional-component attempt are defined in .github/workflows/powershell-compatibility.yml. No PS2 execution or pass is claimed by this local record.",
+    "powershell_5_1_and_7_windows": "PENDING current revision CI. Prior v0.3 native runs do not certify changed v0.4 behavior.",
+    "powershell_7_macos": "PENDING current revision CI; Linux results do not verify macOS providers.",
+    "runnable_harness": "tools/test_legacy_powershell.ps1",
+    "scriptblock_create_boundary": "A Microsoft PS2 example documents ScriptBlock.Create; PS1 availability remains unverified and is recorded by reflection on any host running the harness.",
+    "primary_sources": [
+      "https://learn.microsoft.com/en-us/windows-server/get-started/editions-comparison?pivots=windows-server-2022",
+      "https://learn.microsoft.com/en-us/windows/whats-new/removed-features",
+      "https://learn.microsoft.com/en-us/powershell/scripting/windows-powershell/wmf-overview",
+      "https://devblogs.microsoft.com/scripting/use-powershell-to-combine-multiple-commands-for-ease-of-use/"
+    ]
+  },
+  "limitations": [
+    "Tests run on Debian 13 x86_64, not original historical operating systems.",
+    "No universal OS, distribution, service manager, terminal, font, shell minor-release or future-version claim.",
+    "Exact-engine harness accepts and executes trusted input scripts; it is not a sandbox.",
+    "WMI/provider initialization and native API calls have no hard whole-render deadline; hook timeout guarantees are separate."
+  ]
+}

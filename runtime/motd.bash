@@ -1,5 +1,5 @@
 #!/bin/bash
-# MOTD Bash runtime 0.3.0 | derived from Workshop MOTD 1.2.0, 2026-11-16.
+# MOTD Bash runtime 0.4.0 | derived from Workshop MOTD 1.2.0, 2026-11-16.
 # Bash 4.3+ and GNU timeout; optional GNU df, procps ps, iproute2, systemd.
 # Standalone output: generate settings with motd.py, then use --demo or --help.
 # No daemon, installation side effects, network requests, recursive disk scans,
@@ -41,6 +41,13 @@ MAX_WIDTH=132                   # Use available width up to this cap.
 THEME=cyan                     # cyan | amber | mono
 CHARSET=auto                    # auto | ascii | unicode; CLI flags override.
 COLOR_MODE=auto                 # auto | always | never; NO_COLOR still wins.
+DESIGN=classic                  # classic | cards | ledger | briefing | dashboard
+DENSITY=balanced                # compact | balanced | comfortable
+DETAIL=normal                   # brief | normal | full; independent of spacing
+PADDING=1 SECTION_GAP=0
+COLOR_EMPHASIS=balanced          # quiet | balanced | vivid
+SECTION_PRIORITY=(attention resources system services processes io sessions connections hints)
+declare -A SECTION_DETAIL=()
 MOTD_FASTFETCH=0                # External before/after hooks are owned by motd.py.
 FASTFETCH_TIMEOUT=1s
 STORAGE_TIMEOUT=0.4s
@@ -175,7 +182,7 @@ if [[ ${BASH_SOURCE[0]} == "$0" ]]; then
     ws_guard=1; ws_guard_worker=0
     for ws_arg in "$@"; do
         case $ws_arg in
-            --demo|--demo-alerts|--help|-h|--version|--list-sections|--list-items) ws_guard=0 ;;
+            --demo|--demo-alerts|--help|-h|--version|--list-sections|--list-items|--_validate-options) ws_guard=0 ;;
             --_worker) ws_guard=0; ws_guard_worker=1 ;;
         esac
     done
@@ -216,7 +223,7 @@ fi
 
 
 # ===================== 2. CORE COLLECTION / CONTROL ==========================
-ROWS_OVERRIDE='' TTY_SIZE_OVERRIDE='' WORKER=0
+ROWS_OVERRIDE='' TTY_SIZE_OVERRIDE='' WORKER=0 VALIDATE_ONLY=0
 BUDGET_START_MS=0 BUDGET_ACTIVE=0 LOCAL_ONLY=0
 budget_clock() {
     # /proc/uptime is monotonic and available on Bash4.3; centisecond resolution.
@@ -266,13 +273,16 @@ FASTFETCH_TEXT='' OUTPUT='' REPLY=''
 DEMO=0 PLAIN=0 ASCII=0 FORCE_COLOR=0 WIDTH_OVERRIDE='' FETCH_OVERRIDE='' THEME_OVERRIDE=''
 [[ $CHARSET != ascii ]] || ASCII=1
 PROC_ROOT=/proc SYS_ROOT=/sys ETC_ROOT=/etc RUN_ROOT=/run
-VERSION=0.3.0
+VERSION=0.4.0
 
 usage() {
     printf '%s\n' \
-      'MOTD adaptive runtime 0.3.0 - standalone Linux status display.' \
+      'MOTD adaptive runtime 0.4.0 - standalone Linux status display.' \
       'Usage: motd.bash [--rows 8..200]' \
       '       [--width 24..240] [--theme cyan|amber|green|mono] [--plain|--color] [--ascii|--unicode]' \
+      '       [--design classic|cards|ledger|briefing|dashboard] [--detail brief|normal|full]' \
+      '       [--density compact|balanced|comfortable] [--padding 0..3] [--section-gap 0..2]' \
+      '       [--color-emphasis quiet|balanced|vivid]' \
       '       [--sections system,resources,services,processes,sessions,connections,attention,hints]' \
       '       [--hide SECTION,...] [--show SECTION,...]' \
       '       [--hide-item SECTION.ITEM,...] [--show-item SECTION.ITEM,...]' \
@@ -296,6 +306,7 @@ parse_options() {
     while (($#)); do
         case $1 in
             --_worker) WORKER=1; shift ;;
+            --_validate-options) VALIDATE_ONLY=1; shift ;;
             --_tty-size)
                 (($#>=2)) || return 2
                 [[ -z $2 || $2 =~ ^[0-9]{1,3}[[:space:]][0-9]{1,3}$ ]] || return 2
@@ -303,9 +314,22 @@ parse_options() {
             --demo) DEMO=1; shift ;;
             --demo-alerts) DEMO=2; shift ;;
             --plain) PLAIN=1; shift ;;
+            --no-hooks) shift ;; # The generated wrapper owns hook suppression.
             --color) FORCE_COLOR=1; shift ;;
             --ascii) ASCII=1; shift ;;
             --unicode) ASCII=0; shift ;;
+            --design)
+                case ${2-} in classic|cards|ledger|briefing|dashboard) DESIGN=$2 ;; *) return 2 ;; esac; shift 2 ;;
+            --density)
+                case ${2-} in compact|balanced|comfortable) DENSITY=$2 ;; *) return 2 ;; esac; shift 2 ;;
+            --detail)
+                case ${2-} in brief|normal|full) DETAIL=$2 ;; *) return 2 ;; esac; shift 2 ;;
+            --color-emphasis)
+                case ${2-} in quiet|balanced|vivid) COLOR_EMPHASIS=$2 ;; *) return 2 ;; esac; shift 2 ;;
+            --padding)
+                case ${2-} in 0|1|2|3) PADDING=$2 ;; *) return 2 ;; esac; shift 2 ;;
+            --section-gap)
+                case ${2-} in 0|1|2) SECTION_GAP=$2 ;; *) return 2 ;; esac; shift 2 ;;
             --no-fastfetch) FETCH_OVERRIDE=0; shift ;;
             --journal) SHOW_JOURNAL=1; shift ;;
             --no-journal) SHOW_JOURNAL=0; shift ;;
@@ -691,6 +715,7 @@ main() {
         return 2
     fi
     ui_plan_layout || return $?
+    ((VALIDATE_ONLY==0)) || return 0
     collect_all; prepare_view
     render_adaptive || return $?
     printf '%s' "$OUTPUT"
@@ -1915,6 +1940,14 @@ ui_value_cell() {
 }
 ui_emit() {
     ((UI_REMAIN>0)) || return 0
+    if ((${UI_DESIGN_CAPTURE:-0})); then
+        strip_ansi "$1"
+        # Remove right-padding before a plain-language heading is added. The
+        # shared engine repads the final cell to its own measured width.
+        REPLY=${REPLY%"${REPLY##*[! ]}"}
+        UI_CAPTURE_LINES+=("$REPLY")
+        ((UI_REMAIN-=1)); ((UI_EMITTED+=1)); return 0
+    fi
     line "$BORDER$V$RST $1 $BORDER$V$RST"
     ((UI_REMAIN-=1)); ((UI_EMITTED+=1)); return 0
 }
@@ -1959,6 +1992,9 @@ ui_heading() {
 ui_begin() {
     UI_SECTION_ID=$1; UI_REMAIN=${2:-0}; UI_EMITTED=0
     local title=${UI_SECTION_TITLE:-${SECTION_TITLE[$1]:-$1}}
+    if ((${UI_DESIGN_CAPTURE:-0})); then
+        UI_CAPTURE_SUMMARY=${3-}; ((UI_REMAIN-=1)); return 0
+    fi
     ui_heading "$title" "${3-}" "${4-${COLOR[muted]}}"
 }
 ui_top() {
@@ -2717,9 +2753,98 @@ ui_render_sections() {
     ui_bottom
 }
 
-# Legacy branches within individual components remain private during this
-# bounded migration. All public entry points use the same adaptive dispatcher.
-render_adaptive() { local MODE=concise; ui_render_sections; }
+# The design engine consumes the same section callbacks and validated model.
+# It changes presentation only: collection, ranking and metric formulas still
+# have exactly one owner. Capturing happens in the engine's command-substitution
+# subshell, so temporary widths and glyph choices cannot leak into other cards.
+motd_view_detail() { printf '%s\n' "${SECTION_DETAIL[$1]:-$DETAIL}"; }
+
+motd_view_capture() {
+    local id=$1 rows=$3 flavour=$4 TEXT_WIDTH=$2 INNER=$(($2 + 2)) COLS=$(($2 + 4))
+    local UI_DESIGN_CAPTURE=1 UI_CAPTURE_SUMMARY='' UI_SECTION_TITLE=${SECTION_TITLE[$1]}
+    local GLYPH_USED='#' GLYPH_FREE='.' kind pid memory disk summary=''
+    local -a UI_CAPTURE_LINES=() UI_TASK_IDS=()
+    MODEL[unicode]=0
+    # A one-row section must contain an observation, never only a table header.
+    if ((rows==1)); then
+        case $id in
+            system)
+                if ui_enabled system identity; then summary="${MODEL[host]:-?} | up ${MODEL[uptime]:-?}"; fi
+                if ui_enabled system platform; then summary+="${summary:+ | }${MODEL[os]:-?}"; fi
+                if [[ -n $summary ]]; then printf '%s\n' "$summary"; return; fi ;;
+            resources)
+                if ui_enabled resources memory; then
+                    summary='RAM unavailable'
+                    ((${MODEL[mem_valid]:-0}==0)) || summary="RAM ${VIEW[mem_used]:-?}/${VIEW[mem_total]:-?}"
+                fi
+                if ui_enabled resources storage; then
+                    disk="Disk ${MODEL[storage_state]:-unavailable}"
+                    [[ ${MODEL[storage_state]-} != ok ]] || disk="Disk ${VIEW[storage_used]:-?}/${VIEW[storage_total]:-?}"
+                    summary+="${summary:+ | }$disk"
+                fi
+                if [[ -n $summary ]]; then printf '%s\n' "$summary"; return; fi ;;
+            services)
+                if ui_enabled services summary; then
+                    if [[ ${MODEL[svc_runtime_state]-} == ok ]]; then printf '%s\n' "${MODEL[svc_running]:-?} running; ${MODEL[svc_failed]:-?} failed"
+                    else printf '%s\n' "Service state: ${MODEL[svc_runtime_state]:-unavailable}"; fi; return
+                fi ;;
+            processes|io)
+                for kind in cpu rss io; do
+                    if [[ $id == io ]]; then [[ $kind == io ]] || continue
+                    else ui_enabled processes "$kind" || continue; fi
+                    ui_task_ids "$kind"; pid=${UI_TASK_IDS[0]-}; ui_process_value "$kind" "$pid"
+                    if [[ -n $pid ]]; then printf '%s\n' "$kind: $UI_PROCESS_LABEL $UI_PROCESS_VALUE"
+                    else printf '%s\n' 'Process observation unavailable'; fi; return
+                done ;;
+            sessions)
+                case ${MODEL[session_state]-} in ok|partial|fallback) printf '%s\n' "${MODEL[session_count]:-?} sessions / ${MODEL[session_users]:-?} users" ;;
+                    *) printf '%s\n' "Sessions: ${MODEL[session_state]:-unavailable}" ;; esac; return ;;
+            connections)
+                case ${MODEL[connection_state]-} in ok|partial) printf '%s\n' "${MODEL[tcp_established]:-?} TCP / ${MODEL[tcp_admin]:-?} admin" ;;
+                    *) printf '%s\n' "Connections: ${MODEL[connection_state]:-unavailable}" ;; esac; return ;;
+        esac
+    fi
+    "${SECTION_RENDERER[$id]}" "$((rows + 1))"
+    if ((${#UI_CAPTURE_LINES[@]})); then printf '%s\n' "${UI_CAPTURE_LINES[@]}"
+    elif [[ -n $UI_CAPTURE_SUMMARY ]]; then printf '%s\n' "$UI_CAPTURE_SUMMARY"
+    else printf '%s\n' 'No additional observations in this section.'; fi
+}
+
+ui_classic_defaults() {
+    [[ $DESIGN == classic && $DENSITY == balanced && $DETAIL == normal && $PADDING == 1 &&
+       $SECTION_GAP == 0 && $COLOR_EMPHASIS == balanced && ${#SECTION_DETAIL[@]} == 0 &&
+       ${SECTION_PRIORITY[*]} == 'attention resources system services processes io sessions connections hints' ]]
+}
+
+render_adaptive() {
+    local MODE=concise id memory='RAM unavailable' storage="Disk ${MODEL[storage_state]:-unavailable}"
+    if ui_classic_defaults; then
+        ui_plan_layout || return $?
+        if ((UI_OMITTED_SECTIONS==0)); then ui_render_sections; return $?; fi
+    fi
+    MV_SECTION_IDS=''
+    for id in "${SECTIONS[@]}"; do ui_section_enabled "$id" && MV_SECTION_IDS+=" $id"; done
+    MV_COLUMNS=${MODEL[columns]}; MV_ROWS_LIMIT=$COMPACT_ROWS
+    MV_PRIORITY=${SECTION_PRIORITY[*]}; MV_COLOR=${MODEL[color]}; MV_UNICODE=${MODEL[unicode]}
+    MV_TITLE=''; MV_SUBTITLE=''; MV_METRICS=''
+    ui_enabled header title && MV_TITLE=$TITLE
+    if ui_enabled header host && ui_enabled system identity; then MV_SUBTITLE=${MODEL[host]:-?}; fi
+    if ui_enabled header site && [[ -n $SITE_LABEL ]]; then MV_SUBTITLE+="${MV_SUBTITLE:+ | }$SITE_LABEL"; fi
+    MV_SUBTITLE+="${MV_SUBTITLE:+ | }local observations"
+    ((DEMO==0)) || MV_SUBTITLE="DEMO | $MV_SUBTITLE"
+    ((${MODEL[mem_valid]:-0}==0)) || memory="RAM ${VIEW[mem_used]:-?}/${VIEW[mem_total]:-?}"
+    [[ ${MODEL[storage_state]-} != ok ]] || storage="DISK ${VIEW[storage_used]:-?}/${VIEW[storage_total]:-?}"
+    if [[ " $MV_SECTION_IDS " == *' resources '* ]]; then
+        ui_enabled resources memory && MV_METRICS=$memory
+        ui_enabled resources storage && MV_METRICS+="${MV_METRICS:+ | }$storage"
+    fi
+    if [[ " $MV_SECTION_IDS " == *' system '* ]] && ui_enabled system load; then
+        MV_METRICS+="${MV_METRICS:+ | }load ${MODEL[load1]:-?}"
+    fi
+    [[ -n $MV_METRICS ]] || MV_METRICS='Selected local observations'
+    OUTPUT=$(motd_design_render) || return $?
+    OUTPUT+=$'\n'
+}
 
 ui_section_list() {
     local id state

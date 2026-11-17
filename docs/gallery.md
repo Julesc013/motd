@@ -9,9 +9,10 @@ into a plausible-looking picture.
 
 ## Matrix and retained evidence
 
-The shell matrix is two presets (workshop and home-lab), four outputs (Bash, Zsh,
+The classic shell matrix is two presets (workshop and home-lab), four outputs (Bash, Zsh,
 portable sh and PowerShell), four themes (cyan, green, amber, mono), ASCII and
 Unicode, colour and plain, and the four requested sizes: **512 logical captures**.
+Its presentation settings remain classic, balanced density and normal detail.
 Public static outputs also have four-size captures. They do not receive invented
 theme variants that their text format does not implement.
 
@@ -26,6 +27,31 @@ not claim to show a real machine's workload. Before/after hooks are suppressed.
 The `.sh` examples show the portable Unix branch also used on older Bash and
 systems without the full Linux renderer's capabilities. The captured interpreter
 and host are always recorded; a PNG is not proof that an old OS was tested.
+
+## Design and readability sampler
+
+The separate `examples/designs/` gallery covers **140 actual PTY captures** without
+multiplying the baseline matrix by every layout preference:
+
+| Group | Selection | Captures |
+|---|---|---:|
+| Structure | Five designs × four sizes × two presets × Bash, sh and PowerShell; cyan, Unicode, colour; balanced density and normal detail | 120 |
+| Density | Five designs × compact, balanced and comfortable; full detail; workshop/Bash at 80×50 | 15 |
+| Brief detail | Five designs; balanced density and brief detail; workshop/Bash at 80×50 | 5 |
+
+Classic, cards, ledger, briefing and dashboard change presentation structure.
+Density changes spacing; detail requests how much information is shown. Comparing
+the full-detail density group holds detail constant. Comparing balanced/brief,
+balanced/normal and balanced/full holds density constant. Space planning can
+still reduce a request on short screens; exact recipes accompany each capture.
+
+The local HTML index filters design, density and detail as well as preset,
+backend, geometry, theme, character set and colour. Four comparison sheets place
+the five workshop/Bash designs beside each other at native pixels, one sheet per
+terminal size. The original classic gallery supplies the exhaustive theme,
+colour and charset comparison; the sampler is deliberately representative.
+Fish/cmd wrappers and historical engine execution belong in their native tests,
+not an implied additional PNG certification.
 
 ## Resolution and compression
 
@@ -82,6 +108,19 @@ python3 tools/build_gallery.py \
   --no-static --no-comparisons
 ```
 
+Build the bounded sampler separately:
+
+```sh
+python3 tools/build_gallery.py --design-sampler \
+  --output examples/designs \
+  --powershell /path/to/pwsh --optimizer /path/to/oxipng
+```
+
+For a deliberately selected experiment, `--designs`, `--densities` and `--details`
+accept comma-separated values. These options extend the selected matrix only;
+they do not change the default classic completeness contract. `--design-sampler`
+uses the fixed selections in the table above.
+
 Open `examples/gallery/index.html` locally for the filterable index, or follow the
 PNG/transcript links in `examples/gallery/README.md`. The archive extracts into
 `examples/gallery/` relative to a repository root. Each raw transcript remains
@@ -110,6 +149,7 @@ does not require Pillow, wcwidth or a particular installed raster font.
 
 ```sh
 python3 tools/build_gallery.py --verify --require-full
+python3 tools/build_gallery.py --output examples/designs --verify --require-sampler
 ```
 
 This checks the complete 524-case matrix, repository source hashes, every recipe
@@ -117,5 +157,7 @@ and regenerated artifact hash, raw transcript hashes, terminal-cell geometry,
 all unique PNGs' file hashes and decoded RGBA hashes, and the comparison sheets.
 It never executes a generated script or hook, installs anything, or needs the
 native interpreters or optimizer. Omit `--require-full` when verifying a deliberately
-smaller matrix. Source changes invalidate the recorded build; recapture from the
+smaller matrix; `--require-sampler` checks the exact separate 140-case selection.
+Source provenance includes the shared `runtime/designs.sh` presentation source.
+Source changes invalidate the recorded build; recapture from the
 changed source before claiming the images demonstrate that version.

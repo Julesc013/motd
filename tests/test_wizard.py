@@ -59,8 +59,8 @@ class WizardTests(unittest.TestCase):
         self.assertTrue(all(len(line) <= 80 for line in lines), output)
         self.assertEqual(lines[8], 'Page choice: ')
         self.assertTrue(lines[9].startswith('PREVIEW '))
-        self.assertTrue(any('resize for more' in line for line in lines[10:]))
-        self.assertTrue(any(line.startswith(('╚', '+')) for line in lines[10:]))
+        self.assertTrue(any('Hidden:' in line for line in lines[10:]))
+        self.assertTrue(any(line.startswith(('╚', '└', '+')) for line in lines[10:]))
 
     def test_theme_selection_redraws_preview_before_accepting(self):
         config = motd.preset_config()
@@ -71,13 +71,16 @@ class WizardTests(unittest.TestCase):
                                                    preview_factory=variation)
         self.assertEqual(theme, 'green')
         output = self.output.getvalue()
-        self.assertGreaterEqual(output.count('\x1b[2J\x1b[H'), 2)
+        # Selection redraws changed rows without another whole-screen clear.
+        self.assertEqual(output.count('\x1b[2J'), 1)
         self.assertIn('Green [selected]', output)
         self.assertNotIn('Preview unavailable', output)
 
     def test_navigation_back_retains_edits_and_invalid_value_does_not_replace_draft(self):
-        # Destination -> Appearance; invalid width -> valid width -> Back -> Next.
-        answers = ['n', '4', 'bad', '4', '80', 'b', 'n', 'n', 'n', 'n', 'n', 'n', 'n']
+        # Reach Appearance, reject an invalid width, retain a valid edit through Back.
+        pages = motd._configuration_pages(motd.preset_config())
+        appearance = next(i for i, (title, _) in enumerate(pages) if title == 'Appearance')
+        answers = ['n'] * appearance + ['4', 'bad', '4', '80', 'b', 'n'] + ['n'] * (len(pages) - appearance)
         with patch('builtins.input', side_effect=answers):
             c = motd._configure(motd.preset_config(), motd.WizardUI('line'))
         self.assertEqual(c['display']['width'], 80)
@@ -132,8 +135,8 @@ class WizardTests(unittest.TestCase):
                 frame = ui.frame('Appearance', ['1. Theme: cyan'], config=config, prompt='Page choice: ')
                 self.assertEqual(len(frame), height)
                 self.assertIn(f'{width}x{height-10}', frame[9])
-                self.assertIn('ws-bench-07', frame[10])
-                self.assertTrue(any(line.startswith(('╚', '+')) for line in (motd._SGR.sub('', line) for line in frame[10:])))
+                self.assertTrue(any('ws-bench-07' in line for line in frame[10:]))
+                self.assertTrue(any(line.startswith(('╚', '└', '+')) for line in (motd._SGR.sub('', line) for line in frame[10:])))
                 self.assertFalse(any('Preview unavailable' in line for line in frame))
         self.assertEqual(motd.dump_config(config), original)
 

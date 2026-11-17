@@ -1,6 +1,6 @@
 # Shell outputs, login surfaces and visual configuration
 
-Status: **implementation contract and bounded extension plan**, 2026-11-17.
+Status: **v0.4 implementation contract and bounded extension plan**, 2026-11-17.
 This extends the original v0.1 scope. Requirements describe acceptance behaviour;
 they do not constitute a claim that every listed host has passed testing.
 The [compatibility guide](../docs/compatibility.md) records primary-source reasons
@@ -12,17 +12,23 @@ Keep one downloadable Python configurator, TOML recipes, a small set of embedded
 canonical output templates, and one transaction engine. Add an output backend
 when its interpreter requires different syntax. Reuse modern/portable Unix
 dispatch through the Bash and Zsh entry points instead of maintaining a second
-copy of all collectors for each shell major version.
+copy of all collectors for each shell major version. Fish delegates to the same
+portable Unix payload; CMD launches the same native PowerShell core. Neither
+wrapper adds a second collector implementation.
+
+The configurator must import and generate outputs on Python 3.8+. It uses stdlib
+`tomllib` on Python 3.11+ and licensed, ordinary embedded Tomli source on 3.8–3.10.
+Generated output must not require Python, TOML or the source repository at login.
 
 Separate these choices in the recipe and UI:
 
 | Choice | Meaning |
 |---|---|
 | Action | Create, install, inspect, audit, repair, reconfigure, upgrade, recover, rollback or uninstall |
-| Target | Interactive shell output, agetty issue text, OpenSSH banner text, or generic static text |
-| Shell | Bash with automatic fallback, Zsh launcher, native PowerShell, or portable native sh output |
+| Target | Interactive shell output, agetty issue text, OpenSSH banner text, generic UTF-8 text, or ASCII CMD batch notice |
+| Shell | Bash with automatic fallback, Zsh or Fish launcher, native PowerShell, PowerShell-backed CMD launcher, or portable native sh output |
 | Attachment | The exact startup file or public-text destination on the target machine |
-| Display | Theme, section selection, geometry, messages and hints |
+| Display | Design, density, detail, spacing, priority, theme, section selection, geometry, messages and hints |
 
 A transport such as SSH, Telnet or RDP is not an interpreter. Selecting one must
 not silently select Bash, promise an unsupported server integration, or change
@@ -57,8 +63,51 @@ authentication settings.
    capability unavailable, rather than silently executing it unbounded. Distinguish
    individual operation timeouts from whole-render time and descendant-process
    termination. State limitations in module initialization and kernel I/O.
+9. Fish output forwards literal arguments to its embedded `/bin/sh` payload;
+   test quotes, backslashes, dollar signs and command-looking text as data.
+   Record required runtime libraries and matching data packages for relocated
+   historical executables. Do not present an unavailable engine as a pass.
+10. The CMD launcher stores visible PowerShell source after a batch exit marker,
+    reads that exact file and forwards only understood runtime switches. It must
+    not expand path metacharacters through a second shell evaluation. It requires
+    an installed engine with `ScriptBlock.Create`; the wrapper is PS2+ until an
+    actual PS1 method/engine check establishes a lower boundary.
+11. `batch-text` is a separate static ASCII `cmd.exe` output. Escape literal CMD
+    metacharacters, bound generated line lengths, reject ambiguous Unicode code
+    pages, and require native Windows execution tests. Do not infer DOS or OS/2
+    support from those tests.
+12. The reserved `motd:print` hook action displays literal arguments as lines,
+    sharing the before/after and demo-suppression rules. It must not start a shell,
+    parse expressions or require a platform-specific executable. Its bounded data
+    output is subject to ordinary terminal backpressure, not a child-process
+    timeout. Imported arbitrary scripts are a separate trusted-execution path.
 
-## 3. Visual wizard requirements
+## 3. Shared presentation contract
+
+All designs consume the same selected section observations and preserve their
+units, unavailable states and scope. Presentation controls do not add collectors.
+Unix renderers embed the canonical helper `runtime/designs.sh`; PowerShell keeps
+the corresponding implementation in its single native core.
+
+| Field | Accepted values and meaning |
+|---|---|
+| `design` | `classic` preserves the traditional frame; `cards` frames individual sections; `ledger` aligns unboxed rows; `briefing` puts attention headlines first; `dashboard` pairs metric cards at wide widths and stacks them at 40 columns. |
+| `density` | `compact`, `balanced`, `comfortable`; alters spacing and ordinary detail allocation. |
+| `detail` | `brief`, `normal`, `full`; controls desired section-row allocation within the available viewport. |
+| `padding` / `section_gap` | Integer horizontal padding 0–3 and section gaps 0–2. |
+| `priority` | Ordered section IDs controlling detail allocation and complete-section retention when space is short. |
+| `section_detail` | Per-section `brief`, `normal` or `full` override. |
+| `color_emphasis` | `quiet`, `balanced`, `vivid`; changes tone intensity while respecting plain/mono/NO_COLOR suppression. |
+
+Runtime dimensions are 40–240 columns and 8–200 rows. Account for borders,
+spacing, paired-card band heights, headings and omission notices before emitting
+rows. Keep a prompt row free. A small viewport may omit whole lower-priority
+sections; it must state that omission and retain complete frames. An empty
+heading-only row cannot consume a briefing section's entire brief allocation:
+promote the first actual detail when one exists. The default classic recipe
+retains its established layout.
+
+## 4. Visual wizard requirements
 
 The default on a suitable terminal is a page-by-page text interface, with
 `--ui auto|screen|line` selecting its presentation. This is a terminal wizard;
@@ -93,12 +142,18 @@ it does not introduce a graphical desktop toolkit.
 - Restore terminal state after cancellation or errors. Do not hide important
   installation plans behind a cleared screen before confirmation.
 
-## 4. Installation and surface boundaries
+## 5. Installation and surface boundaries
 
-All managed changes continue through the existing journalled transaction engine.
-Adding a renderer must not introduce an unrecorded profile-writing helper.
-Windows installation needs a separate reviewed implementation of filesystem,
-ownership and recovery semantics before the Linux engine can claim that support.
+All managed installation changes continue through the Linux journalled transaction
+engine. Adding a renderer must not introduce an unrecorded profile-writing helper.
+Create-only export is a separate cross-platform route: exclusively create new
+UTF-8 files plus a content-hash manifest, refuse existing destinations and observed
+symlink/reparse parents, and compensate only files still attributable to that
+attempt. It creates no install state and makes no atomic multi-file claim.
+Windows exports use this route by default; other hosts can select `--create-only`.
+Replacement, managed Windows/macOS profiles and rollback require separate reviewed
+filesystem/ownership/recovery implementations. Generation alone does not supply
+those installers.
 
 Current shell hooks must check interactive state, terminal suitability, configured
 audience and duplicate invocation within a process. They must preserve unrelated
@@ -117,7 +172,8 @@ Future adapters are small, independently testable integrations:
 | Windows PowerShell profile | Explicit host/scope selection, policy-respecting execution, Windows-safe transactions and uninstall. |
 | RDP desktop-start display | Explicit opt-in to a visible terminal or notification after desktop login; distinguish reconnect from a new session. |
 | Windows sign-in notice | Separate public title/text export and explicit local/domain policy ownership; no dashboard execution in the sign-in policy. |
-| Fish, ksh, csh/tcsh, cmd.exe | Native startup rules and quoting tests; a file extension alone is not a backend. |
+| ksh and csh/tcsh startup attachment | Native startup rules and quoting tests; executing portable sh under ksh is not a tested installer for every ksh or csh profile. |
+| Fish and CMD additional login surfaces | Existing generated wrappers retain their tested delegation boundaries; each new auto-start/login attachment still needs ownership and native-session tests. |
 | DOS, OS/2 and early Windows | Explicit encoding/newline contract and native wrapper tests; static export is the starting point. |
 
 Telnet support means content for an already configured service, not provisioning
@@ -126,7 +182,7 @@ an invented generic RDP text banner. PowerShell remoting, SFTP, remote command
 execution and similar serialized transports must remain free of unsolicited
 dashboard output.
 
-## 5. Compatibility evidence and regression gates
+## 6. Compatibility evidence and regression gates
 
 Record the exact executable versions and OS for each result. Use three statuses:
 verified, targeted but unverified, and specified for future implementation.
@@ -137,7 +193,10 @@ Do not use “all versions” or “all newer versions” as a test result.
 | Bash dispatch | Real historical major-family executions plus modern Bash; enhanced-renderer minimum-version checks; old engines exit before modern syntax and configured hooks still obey preview suppression |
 | Zsh launcher | Actual Zsh invocation, correct argument forwarding, duplicate/interactive guards, and the shared Bash demonstration |
 | Portable sh | At least dash plus a BusyBox ash build before claiming both; restricted environment and missing-utility behaviour |
-| PowerShell | Actual Windows PowerShell5.1, PS6 and PS7 checks; PS1–4 retain targeted status until their real engines execute the tests; OS-specific collector checks recorded separately |
+| Fish | Actual Fish2.4, 3.6 and any additional claimed engine; literal payload/argument forwarding and truthful record of relocated runtime dependencies |
+| PowerShell | Actual Windows PowerShell5.1, PS6 and PS7 checks; PS1, 3, 4 and 5.0 remain unexecuted targets; PS2 requires the separate exact-engine evidence below; OS-specific collector checks recorded separately |
+| CMD launcher / batch notice | Actual `cmd.exe` execution on Windows; literal filename/text metacharacters, generated geometry, hook suppression and no-PowerShell static output |
+| Python generation / export | Actual Python3.8 boundary, bundled-parser differential checks, new-file-only behavior, refusal of collisions, and preservation of externally edited files on failure |
 | Hooks | Exactly-once calls, literal arguments, timeout/failure behaviour, and suppression during preview |
 | Terminal wizard | Page navigation, updated preview, line fallback, cancellation, resize/narrow-terminal handling and no install before confirmation |
 | New attachment | Temporary-file install/upgrade/uninstall/drift tests, followed by an isolated real host/session test before an end-to-end claim |
@@ -148,12 +207,31 @@ interpreter can skip a local test, but release evidence must name that skip.
 Newer versions are candidates for the same checks; they are not automatically
 certified by an open-ended version comparison.
 
-## 6. Reproducible PNG gallery
+`tools/test_legacy_powershell.ps1` must execute trusted generated files in the
+actual requested engine, rejecting a major-version mismatch before any artifact
+runs. Record exact engine, CLR, OS, bitness, automation assembly, artifact hashes,
+four geometries, character modes and individual outcomes as XML usable on .NET2.
+An optional live case uses local observations with hooks suppressed.
+
+The dedicated PS2 CI job targets Windows Server2022, probes `-Version 2`, and may
+enable only that disposable runner's available Windows optional components. It
+does not provision a paid host, alter the user's machine or bypass execution
+policy. If the component or real engine is unavailable, preserve the observed
+blocking reason and skip the execution step explicitly. A green surrounding job
+or a Windows PowerShell5.1 fallback cannot become PS2 evidence. Do not claim PS1,
+PS3, PS4 or PS5.0 execution until a legitimate actual host has run the harness.
+
+## 7. Reproducible PNG gallery
 
 The maintained dashboard matrix is two presets × four output routes × four
 themes × two character sets × two colour modes × four terminal sizes: **512
-logical captures**. Three static public output formats add **12 captures** at
-the same four sizes. Do not invent colour/theme behavior for static notices.
+logical classic captures**. Three static public output formats add **12 captures**
+at the same four sizes. The separate bounded design sampler contains **140
+captures**: 120 structural comparisons (five designs × four sizes × two presets
+× three native backends), 15 full-detail density contrasts, and five brief-detail
+views. This is not the exhaustive Cartesian product of every control. Do not
+invent colour/theme behavior for static notices or claim a native CMD image from
+a Linux-only capture.
 
 - Run the generated output in an actual controlling PTY set to 40×25, 40×50,
   80×25 or 80×50. Set runtime dimensions explicitly for reproducible captures;

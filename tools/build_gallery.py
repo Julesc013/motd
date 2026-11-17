@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Capture actual MOTD terminal output and publish a lossless PNG gallery.
 
-The full matrix has 512 shell cases: two presets, four interpreters, four themes,
-two character modes, two colour modes, and four real PTY sizes. Identical rendered
-pixels share one PNG, while every logical case keeps its transcript and recipe.
+The classic matrix has 512 shell cases: two presets, four interpreters, four
+themes, two character modes, two colour modes, and four real PTY sizes. A bounded
+design sampler covers presentation choices separately. Identical rendered pixels
+share one PNG, while every logical case keeps its transcript and recipe.
 
 Build dependencies: Python, Pillow, wcwidth, the chosen interpreters, and optional
 oxipng. These are developer/gallery dependencies, never login dependencies.
@@ -49,6 +50,10 @@ SHELLS = ('bash', 'zsh', 'sh', 'powershell')
 THEMES = ('cyan', 'green', 'amber', 'mono')
 CHARSETS = ('ascii', 'unicode')
 COLOURS = ('colour', 'plain')
+DESIGNS = ('classic', 'cards', 'ledger', 'briefing', 'dashboard')
+DENSITIES = ('compact', 'balanced', 'comfortable')
+DETAILS = ('brief', 'normal', 'full')
+DEFAULT_PRESENTATION = ('classic', 'balanced', 'normal')
 PALETTE = ('#171d2b', '#ed6a73', '#74d19b', '#edce77', '#76a9fa', '#c19deb', '#63d1df', '#e4e9f0',
            '#8390a3', '#ff8590', '#9beaaf', '#ffe599', '#9bc2ff', '#d7b5ff', '#8ae5ef', '#ffffff')
 BACKGROUND = '#111827'
@@ -361,19 +366,28 @@ def write_index(output, manifest):
 <h1>MOTD terminal gallery</h1><p>Actual output captured through sized pseudo-terminals, with synthetic data and disabled hooks. Each PNG preserves the entire requested terminal grid, including unused rows. Every PNG is lossless; identical pictures share a file without losing their individual capture records.</p>
 <p>CASES logical captures · UNIQUE unique PNGs · <a href="manifest.json">Evidence manifest</a> · <a href="README.md">Reproduction notes</a></p>
 <div class="filters" id="filters"></div><div class="status" id="status"></div><div class="cards" id="cards"></div>
-<script>const cases=PAYLOAD;const keys=['preset','shell','size','theme','charset','colour'];const filters=document.getElementById('filters');for(const key of keys){const label=document.createElement('label');label.textContent=key;const select=document.createElement('select');select.dataset.key=key;for(const value of ['All',...new Set(cases.map(c=>c[key]))]){const option=document.createElement('option');option.textContent=value;select.append(option)}select.addEventListener('change',render);label.append(select);filters.append(label)}function render(){const selected=cases.filter(c=>[...filters.querySelectorAll('select')].every(s=>s.value==='All'||c[s.dataset.key]===s.value));document.getElementById('status').textContent=selected.length+' cases shown';const cards=document.getElementById('cards');cards.replaceChildren();for(const c of selected){const card=document.createElement('article');card.className='card';const link=document.createElement('a');link.href=c.png;link.target='_blank';const image=document.createElement('img');image.loading='lazy';image.src=c.png;image.alt=c.id;link.append(image);card.append(link);const meta=document.createElement('div');meta.className='meta';const h=document.createElement('h2');h.textContent=c.preset+' · '+c.shell+' · '+c.size;meta.append(h);const p=document.createElement('p');p.textContent=c.theme+' / '+c.charset+' / '+c.colour+' · '+c.content_rows+' used rows';meta.append(p);const actions=document.createElement('div');actions.className='actions';for(const [text,path]of[['PNG',c.png],['ANSI transcript',c.transcript],['Recipe',c.recipe]]){const a=document.createElement('a');a.textContent=text;a.href=path;actions.append(a)}meta.append(actions);card.append(meta);cards.append(card)}}render();</script></html>'''
+<script>const cases=PAYLOAD;const keys=['preset','shell','size','design','density','detail','theme','charset','colour'];const filters=document.getElementById('filters');for(const key of keys){const label=document.createElement('label');label.textContent=key;const select=document.createElement('select');select.dataset.key=key;for(const value of ['All',...new Set(cases.map(c=>c[key]))]){const option=document.createElement('option');option.textContent=value;select.append(option)}select.addEventListener('change',render);label.append(select);filters.append(label)}function render(){const selected=cases.filter(c=>[...filters.querySelectorAll('select')].every(s=>s.value==='All'||c[s.dataset.key]===s.value));document.getElementById('status').textContent=selected.length+' cases shown';const cards=document.getElementById('cards');cards.replaceChildren();for(const c of selected){const card=document.createElement('article');card.className='card';const link=document.createElement('a');link.href=c.png;link.target='_blank';const image=document.createElement('img');image.loading='lazy';image.src=c.png;image.alt=c.id;link.append(image);card.append(link);const meta=document.createElement('div');meta.className='meta';const h=document.createElement('h2');h.textContent=c.preset+' · '+c.shell+' · '+c.size;meta.append(h);const p=document.createElement('p');p.textContent=c.design+' / '+c.density+' / '+c.detail+' · '+c.theme+' / '+c.charset+' / '+c.colour+' · '+c.content_rows+' used rows';meta.append(p);const actions=document.createElement('div');actions.className='actions';for(const [text,path]of[['PNG',c.png],['ANSI transcript',c.transcript],['Recipe',c.recipe]]){const a=document.createElement('a');a.textContent=text;a.href=path;actions.append(a)}meta.append(actions);card.append(meta);cards.append(card)}}render();</script></html>'''
     document = document.replace('CASES', str(total)).replace('UNIQUE', str(unique)).replace('PAYLOAD', payload)
     (output / 'index.html').write_text(document, encoding='utf-8')
     overview = ['# Actual terminal PNG gallery', '',
                 f'{total} logical captures; {unique} unique lossless PNGs.', '',
-                'Open [index.html](index.html) locally to filter by preset, interpreter, size, theme, character set and colour mode.', '',
+                'Open [index.html](index.html) locally to filter by preset, interpreter, size, design, density, detail, theme, character set and colour mode.', '',
                 'The requested sizes are **40×25, 40×50, 80×25 and 80×50**. The full grid is preserved; no terminal output was cropped or resized to make a layout fit. The final row is reserved for the shell prompt.', '',
                 'Each record in [manifest.json](manifest.json) links its raw ANSI transcript, effective recipe, exact command, interpreter version, source hashes, cell geometry and lossless PNG pixel hash. Records may share a PNG when their actual output is identical.', '',
                 'Fixtures are synthetic. Configured before/after commands do not run. Static public notices have no invented colour/theme variants.', '',
                 '## Size comparisons', '']
+    if manifest.get('selection') == 'design-sampler':
+        overview[-2:] = ['## Design comparisons', '',
+            'This bounded sampler has 120 structural comparisons (five designs × four sizes × two presets × three backends), 15 full-detail density contrasts, and five brief-detail views. Colors and character modes are covered by the separate 524-case classic gallery.', '',
+            'Density/detail contrasts use workshop/Bash at 80×50: all three densities at full detail, plus balanced/brief. The structural group supplies the balanced/normal reference. These are requested detail levels; actual row allocation still depends on available terminal space.', '',
+            '| Terminal | Five-design comparison |', '|---|---|']
+        overview += [f'| {c["size"]} | [Open PNG]({c["path"]}) |' for c in manifest['comparisons'] if c.get('kind') == 'designs']
+        overview += ['', 'Use the HTML filters for individual Bash, sh and PowerShell captures and their exact recipes.', '']
+        (output / 'README.md').write_text('\n'.join(overview) + '\n', encoding='utf-8')
+        return
     for preset in PRESETS:
         for shell in SHELLS:
-            matching = [c for c in manifest['cases'] if c['preset'] == preset and c['shell'] == shell and c['theme'] == 'cyan' and c['charset'] == 'unicode' and c['colour'] == 'colour']
+            matching = [c for c in manifest['cases'] if c['preset'] == preset and c['shell'] == shell and c['theme'] == 'cyan' and c['charset'] == 'unicode' and c['colour'] == 'colour' and presentation(c) == DEFAULT_PRESENTATION]
             if not matching: continue
             overview += [f'### {preset} / {shell}', '']
             comparison = next((c for c in manifest['comparisons'] if c['preset'] == preset and c['shell'] == shell), None)
@@ -388,7 +402,7 @@ def contact_sheets(output, cases, renderer, optimizer, opt_level, zopfli):
     records = []
     for preset in PRESETS:
         for shell in SHELLS:
-            selected = [c for c in cases if c['preset'] == preset and c['shell'] == shell and c['theme'] == 'cyan' and c['charset'] == 'unicode' and c['colour'] == 'colour']
+            selected = [c for c in cases if c['preset'] == preset and c['shell'] == shell and c['theme'] == 'cyan' and c['charset'] == 'unicode' and c['colour'] == 'colour' and presentation(c) == DEFAULT_PRESENTATION]
             if len(selected) != 4: continue
             selected.sort(key=lambda c: (c['columns'], c['rows']))
             images = [Image.open(output / c['png']).convert('RGB') for c in selected]
@@ -412,6 +426,72 @@ def contact_sheets(output, cases, renderer, optimizer, opt_level, zopfli):
     return records
 
 
+def design_sheets(output, cases, renderer):
+    """Compare five complete terminal grids at native pixels, one sheet per size."""
+    records = []
+    for columns, rows in SIZES:
+        selected = [c for c in cases if c['preset'] == 'workshop' and c['shell'] == 'bash'
+                    and c['columns'] == columns and c['rows'] == rows and c['theme'] == 'cyan'
+                    and c['charset'] == 'unicode' and c['colour'] == 'colour'
+                    and c['density'] == 'balanced' and c['detail'] == 'normal']
+        if {c['design'] for c in selected} != set(DESIGNS) or len(selected) != len(DESIGNS): continue
+        selected.sort(key=lambda c: DESIGNS.index(c['design']))
+        images = [Image.open(output / c['png']).convert('RGB') for c in selected]
+        gap = 32; label_height = 34; width, height = images[0].size
+        sheet = Image.new('RGB', (3 * width + 4 * gap, 2 * (height + label_height) + 3 * gap), '#080f1b')
+        draw = ImageDraw.Draw(sheet)
+        for index, (case, picture) in enumerate(zip(selected, images)):
+            x = gap + (index % 3) * (width + gap)
+            y = gap + (index // 3) * (height + label_height + gap)
+            draw.text((x, y), case['design'] + ' / ' + case['size'], font=renderer.small, fill=FOREGROUND)
+            sheet.paste(picture, (x, y + label_height))
+        path = output / 'comparisons' / f'five-designs-{columns}x{rows}.png'
+        path.parent.mkdir(exist_ok=True)
+        records.append({'kind': 'designs', 'preset': 'workshop', 'shell': 'bash',
+                        'size': f'{columns}x{rows}', 'source_cases': [c['id'] for c in selected],
+                        'path': str(path.relative_to(output)), **save_lossless(sheet, path)})
+    return records
+
+
+def presentation(case):
+    return tuple(case.get(key, default) for key, default in
+                 zip(('design', 'density', 'detail'), DEFAULT_PRESENTATION))
+
+
+def case_identifier(case):
+    columns, rows = case['geometry']
+    name = '-'.join(case[key] for key in ('preset', 'shell', 'theme', 'charset', 'colour'))
+    name += f'-{columns}x{rows}'
+    if presentation(case) != DEFAULT_PRESENTATION:
+        name += '-' + '-'.join(presentation(case))
+    return name
+
+
+def design_sampler_specs():
+    """A fixed evidence budget, not a crossproduct of every configuration knob."""
+    specs = []
+    for preset, shell, design, geometry in itertools.product(PRESETS, ('bash', 'sh', 'powershell'), DESIGNS, SIZES):
+        specs.append({'preset': preset, 'shell': shell, 'theme': 'cyan', 'charset': 'unicode',
+                      'colour': 'colour', 'geometry': geometry, 'design': design,
+                      'density': 'balanced', 'detail': 'normal', 'sample_group': 'structure'})
+    for design, density in itertools.product(DESIGNS, DENSITIES):
+        specs.append({'preset': 'workshop', 'shell': 'bash', 'theme': 'cyan', 'charset': 'unicode',
+                      'colour': 'colour', 'geometry': (80, 50), 'design': design,
+                      'density': density, 'detail': 'full', 'sample_group': 'density-at-full-detail'})
+    for design in DESIGNS:
+        specs.append({'preset': 'workshop', 'shell': 'bash', 'theme': 'cyan', 'charset': 'unicode',
+                      'colour': 'colour', 'geometry': (80, 50), 'design': design,
+                      'density': 'balanced', 'detail': 'brief', 'sample_group': 'brief-detail'})
+    return specs
+
+
+def capture_specs(args):
+    if args.design_sampler: return design_sampler_specs()
+    keys = ('preset', 'shell', 'theme', 'charset', 'colour', 'geometry', 'design', 'density', 'detail')
+    return [dict(zip(keys, values)) for values in itertools.product(args.presets, args.shells,
+            args.themes, args.charsets, args.colours, args.sizes, args.designs, args.densities, args.details)]
+
+
 def parse_csv(raw, allowed, name):
     selected = tuple(x.strip() for x in raw.split(',') if x.strip())
     if not selected or set(selected) - set(allowed): raise GalleryError(f'Invalid {name}: {raw}')
@@ -420,7 +500,8 @@ def parse_csv(raw, allowed, name):
 
 
 def source_hashes():
-    paths = [ROOT/'motd.py', Path(__file__)] + sorted((ROOT/'runtime').glob('motd.*'))
+    paths = [ROOT/'motd.py', Path(__file__)] + sorted(path for path in (ROOT/'runtime').iterdir()
+            if path.is_file() and path.suffix in ('.bash', '.sh', '.ps1'))
     return {str(path.relative_to(ROOT)): digest(path.read_bytes()) for path in paths}
 
 
@@ -439,12 +520,13 @@ def font_metadata(renderer):
 
 def inside(directory, relative):
     path = (directory / relative).resolve()
-    if not path.is_relative_to(directory.resolve()):
+    try: path.relative_to(directory.resolve())
+    except ValueError:
         raise GalleryError('Manifest path escapes the gallery or repository')
     return path
 
 
-def verify_gallery(output, *, require_full=False):
+def verify_gallery(output, *, require_full=False, require_sampler=False):
     """Validate retained evidence without running imported scripts or hooks."""
     output = Path(output).resolve()
     manifest = json.loads((output/'manifest.json').read_text())
@@ -460,6 +542,10 @@ def verify_gallery(output, *, require_full=False):
         expected |= {f'public-{t}-{w}x{h}' for t in ('issue','ssh-banner','text') for w,h in SIZES}
         if set(identifiers) != expected:
             raise GalleryError('The gallery does not contain the complete 524-case matrix')
+        if any(presentation(c) != DEFAULT_PRESENTATION for c in cases if not c['shell'].startswith('static-')):
+            raise GalleryError('The complete classic matrix must use classic/balanced/normal presentation')
+    if require_sampler and set(identifiers) != {case_identifier(c) for c in design_sampler_specs()}:
+        raise GalleryError('The gallery does not contain the complete 140-case design sampler')
     recipes = {}; images = {}
     for case in cases:
         raw = inside(output, case['transcript']).read_bytes()
@@ -475,9 +561,12 @@ def verify_gallery(output, *, require_full=False):
         recipe = case['recipe']
         if recipe not in recipes:
             path = inside(output, recipe)
-            recipes[recipe] = (digest(path.read_bytes()), digest(motd.generate_artifact(motd.load_config(path)).encode()))
-        if recipes[recipe] != (case['recipe_sha256'], case['artifact_sha256']):
+            config = motd.load_config(path)
+            recipes[recipe] = (digest(path.read_bytes()), digest(motd.generate_artifact(config).encode()), presentation(config['display']))
+        if recipes[recipe][:2] != (case['recipe_sha256'], case['artifact_sha256']):
             raise GalleryError('Recipe or generated-source mismatch: ' + recipe)
+        if not case['shell'].startswith('static-') and recipes[recipe][2] != presentation(case):
+            raise GalleryError('Presentation metadata differs from the captured recipe: ' + recipe)
         png = case['png']
         if png not in images:
             path = inside(output, png)
@@ -506,14 +595,19 @@ def verify_gallery(output, *, require_full=False):
 
 def build(args):
     output = Path(args.output).resolve()
-    if args.zip and Path(args.zip).resolve().is_relative_to(output):
-        raise GalleryError('The gallery archive must be outside the gallery directory')
+    if args.zip:
+        try: Path(args.zip).resolve().relative_to(output)
+        except ValueError: pass
+        else: raise GalleryError('The gallery archive must be outside the gallery directory')
     output.mkdir(parents=True, exist_ok=True)
+    try: recipe_root = str(output.relative_to(ROOT))
+    except ValueError: recipe_root = str(output)
     for name in ('png', 'transcripts', 'recipes'): (output / name).mkdir(exist_ok=True)
     sources = source_hashes()
+    matrix = capture_specs(args)
     renderer = Renderer(args.font)
     interpreters = {}
-    for shell in args.shells:
+    for shell in dict.fromkeys(case['shell'] for case in matrix):
         exe = args.powershell if shell == 'powershell' else shutil.which(shell)
         if not exe: raise GalleryError(f'{shell} is required to capture this gallery; no simulated substitute is used')
         if shell == 'powershell': query = [exe, '-NoProfile', '-NonInteractive', '-Command', '$PSVersionTable.PSVersion.ToString()']
@@ -526,23 +620,26 @@ def build(args):
     if optimizer and not Path(optimizer).is_file(): raise GalleryError('PNG optimizer not found')
     optimizer_version = subprocess.check_output([optimizer, '--version'], text=True).strip() if optimizer else None
     cases = []; png_cache = {}; templates = {}; bytes_before = 0
-    matrix = list(itertools.product(args.presets, args.shells, args.themes, args.charsets, args.colours, args.sizes))
     with tempfile.TemporaryDirectory(prefix='motd-gallery-') as folder:
         temporary = Path(folder)
-        for number, (preset, shell, theme, charset, colour, (columns, rows)) in enumerate(matrix, 1):
-            key = (preset, shell, theme)
+        for number, specification in enumerate(matrix, 1):
+            preset, shell, theme, charset, colour = (specification[x] for x in ('preset', 'shell', 'theme', 'charset', 'colour'))
+            columns, rows = specification['geometry']
+            design, density, detail = presentation(specification)
+            key = (preset, shell, theme, design, density, detail)
             if key not in templates:
                 config = motd.preset_config(preset); motd.select_shell(config, shell)
-                config['display']['theme'] = theme
+                config['display'].update(theme=theme, design=design, density=density, detail=detail)
                 config = motd.validate_config(config)
                 artifact = motd.generate_artifact(config)
-                path = temporary / ('-'.join(key) + motd.artifact_suffix(config))
+                stem = '-'.join(key[:3] if presentation(specification) == DEFAULT_PRESENTATION else key)
+                path = temporary / (stem + motd.artifact_suffix(config))
                 path.write_text(artifact, encoding='utf-8')
-                recipe = Path('recipes') / ('-'.join(key) + '.toml')
+                recipe = Path('recipes') / (stem + '.toml')
                 (output / recipe).write_text(motd.dump_config(config), encoding='utf-8')
                 templates[key] = (path, recipe, digest(artifact.encode()))
             artifact, recipe, artifact_hash = templates[key]
-            identifier = f'{preset}-{shell}-{theme}-{charset}-{colour}-{columns}x{rows}'
+            identifier = case_identifier(specification)
             command = output_command(shell, interpreters[shell]['path'], artifact, columns, rows, charset, colour)
             raw, elapsed = capture_pty(command, columns, rows, cwd=temporary)
             text = raw.decode('utf-8', errors='strict')
@@ -568,17 +665,19 @@ def build(args):
                 png_cache[grid_hash] = (png, details)
             normalized_command = [str(x).replace(str(artifact), '<generated-script>') for x in command]
             cases.append({'id': identifier, 'preset': preset, 'shell': shell, 'theme': theme,
+                          'design': design, 'density': density, 'detail': detail,
+                          'sample_group': specification.get('sample_group', 'matrix'),
                           'charset': charset, 'colour': colour, 'size': f'{columns}x{rows}', 'columns': columns, 'rows': rows,
                           'content_rows': grid.highest_row + 1, 'maximum_columns_used': grid.max_columns,
                           'png': str(png), 'transcript': str(transcript), 'recipe': str(recipe),
                           'command': normalized_command, 'artifact_sha256': artifact_hash,
                           'generate_command': ['python3', 'motd.py', 'build', '--config',
-                                               'examples/gallery/' + str(recipe), '--output', '<generated-script>'],
+                                               str(Path(recipe_root) / recipe), '--output', '<generated-script>'],
                           'recipe_sha256': digest((output / recipe).read_bytes()),
                           'transcript_sha256': digest(raw), 'cell_grid_sha256': grid_hash,
                           'terminal_modes_ignored': sorted(set(grid.ignored_modes)), 'observed_capture_seconds': elapsed, **details})
             if number % 16 == 0 or number == len(matrix): print(f'Captured {number}/{len(matrix)} shell cases', flush=True)
-        if args.static:
+        if args.static and not args.design_sampler:
             for target in ('issue', 'ssh-banner', 'text'):
                 config = motd.preset_config('public-console'); config['target'] = target
                 artifact = motd.generate_artifact(config)
@@ -600,22 +699,25 @@ def build(args):
                         png_cache[grid.fingerprint()] = (png, details)
                     cases.append({'id': identifier, 'preset': 'public-console', 'shell': 'static-' + target,
                                   'theme': 'literal', 'charset': 'literal', 'colour': 'plain',
+                                  'design': 'literal', 'density': 'literal', 'detail': 'literal', 'sample_group': 'static',
                                   'size': f'{columns}x{rows}', 'columns': columns, 'rows': rows,
                                   'content_rows': grid.highest_row + 1, 'maximum_columns_used': grid.max_columns,
                                   'png': str(png), 'transcript': str(transcript), 'recipe': str(recipe),
                                   'command': ['/bin/cat', '<generated-static-file>'], 'artifact_sha256': digest(artifact.encode()),
                                   'generate_command': ['python3', 'motd.py', 'build', '--config',
-                                                       'examples/gallery/' + str(recipe), '--output', '<generated-static-file>'],
+                                                       str(Path(recipe_root) / recipe), '--output', '<generated-static-file>'],
                                   'recipe_sha256': digest((output / recipe).read_bytes()),
                                   'transcript_sha256': digest(raw), 'cell_grid_sha256': grid.fingerprint(),
                                   'terminal_modes_ignored': [], 'observed_capture_seconds': elapsed,
                                   'note': 'Literal bytes displayed by cat; no real getty or SSH server is claimed.', **details})
-    comparisons = contact_sheets(output, cases, renderer, None, args.opt_level, False) if args.comparisons else []
+    comparisons = contact_sheets(output, cases, renderer, None, args.opt_level, False) if args.comparisons and not args.design_sampler else []
+    if args.comparisons: comparisons += design_sheets(output, cases, renderer)
     optimize_gallery(output, cases, comparisons, optimizer, args.opt_level, args.zopfli, args.jobs)
     unique = {c['png']: c for c in cases}
     if source_hashes() != sources:
         raise GalleryError('Source files changed during capture; rebuild from stable sources')
-    manifest = {'schema_version': 1, 'generator': motd.VERSION, 'source_sha256': sources,
+    manifest = {'schema_version': 2, 'generator': motd.VERSION, 'source_sha256': sources,
+                'selection': 'design-sampler' if args.design_sampler else 'matrix',
                 'environment': {'system': platform.platform(), 'python': platform.python_version(), 'pillow': PILLOW_VERSION,
                                 'wcwidth': WCWIDTH_VERSION, 'interpreters': interpreters},
                 'raster': {'font': str(renderer.path), 'font_sha256': digest(renderer.path.read_bytes()), 'font_size_px': renderer.font_size, 'font_variants': font_metadata(renderer),
@@ -637,16 +739,19 @@ def build(args):
     (output / 'manifest.json').write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
     write_index(output, manifest)
     # Remove stale generated captures from a previous matrix, never other files.
-    expected = {c['png'] for c in cases} | {c['transcript'] for c in cases} | {c['recipe'] for c in cases}
-    for directory in ('png', 'transcripts', 'recipes'):
+    expected = {c['png'] for c in cases} | {c['transcript'] for c in cases} | {c['recipe'] for c in cases} | {c['path'] for c in comparisons}
+    for directory in ('png', 'transcripts', 'recipes', 'comparisons'):
+        if not (output/directory).is_dir(): continue
         for path in (output/directory).iterdir():
             if path.is_file() and str(path.relative_to(output)) not in expected: path.unlink()
     if args.zip:
         archive = Path(args.zip).resolve(); archive.parent.mkdir(parents=True, exist_ok=True)
+        try: archive_root = str(output.relative_to(ROOT))
+        except ValueError: archive_root = output.name
         with zipfile.ZipFile(archive, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as z:
             for path in sorted(output.rglob('*')):
                 if path.is_file():
-                    info = zipfile.ZipInfo('examples/gallery/' + str(path.relative_to(output)), date_time=(2026, 11, 16, 0, 0, 0))
+                    info = zipfile.ZipInfo(archive_root + '/' + str(path.relative_to(output)), date_time=(2026, 11, 17, 0, 0, 0))
                     info.compress_type = zipfile.ZIP_STORED if path.suffix == '.png' else zipfile.ZIP_DEFLATED
                     info.external_attr = 0o100644 << 16
                     z.writestr(info, path.read_bytes())
@@ -657,14 +762,19 @@ def build(args):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('--output', default=str(ROOT/'examples/gallery'))
+    parser.add_argument('--output', help='Destination (default: examples/gallery, or examples/designs for the sampler)')
     parser.add_argument('--verify', action='store_true', help='Verify retained evidence without executing scripts or recapturing')
     parser.add_argument('--require-full', action='store_true', help='With --verify, require all 512 shell and 12 static cases')
+    parser.add_argument('--require-sampler', action='store_true', help='With --verify, require the fixed 140-case design sampler')
+    parser.add_argument('--design-sampler', action='store_true', help='Capture a fixed 140-case presentation sampler; excludes static notices')
     parser.add_argument('--presets', default=','.join(PRESETS))
     parser.add_argument('--shells', default=','.join(SHELLS))
     parser.add_argument('--themes', default=','.join(THEMES))
     parser.add_argument('--charsets', default=','.join(CHARSETS))
     parser.add_argument('--colours', default=','.join(COLOURS))
+    parser.add_argument('--designs', default='classic', help='Comma-separated presentation designs (default: classic)')
+    parser.add_argument('--densities', default='balanced', help='Comma-separated spacing densities (default: balanced)')
+    parser.add_argument('--details', default='normal', help='Comma-separated requested detail levels (default: normal)')
     parser.add_argument('--sizes', default=','.join(f'{c}x{r}' for c, r in SIZES))
     parser.add_argument('--powershell', default=shutil.which('pwsh') or shutil.which('powershell'))
     parser.add_argument('--font', default=DEFAULT_FONT)
@@ -676,8 +786,10 @@ def main(argv=None):
     parser.add_argument('--no-comparisons', dest='comparisons', action='store_false')
     parser.add_argument('--zip', help='Write a repository-root-extractable gallery archive')
     args = parser.parse_args(argv)
-    if args.verify: return verify_gallery(args.output, require_full=args.require_full)
-    for name, allowed in [('presets', PRESETS), ('shells', SHELLS), ('themes', THEMES), ('charsets', CHARSETS), ('colours', COLOURS)]:
+    if not args.output:
+        args.output = str(ROOT / ('examples/designs' if args.design_sampler or args.require_sampler else 'examples/gallery'))
+    if args.verify: return verify_gallery(args.output, require_full=args.require_full, require_sampler=args.require_sampler)
+    for name, allowed in [('presets', PRESETS), ('shells', SHELLS), ('themes', THEMES), ('charsets', CHARSETS), ('colours', COLOURS), ('designs', DESIGNS), ('densities', DENSITIES), ('details', DETAILS)]:
         setattr(args, name, parse_csv(getattr(args, name), allowed, name))
     sizes = parse_csv(args.sizes, tuple(f'{c}x{r}' for c, r in SIZES), 'sizes')
     args.sizes = tuple(tuple(map(int, x.split('x'))) for x in sizes)

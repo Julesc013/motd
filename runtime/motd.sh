@@ -9,6 +9,13 @@ SITE_LABEL=''
 THEME=mono
 CHARSET=auto
 COLOR_MODE=auto
+DESIGN=classic
+DENSITY=balanced
+DETAIL=normal
+PADDING=1
+SECTION_GAP=0
+COLOR_EMPHASIS=balanced
+SECTION_PRIORITY='attention resources system services processes io sessions connections hints'
 MAX_WIDTH=80
 ROWS=25
 TOP_N=3
@@ -23,6 +30,7 @@ motd_required_services() { :; }
 motd_service_allowed() { return 0; }
 motd_before_hooks() { :; }
 motd_after_hooks() { :; }
+motd_section_detail() { printf '%s\n' "$DETAIL"; }
 
 # @MOTD_CONFIG@
 
@@ -44,6 +52,18 @@ while [ "$#" -gt 0 ]; do
         --color) MOTD_FORCE_COLOR=1 ;;
         --ascii) MOTD_ASCII=1 ;;
         --unicode) MOTD_ASCII=0 ;;
+        --design)
+            shift; case "${1-}" in classic|cards|ledger|briefing|dashboard) DESIGN=$1 ;; *) exit 2 ;; esac ;;
+        --density)
+            shift; case "${1-}" in compact|balanced|comfortable) DENSITY=$1 ;; *) exit 2 ;; esac ;;
+        --detail)
+            shift; case "${1-}" in brief|normal|full) DETAIL=$1 ;; *) exit 2 ;; esac ;;
+        --color-emphasis)
+            shift; case "${1-}" in quiet|balanced|vivid) COLOR_EMPHASIS=$1 ;; *) exit 2 ;; esac ;;
+        --padding)
+            shift; case "${1-}" in 0|1|2|3) PADDING=$1 ;; *) exit 2 ;; esac ;;
+        --section-gap)
+            shift; case "${1-}" in 0|1|2) SECTION_GAP=$1 ;; *) exit 2 ;; esac ;;
         --width|--rows)
             motd_option=$1; shift
             case "${1-}" in ''|*[!0-9]*) printf '%s\n' 'Width/rows require an integer.' >&2; exit 2 ;; esac
@@ -63,6 +83,9 @@ while [ "$#" -gt 0 ]; do
         --list-sections) printf '%s\n' 'system resources services processes sessions connections attention hints io'; exit 0 ;;
         --help|-h)
             printf '%s\n' 'MOTD: --demo --demo-alerts --plain --color --ascii --unicode --no-hooks --width N --rows N' \
+                '--design classic|cards|ledger|briefing|dashboard --detail brief|normal|full' \
+                '--density compact|balanced|comfortable --padding 0..3 --section-gap 0..2' \
+                '--color-emphasis quiet|balanced|vivid' \
                 'Portable Unix: identity, memory, storage, services, processes, sessions, connections, notices and hints.' \
                 'Missing OS facilities and inaccessible observations say unavailable.'
             exit 0 ;;
@@ -435,6 +458,7 @@ motd_clean_text() {
     if [ -n "$motd_rest" ] && [ "$2" -gt 0 ]; then motd_clean=${motd_clean%?}'~'; fi
 }
 motd_border() {
+    if [ "${motd_capture_mode-0}" -eq 1 ]; then return; fi
     if [ "$motd_budget" -le 0 ]; then return; fi
     motd_clean_text "$3" "$motd_inner"
     # Use the counted characters: old Bash ${#var} in arithmetic can apply
@@ -448,6 +472,10 @@ motd_border() {
 motd_line() {
     if [ "$motd_section_budget" -le 0 ] || [ "$motd_budget" -le 1 ]; then return; fi
     motd_clean_text "$1" "$motd_inner"
+    if [ "${motd_capture_mode-0}" -eq 1 ]; then
+        printf '%s\n' "$motd_clean"
+        motd_section_budget=$((motd_section_budget - 1)); return
+    fi
     printf '%s%s%s %-*s %s%s%s\n' "$motd_color" "$motd_v" "$motd_reset" "$motd_inner" "$motd_clean" "$motd_color" "$motd_v" "$motd_reset"
     motd_section_budget=$((motd_section_budget - 1)); motd_budget=$((motd_budget - 1))
 }
@@ -463,14 +491,11 @@ MOTD_ROWS_END
 motd_first() { motd_first_row=${1%%'
 '*}; }
 
-motd_border "$motd_tl" "$motd_tr" "$TITLE"
-motd_section_budget=1
-if [ -n "$SITE_LABEL" ]; then motd_line "$SITE_LABEL | Portable Unix"
-else motd_line 'Portable Unix | local observations'; fi
-for motd_section in $motd_visible_sections; do
-    motd_section_budget=$((1 + motd_share))
-    if [ "$motd_extra" -gt 0 ]; then motd_section_budget=$((motd_section_budget + 1)); motd_extra=$((motd_extra - 1)); fi
-    case "$motd_section" in
+# One set of section callbacks serves every design. The shared POSIX engine
+# captures these data rows in a subshell and owns all layout; no collector or
+# measurement formula is duplicated for a different presentation.
+motd_render_section() {
+    case "$1" in
         system)
             motd_border "$motd_ml" "$motd_mr" 'SYSTEM'
             motd_line "Host: $motd_host | $motd_os $motd_release"
@@ -510,18 +535,76 @@ MOTD_SERVICES_END
             motd_border "$motd_ml" "$motd_mr" 'CONNECTIONS'; motd_line "$motd_connections"; motd_rows "$motd_connection_rows" ;;
         attention)
             motd_border "$motd_ml" "$motd_mr" 'ATTENTION'
-            case "$motd_attention" in 'DEMO WARNING:'*|'Required service:'*) motd_line "$motd_attention" ;; esac
+            motd_attention_first=0
+            case "$motd_attention" in 'DEMO WARNING:'*|'Required service:'*)
+                motd_line "$motd_attention"; motd_attention_first=1 ;; esac
             motd_messages
-            motd_line "$motd_attention" ;;
+            if [ "${motd_capture_mode-0}" -eq 0 ] || [ "$motd_attention_first" -eq 0 ]; then
+                motd_line "$motd_attention"
+            fi ;;
         hints)
             motd_border "$motd_ml" "$motd_mr" 'HINTS'; motd_hints; motd_line 'Inspect: ps | df -Pk / | who' ;;
         io)
             motd_border "$motd_ml" "$motd_mr" 'I/O (cumulative; visible sample)'; motd_line "$motd_disk_io"; motd_rows "$motd_io_rows" ;;
     esac
+}
+
+motd_view_detail() { motd_section_detail "$1"; }
+
+motd_view_capture() {
+    motd_capture_mode=1; motd_section_budget=$3; motd_inner=$2; motd_budget=10000
+    motd_process_extra=0; motd_resource_extra=0
+    if [ "$3" -eq 1 ]; then
+        case "$1" in
+            system) motd_line "$motd_host | up $motd_uptime s | $motd_os"; return ;;
+            resources)
+                if [ "$motd_available" != unavailable ]; then motd_line "RAM $motd_available KiB available | $motd_disk"
+                elif [ "$motd_free" != unavailable ]; then motd_line "RAM $motd_free KiB free | $motd_disk"
+                else motd_line "RAM unavailable | $motd_disk"; fi; return ;;
+            processes) motd_first "$motd_cpu_rows"; motd_line "CPU: $motd_first_row"; return ;;
+            io) motd_first "$motd_io_rows"; motd_line "I/O bytes: $motd_first_row"; return ;;
+        esac
+    fi
+    motd_render_section "$1"
+}
+
+motd_classic_defaults() {
+    [ "$DESIGN" = classic ] && [ "$DENSITY" = balanced ] && [ "$DETAIL" = normal ] &&
+    [ "$PADDING" = 1 ] && [ "$SECTION_GAP" = 0 ] && [ "$COLOR_EMPHASIS" = balanced ] &&
+    [ "$SECTION_PRIORITY" = 'attention resources system services processes io sessions connections hints' ] || return 1
+    for motd_default_id in $SECTIONS; do
+        [ "$(motd_section_detail "$motd_default_id")" = normal ] || return 1
+    done
+    return 0
+}
+
+if motd_classic_defaults && [ "$motd_omitted_sections" -eq 0 ]; then
+motd_border "$motd_tl" "$motd_tr" "$TITLE"
+motd_section_budget=1
+if [ -n "$SITE_LABEL" ]; then motd_line "$SITE_LABEL | Portable Unix"
+else motd_line 'Portable Unix | local observations'; fi
+for motd_section in $motd_visible_sections; do
+    motd_section_budget=$((1 + motd_share))
+    if [ "$motd_extra" -gt 0 ]; then motd_section_budget=$((motd_section_budget + 1)); motd_extra=$((motd_extra - 1)); fi
+    motd_render_section "$motd_section"
 done
 if [ "$motd_omitted_sections" -gt 0 ]; then
     motd_section_budget=1
     motd_line "+$motd_omitted_sections sections; resize for more."
 fi
 motd_border "$motd_bl" "$motd_br" ''
+else
+    MV_COLUMNS=$MAX_WIDTH; MV_ROWS_LIMIT=$ROWS; MV_SECTION_IDS=$SECTIONS
+    MV_PRIORITY=$SECTION_PRIORITY; MV_UNICODE=$((1 - MOTD_ASCII)); MV_COLOR=0
+    [ -z "$motd_color" ] || MV_COLOR=1
+    MV_TITLE=$TITLE; MV_SUBTITLE="$motd_host | $SITE_LABEL | Portable Unix"
+    [ "$MOTD_DEMO" -eq 0 ] || MV_SUBTITLE="DEMO | $MV_SUBTITLE"
+    MV_METRICS='Selected local observations'
+    case " $MV_SECTION_IDS " in *' resources '*)
+        if [ "$motd_available" != unavailable ]; then MV_METRICS="RAM $motd_available KiB available | $motd_disk"
+        elif [ "$motd_free" != unavailable ]; then MV_METRICS="RAM $motd_free KiB free | $motd_disk"
+        else MV_METRICS="RAM unavailable | $motd_disk"; fi ;;
+    esac
+    motd_design_render || exit "$?"
+fi
 motd_after_hooks || exit "$?"

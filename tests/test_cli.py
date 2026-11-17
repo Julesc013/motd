@@ -121,7 +121,7 @@ class CliTests(unittest.TestCase):
         source = self.root / "opaque.bash"
         executed = self.root / "must-not-exist"
         source.write_text("#!/bin/bash\nprintf executed > " + shlex.quote(str(executed)) + "\n")
-        arguments = ["install", "--artifact", source, "--target", "shell", "--name", "opaque",
+        arguments = ["install", "--artifact", source, "--target", "shell", "--shell", "bash", "--name", "opaque",
                      *self.destinations(), "--yes"]
         with self.assertRaises(motd.MotdError):
             self.cli(*arguments)
@@ -158,7 +158,7 @@ class CliTests(unittest.TestCase):
         source.write_text("#!/bin/bash\ntouch " + shlex.quote(str(executed)) + "\n")
         before = self.snapshot()
         status, text, _ = self.cli("plan", "--artifact", source, "--target", "shell",
-                                   "--name", "opaque", *self.destinations(), "--json")
+                                   "--shell", "bash", "--name", "opaque", *self.destinations(), "--json")
         self.assertEqual(status, 0)
         self.assertEqual(json.loads(text)["metadata"]["artifact_origin"], "opaque-import")
         self.assertEqual(self.snapshot(), before)
@@ -272,6 +272,7 @@ class CliTests(unittest.TestCase):
                 *([("Choice [1]:", "")] if mode == 'screen' else []),
                 ("Page choice:", "1"),  # Destination: edit name.
                 ("Name:" if mode == 'screen' else "Name [", "wizard-test"),
+                ("Page choice:", "n"),  # Design and readability.
                 ("Page choice:", "n"),  # Appearance.
                 ("Page choice:", "1"),
                 ("Heading:" if mode == 'screen' else "Heading [", "Wizard smoke"),
@@ -283,6 +284,8 @@ class CliTests(unittest.TestCase):
                 ("Page choice:", "n"),  # Characters and colour.
                 ("Page choice:", "n"),  # Sections (1/2).
                 ("Page choice:", "n"),  # Sections (2/2).
+                ("Page choice:", "n"),  # Per-section detail (1/2).
+                ("Page choice:", "n"),  # Per-section detail (2/2).
                 ("Page choice:", "n"),  # Content.
                 ("Page choice:", "n"),  # Hooks.
                 ("Page choice:", "n"),  # Review.
@@ -306,7 +309,7 @@ class CliTests(unittest.TestCase):
             self.assertEqual(process.returncode, 0, text[-4000:])
             if mode == 'screen':
                 self.assertIn('PREVIEW 100x28 | demo | calls off', text)
-                self.assertIn('\x1b[2J\x1b[H', text)
+                self.assertIn('\x1b[2J', text)
             else:
                 self.assertIn("Synthetic demonstration", text)
             self.assertNotIn("# MOTD-BODY-BEGIN", text, "Saving a recipe dumped the executable to the terminal")

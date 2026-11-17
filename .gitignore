@@ -17,3 +17,10 @@ build/*
 !build/verification-v03-final.json
 !build/verification-v03-final.log
 !build/verification-gallery.json
+!build/verification-unix-v04.json
+!build/verification-powershell-v04.json
+!build/verification-v04.json
+!build/verification-v04.log
+!build/verification-python38-v04.json
+!build/verification-python38-v04.log
+!build/verification-native-v04.json

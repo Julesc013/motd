@@ -122,11 +122,18 @@ function Format-MotdShortBytes([double] $Bytes) {
 function Format-MotdBar([double] $Used, [double] $Total) {
     if ($Total -le 0 -or $Used -lt 0) { return '[unavailable]' }
     $length = 12
-    if ($MotdWidth -lt 60) { $length = 8 }
+    if ((Get-MotdResourceWidth) -lt 60) { $length = 8 }
     $filled = [int][Math]::Round($length * [Math]::Max(0.0, [Math]::Min(1.0, $Used / $Total)))
     $full = '#'; $empty = '-'
     if ($Unicode -and -not $Ascii) { $full = [string][char]0x2588; $empty = [string][char]0x2591 }
     return '[' + ($full * $filled) + ($empty * ($length - $filled)) + ']'
+}
+
+function Get-MotdResourceWidth {
+    if ($MotdConfig['display']['design'] -eq 'dashboard' -and $MotdWidth -ge 80) {
+        return [int][Math]::Floor(($MotdWidth - 2) / 2)
+    }
+    return $MotdWidth
 }
 
 function ConvertTo-MotdWindowsArgument([string] $Argument) {
@@ -157,6 +164,12 @@ function Invoke-MotdHooks([string] $Phase) {
     $number = 0
     foreach ($hook in @($MotdConfig['hooks'][$Phase])) {
         $number++
+        if ($hook.argv[0] -ceq 'motd:print') {
+            # A built-in literal line action shares the phase/demo gate above.
+            # It invokes no process, parser, expression evaluator or shell.
+            for ($i = 1; $i -lt $hook.argv.Count; $i++) { Write-Output (ConvertTo-MotdText $hook.argv[$i]) }
+            continue
+        }
         $state = @{ Process = (New-Object Diagnostics.Process); Status = 127 }
         $read = Read-MotdObservation {
             $info = New-Object Diagnostics.ProcessStartInfo
@@ -294,7 +307,7 @@ function Add-MotdResources {
             if ($size.Ok -and $size.Value.Count -eq 2) { $diskTotal = [double]$size.Value[0]; $diskUsed = $diskTotal - [double]$size.Value[1] }
         }
     }
-    if ($MotdWidth -lt 60) {
+    if ((Get-MotdResourceWidth) -lt 60) {
         Add-MotdLine ('MEM ' + (Format-MotdShortBytes $used) + '/' + (Format-MotdShortBytes $total) + ' ' + (Format-MotdBar $used $total)) 'accent'
         Add-MotdLine ('DISK ' + (Format-MotdShortBytes $diskUsed) + '/' + (Format-MotdShortBytes $diskTotal) + ' ' + (Format-MotdBar $diskUsed $diskTotal))
     } else {
@@ -554,12 +567,275 @@ function Format-MotdCell([string] $Text, [int] $Length) {
 
 function Write-MotdRow([string] $Text, [string] $Tone = 'normal') {
     $line = $MotdVertical + ' ' + (Format-MotdCell $Text ($MotdWidth - 4)) + ' ' + $MotdVertical
-    if ($MotdColor -and $Tone -ne 'normal') {
+    if ($MotdColor -and $Tone -ne 'normal' -and ($MotdConfig['display']['color_emphasis'] -ne 'quiet' -or $Tone -eq 'warning')) {
         $code = $MotdAccent
         switch ($Tone) { 'warning' { $code = '33' } 'good' { $code = '32' } 'muted' { $code = '90' } }
+        if ($MotdConfig['display']['color_emphasis'] -eq 'vivid' -and $Tone -ne 'muted') { $code = '1;' + $code }
         $line = $MotdEscape + '[' + $code + 'm' + $line + $MotdEscape + '[0m'
     }
     Write-Output $line
+}
+
+# Presentation is a pure transformation of the section rows collected above.
+# These helpers never call a provider or execute a hook. The planner accounts
+# for every border, gap and omission row before writing anything to the terminal.
+function Get-MotdDisplaySetting([string] $Name, $Default) {
+    if ($MotdConfig['display'].ContainsKey($Name)) { return $MotdConfig['display'][$Name] }
+    return $Default
+}
+
+function Get-MotdSectionCaption([string] $Id) {
+    switch ($Id) {
+        'io' { return 'I/O' }
+        default { return $Id.ToUpper() }
+    }
+}
+
+function Get-MotdPresentationOrder([string] $Design) {
+    $order = New-MotdList
+    $leading = @()
+    if ($Design -eq 'briefing') { $leading = @('attention') }
+    if ($Design -eq 'dashboard') { $leading = @('resources', 'system', 'attention') }
+    foreach ($id in $leading) { if ($MotdSectionOrder -contains $id) { [void]$order.Add($id) } }
+    foreach ($id in $MotdSectionOrder) { if (-not $order.Contains($id)) { [void]$order.Add($id) } }
+    return ,$order
+}
+
+function Get-MotdPresentationRows([string] $Id, [string] $Design) {
+    $rows = New-MotdList
+    $source = $MotdSections[$Id].Lines
+    if ($Id -eq 'attention' -and $source.Count -gt 1) {
+        # Put actual warnings before routine messages in compact presentations.
+        [void]$rows.Add($source[0])
+        foreach ($row in $source) { if ($row.Tone -eq 'warning') { [void]$rows.Add($row) } }
+        for ($i = 1; $i -lt $source.Count; $i++) { if ($source[$i].Tone -ne 'warning') { [void]$rows.Add($source[$i]) } }
+    } else { foreach ($row in $source) { [void]$rows.Add($row) } }
+    if ($Design -eq 'briefing' -and $rows.Count -gt 0) {
+        $brief = New-MotdList
+        $caption = (Get-MotdSectionCaption $Id).ToLower()
+        $caption = $caption.Substring(0, 1).ToUpper() + $caption.Substring(1)
+        if ($Id -eq 'io') { $caption = 'I/O' }
+        $start = 1; $first = $rows[0]
+        $text = [regex]::Replace($first.Text, ('^' + [regex]::Escape((Get-MotdSectionCaption $Id)) + '(?:\s+|$)'), '')
+        # Heading-only sections use their first observation as the headline;
+        # brief detail must not spend its entire allocation on an empty label.
+        if ($text -eq '' -and $rows.Count -gt 1) { $first = $rows[1]; $text = $first.Text; $start = 2 }
+        if ($text -eq '') { $text = 'No configured items.' }
+        [void]$brief.Add(@{ Text = ($caption + ': ' + $text); Tone = $first.Tone })
+        for ($i = $start; $i -lt $rows.Count; $i++) { [void]$brief.Add(@{ Text = ('  ' + $rows[$i].Text); Tone = $rows[$i].Tone }) }
+        return ,$brief
+    }
+    if (($Design -eq 'cards' -or $Design -eq 'dashboard') -and $rows.Count -gt 0) {
+        # The section caption is already in the card border. Keep its first
+        # observation, removing only the duplicated fixed label.
+        $cards = New-MotdList
+        $first = [regex]::Replace($rows[0].Text, ('^' + [regex]::Escape((Get-MotdSectionCaption $Id)) + '(?:\s+|$)'), '')
+        if ($first -ne '') { [void]$cards.Add(@{ Text = $first; Tone = $rows[0].Tone }) }
+        for ($i = 1; $i -lt $rows.Count; $i++) { [void]$cards.Add($rows[$i]) }
+        return ,$cards
+    }
+    return ,$rows
+}
+
+function Get-MotdPresentationMinimum([string] $Id, [int] $Count, [string] $Design) {
+    $minimum = 1
+    if ($Id -eq 'resources' -or $Id -eq 'system' -or $Id -eq 'attention') { $minimum = 2 }
+    if ($Id -eq 'processes') { $minimum = 3 }
+    if ($Design -eq 'briefing' -and $Id -eq 'attention') { $minimum = 1 }
+    return [Math]::Min($minimum, $Count)
+}
+
+function Get-MotdPresentationGroups($Selected, [string] $Design) {
+    $groups = New-MotdList
+    $columns = 1
+    if ($Design -eq 'dashboard' -and $MotdWidth -ge 80) { $columns = 2 }
+    for ($i = 0; $i -lt $Selected.Count; $i += $columns) {
+        $ids = New-MotdList
+        [void]$ids.Add($Selected[$i])
+        if ($columns -eq 2 -and $i + 1 -lt $Selected.Count) { [void]$ids.Add($Selected[$i + 1]) }
+        [void]$groups.Add(@{ Ids = $ids })
+    }
+    return ,$groups
+}
+
+function Measure-MotdPresentation($Selected, $Allocated, [string] $Design, [int] $Gap) {
+    $groups = Get-MotdPresentationGroups $Selected $Design
+    $height = 0
+    foreach ($group in $groups) {
+        $band = 0
+        foreach ($id in $group.Ids) { $band = [Math]::Max($band, [int]$Allocated[$id]) }
+        if ($Design -eq 'cards' -or $Design -eq 'dashboard') { $band += 2 }
+        $height += $band
+    }
+    if ($groups.Count -gt 1) { $height += $Gap * ($groups.Count - 1) }
+    return $height
+}
+
+function Get-MotdPresentationPlan([string] $Design) {
+    $order = Get-MotdPresentationOrder $Design
+    $selected = New-MotdList
+    $priority = New-MotdList
+    foreach ($id in @(Get-MotdDisplaySetting 'priority' @('attention', 'resources', 'system', 'services', 'processes', 'io', 'sessions', 'connections', 'hints'))) {
+        if (-not $priority.Contains($id)) { [void]$priority.Add($id) }
+    }
+    foreach ($id in $order) { if (-not $priority.Contains($id)) { [void]$priority.Add($id) } }
+    $density = Get-MotdDisplaySetting 'density' 'balanced'
+    $detail = Get-MotdDisplaySetting 'detail' 'normal'
+    $sectionDetail = Get-MotdDisplaySetting 'section_detail' @{}
+    $gap = [int](Get-MotdDisplaySetting 'section_gap' 0)
+    if ($density -eq 'comfortable') { $gap = [Math]::Min(2, $gap + 1) }
+    if ($density -eq 'compact') { $gap = [Math]::Max(0, $gap - 1) }
+    $rows = @{}; $allocated = @{}; $maximum = @{}
+    foreach ($id in $order) {
+        $rows[$id] = Get-MotdPresentationRows $id $Design
+        if ($rows[$id].Count -eq 0) { continue }
+        [void]$selected.Add($id)
+        $minimum = Get-MotdPresentationMinimum $id $rows[$id].Count $Design
+        $selectedDetail = $detail
+        if ($sectionDetail.ContainsKey($id)) { $selectedDetail = $sectionDetail[$id] }
+        $limit = $rows[$id].Count
+        if ($selectedDetail -eq 'brief') { $limit = $minimum }
+        elseif ($selectedDetail -eq 'normal') {
+            $limit = 6
+            if ($density -eq 'compact') { $limit = 3 }
+            if ($density -eq 'comfortable') { $limit = 4 }
+            $limit = [Math]::Max($minimum, [Math]::Min($limit, $rows[$id].Count))
+        }
+        $allocated[$id] = $minimum; $maximum[$id] = $limit
+    }
+    $capacity = $MotdHeight - 3
+    if ($Design -eq 'classic') { $capacity = $MotdHeight - 4 }
+    $omitted = 0
+    for ($i = $priority.Count - 1; $i -ge 0; $i--) {
+        $reserved = 0; if ($omitted -gt 0) { $reserved = 1 }
+        if ((Measure-MotdPresentation $selected $allocated $Design $gap) + $reserved -le $capacity) { break }
+        $id = $priority[$i]
+        if ($selected.Contains($id)) { [void]$selected.Remove($id); $allocated[$id] = 0; $omitted++ }
+    }
+    $changed = $true
+    while ($changed) {
+        $changed = $false
+        foreach ($id in $priority) {
+            if (-not $selected.Contains($id) -or $allocated[$id] -ge $maximum[$id]) { continue }
+            $allocated[$id]++
+            $reserved = 0; if ($omitted -gt 0) { $reserved = 1 }
+            if ((Measure-MotdPresentation $selected $allocated $Design $gap) + $reserved -le $capacity) { $changed = $true }
+            else { $allocated[$id]-- }
+        }
+    }
+    return @{ Selected = $selected; Rows = $rows; Allocated = $allocated; Gap = $gap; Omitted = $omitted }
+}
+
+function Format-MotdDesignTone([string] $Text, [string] $Tone) {
+    $emphasis = Get-MotdDisplaySetting 'color_emphasis' 'balanced'
+    if (-not $MotdColor -or $Tone -eq 'normal' -or ($emphasis -eq 'quiet' -and $Tone -ne 'warning')) { return $Text }
+    $code = $MotdAccent
+    switch ($Tone) { 'warning' { $code = '33' } 'good' { $code = '32' } 'muted' { $code = '90' } }
+    if ($emphasis -eq 'vivid' -and $Tone -ne 'muted') { $code = '1;' + $code }
+    return $MotdEscape + '[' + $code + 'm' + $Text + $MotdEscape + '[0m'
+}
+
+function Get-MotdBoxCharacters {
+    if ($Unicode -and -not $Ascii) {
+        return @{ H = [string][char]0x2500; V = [string][char]0x2502; TL = [string][char]0x250C; TR = [string][char]0x2510; BL = [string][char]0x2514; BR = [string][char]0x2518 }
+    }
+    return @{ H = '-'; V = '|'; TL = '+'; TR = '+'; BL = '+'; BR = '+' }
+}
+
+function Format-MotdDesignCell([string] $Text, [int] $Width, [int] $Padding, [bool] $Framed) {
+    $characters = Get-MotdBoxCharacters
+    $inner = $Width - 2 * $Padding
+    if ($Framed) { $inner -= 2 }
+    $body = (' ' * $Padding) + (Format-MotdCell $Text $inner) + (' ' * $Padding)
+    if ($Framed) { return $characters.V + $body + $characters.V }
+    return $body
+}
+
+function Get-MotdCardRows([string] $Id, $Rows, [int] $Count, [int] $Width, [int] $Padding, [int] $BandHeight) {
+    $characters = Get-MotdBoxCharacters
+    $output = New-MotdList
+    $label = ' ' + (Get-MotdSectionCaption $Id) + ' '
+    $top = $characters.TL + $label + ($characters.H * ($Width - 2 - $label.Length)) + $characters.TR
+    [void]$output.Add((Format-MotdDesignTone $top 'accent'))
+    for ($i = 0; $i -lt $BandHeight; $i++) {
+        $text = ''; $tone = 'normal'
+        if ($i -lt $Count) { $text = $Rows[$i].Text; $tone = $Rows[$i].Tone }
+        [void]$output.Add((Format-MotdDesignTone (Format-MotdDesignCell $text $Width $Padding $true) $tone))
+    }
+    [void]$output.Add((Format-MotdDesignTone ($characters.BL + ($characters.H * ($Width - 2)) + $characters.BR) 'accent'))
+    return ,$output
+}
+
+function Write-MotdPresentation {
+    $design = Get-MotdDisplaySetting 'design' 'classic'
+    $padding = [int](Get-MotdDisplaySetting 'padding' 1)
+    $defaultPriority = Join-MotdText @('attention', 'resources', 'system', 'services', 'processes', 'io', 'sessions', 'connections', 'hints') ','
+    $configuredPriority = Join-MotdText @(Get-MotdDisplaySetting 'priority' @('attention', 'resources', 'system', 'services', 'processes', 'io', 'sessions', 'connections', 'hints')) ','
+    if ($design -eq 'classic' -and $padding -eq 1 -and (Get-MotdDisplaySetting 'density' 'balanced') -eq 'balanced' -and (Get-MotdDisplaySetting 'detail' 'normal') -eq 'normal' -and (Get-MotdDisplaySetting 'section_gap' 0) -eq 0 -and (Get-MotdDisplaySetting 'section_detail' @{}).Count -eq 0 -and $defaultPriority -eq $configuredPriority) {
+        Write-MotdFrame
+        return
+    }
+    $plan = Get-MotdPresentationPlan $design
+    $output = New-MotdList
+    $characters = Get-MotdBoxCharacters
+    $title = [string]$MotdConfig['display']['title']
+    if ($Demo) { $title += ' | DEMO' }
+    if ($design -eq 'classic') {
+        [void]$output.Add($characters.TL + ($characters.H * ($MotdWidth - 2)) + $characters.TR)
+        [void]$output.Add((Format-MotdDesignTone (Format-MotdDesignCell $title $MotdWidth $padding $true) 'accent'))
+    } else {
+        [void]$output.Add((Format-MotdDesignTone (Format-MotdDesignCell ($title + ' | ' + $design.ToUpper()) $MotdWidth $padding $false) 'accent'))
+        [void]$output.Add((Format-MotdDesignTone ($characters.H * $MotdWidth) 'muted'))
+    }
+    $groups = Get-MotdPresentationGroups $plan.Selected $design
+    $groupNumber = 0
+    foreach ($group in $groups) {
+        if ($groupNumber -gt 0) {
+            for ($gap = 0; $gap -lt $plan.Gap; $gap++) {
+                [void]$output.Add((Format-MotdDesignCell '' $MotdWidth $padding ($design -eq 'classic')))
+            }
+        }
+        $groupNumber++
+        if ($design -eq 'cards' -or $design -eq 'dashboard') {
+            $bandHeight = 0
+            foreach ($id in $group.Ids) { $bandHeight = [Math]::Max($bandHeight, [int]$plan.Allocated[$id]) }
+            $leftWidth = $MotdWidth; $rightWidth = 0
+            if ($group.Ids.Count -eq 2) { $leftWidth = [int][Math]::Floor(($MotdWidth - 2) / 2); $rightWidth = $MotdWidth - 2 - $leftWidth }
+            $id = $group.Ids[0]
+            $left = Get-MotdCardRows $id $plan.Rows[$id] $plan.Allocated[$id] $leftWidth $padding $bandHeight
+            $right = $null
+            if ($group.Ids.Count -eq 2) {
+                $id = $group.Ids[1]
+                $right = Get-MotdCardRows $id $plan.Rows[$id] $plan.Allocated[$id] $rightWidth $padding $bandHeight
+            }
+            for ($i = 0; $i -lt $left.Count; $i++) {
+                $line = $left[$i]
+                if ($null -ne $right) { $line += '  ' + $right[$i] }
+                [void]$output.Add($line)
+            }
+        } else {
+            $id = $group.Ids[0]
+            for ($i = 0; $i -lt $plan.Allocated[$id]; $i++) {
+                $row = $plan.Rows[$id][$i]; $text = $row.Text
+                if ($design -eq 'ledger') {
+                    if ($MotdWidth -lt 60) {
+                        # Keep resource values and alert quantities visible on
+                        # a narrow terminal instead of spending 12 cells on labels.
+                        if ($i -gt 0) { $text = '  ' + $text }
+                    } else {
+                        $label = ''; if ($i -eq 0) { $label = Get-MotdSectionCaption $id }
+                        if ($i -eq 0) { $text = [regex]::Replace($text, ('^' + [regex]::Escape($label) + '(?:\s+|$)'), '') }
+                        $text = $label.PadRight(12) + $text
+                    }
+                }
+                [void]$output.Add((Format-MotdDesignTone (Format-MotdDesignCell $text $MotdWidth $padding ($design -eq 'classic')) $row.Tone))
+            }
+        }
+    }
+    if ($plan.Omitted -gt 0) { [void]$output.Add((Format-MotdDesignTone (Format-MotdDesignCell ('... ' + $plan.Omitted + ' sections omitted; enlarge terminal') $MotdWidth $padding ($design -eq 'classic')) 'muted')) }
+    if ($design -eq 'classic') { [void]$output.Add($characters.BL + ($characters.H * ($MotdWidth - 2)) + $characters.BR) }
+    if ($output.Count -gt $MotdHeight - 1) { throw 'Internal presentation plan exceeds the terminal row budget.' }
+    foreach ($line in $output) { Write-Output $line }
 }
 
 function Write-MotdFrame {
@@ -637,5 +913,5 @@ if ($MotdSections.ContainsKey('attention')) {
     $MotdCurrentSection = 'attention'
     Add-MotdAttention
 }
-Write-MotdFrame
+Write-MotdPresentation
 Invoke-MotdHooks 'after'

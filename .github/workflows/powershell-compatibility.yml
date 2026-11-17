@@ -1,0 +1,127 @@
+name: Native PowerShell designs and legacy evidence
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+env:
+  POWERSHELL_TELEMETRY_OPTOUT: '1'
+  DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+jobs:
+  native-designs:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            engine: powershell
+          - os: windows-latest
+            engine: pwsh
+          - os: macos-latest
+            engine: pwsh
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.11'
+      - name: Execute presentation contracts in the named native engine
+        shell: pwsh
+        run: |
+          $env:MOTD_TEST_POWERSHELL = (Get-Command '${{ matrix.engine }}' -CommandType Application).Source
+          & $env:MOTD_TEST_POWERSHELL -NoProfile -Command '$PSVersionTable | Format-List'
+          foreach ($pattern in @('test_designs_powershell.py', 'test_windows_adapters.py', 'test_portable_export.py', 'test_python_compatibility.py')) {
+            python -m unittest discover -s tests -p $pattern -v
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+  actual-powershell-2:
+    # Server2025 removed PS2. Server2022 is a separate, disposable host; the
+    # version assertion below must succeed before any test is called a PS2 pass.
+    runs-on: windows-2022
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.11'
+      - name: Generate trusted standalone artifacts for every design
+        shell: pwsh
+        run: |
+          @'
+          from pathlib import Path
+          import motd
+          folder = Path('build/legacy-powershell-inputs')
+          folder.mkdir(parents=True, exist_ok=True)
+          for design in motd.DESIGNS:
+              config = motd.preset_config('workshop', shell='powershell')
+              config['display']['design'] = design
+              config['display']['sections'] = list(motd.SECTION_IDS)
+              (folder / (design + '.ps1')).write_text(motd.generate_artifact(config), encoding='utf-8')
+          '@ | python -
+          exit $LASTEXITCODE
+      - name: Probe actual PS2 and available Windows components
+        id: probe
+        shell: powershell
+        run: |
+          $engine = Join-Path $PSHOME 'powershell.exe'
+          function Read-LegacyVersion {
+            $process = New-Object Diagnostics.Process
+            $process.StartInfo.FileName = $engine
+            $process.StartInfo.Arguments = '-Version 2 -NoLogo -NoProfile -NonInteractive -Command "$PSVersionTable.PSVersion.ToString()"'
+            $process.StartInfo.UseShellExecute = $false
+            $process.StartInfo.RedirectStandardOutput = $true
+            $process.StartInfo.RedirectStandardError = $true
+            [void]$process.Start()
+            if (-not $process.WaitForExit(30000)) {
+              $process.Kill()
+              return @{ version = ''; exit_code = 124; stderr = 'Engine startup timed out.' }
+            }
+            $result = @{ version = $process.StandardOutput.ReadToEnd().Trim(); exit_code = $process.ExitCode; stderr = $process.StandardError.ReadToEnd().Trim() }
+            $process.Dispose()
+            return $result
+          }
+          $before = Read-LegacyVersion
+          $features = @(Get-WindowsFeature -Name NET-Framework-Core,PowerShell-V2 -ErrorAction SilentlyContinue | Select-Object Name,InstallState)
+          $installation = 'not needed'
+          if ($before.exit_code -ne 0 -or $before.version -notmatch '^2\.') {
+            # Only this disposable hosted CI VM is changed, using Windows'
+            # own optional components. No image download, policy bypass or
+            # paid VM provisioning is attempted.
+            try {
+              if (@($features | Where-Object { $_.Name -eq 'PowerShell-V2' }).Count -gt 0) {
+                $installed = Install-WindowsFeature -Name NET-Framework-Core,PowerShell-V2 -ErrorAction Stop
+                $installation = $installed | Out-String
+              } else { $installation = 'PowerShell-V2 component is absent from this image.' }
+            } catch { $installation = $_.Exception.Message }
+          }
+          $after = Read-LegacyVersion
+          $available = $after.exit_code -eq 0 -and $after.version -match '^2\.'
+          $status = 'blocked'
+          if ($available) { $status = 'engine-available-tests-pending' }
+          $record = @{ status = $status; expected_major = 2; runner = 'windows-2022'; os = [Environment]::OSVersion.VersionString; before = $before; after = $after; optional_components_before = $features; component_installation = $installation; recorded_at_utc = [DateTime]::UtcNow.ToString('o') }
+          $record | ConvertTo-Json -Depth 6 | Set-Content -Encoding UTF8 build/powershell-2-probe.json
+          ('available=' + $available.ToString().ToLowerInvariant()) >> $env:GITHUB_OUTPUT
+          if (-not $available) {
+            '### BLOCKED: actual PowerShell2 is unavailable' >> $env:GITHUB_STEP_SUMMARY
+            'No PS2 compatibility pass is claimed. See powershell-2-probe.json for the observed engine and component failure.' >> $env:GITHUB_STEP_SUMMARY
+          }
+      - name: Execute and record the actual PowerShell2 engine
+        if: steps.probe.outputs.available == 'true'
+        shell: powershell
+        run: |
+          $harness = (Resolve-Path tools/test_legacy_powershell.ps1).Path.Replace("'", "''")
+          $inputs = (Resolve-Path build/legacy-powershell-inputs).Path.Replace("'", "''")
+          $output = (Join-Path (Get-Location).Path 'build/powershell-2-evidence.xml').Replace("'", "''")
+          $command = "& '$harness' -ArtifactsDirectory '$inputs' -ExpectedMajor 2 -Output '$output' -IncludeLive"
+          & (Join-Path $PSHOME 'powershell.exe') -Version 2 -NoLogo -NoProfile -NonInteractive -Command $command
+          if ($LASTEXITCODE -ne 0) { throw 'The actual PowerShell2 evidence harness failed.' }
+          '### Actual PowerShell2 executed successfully' >> $env:GITHUB_STEP_SUMMARY
+          'Exact engine, CLR, OS, artifact hashes and individual case results are in powershell-2-evidence.xml.' >> $env:GITHUB_STEP_SUMMARY
+      - name: Preserve exact engine evidence or explicit blocking reason
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: actual-powershell-2-evidence
+          path: |
+            build/powershell-2-probe.json
+            build/powershell-2-evidence.xml
+          if-no-files-found: warn

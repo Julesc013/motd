@@ -23,6 +23,27 @@ if DEPENDENCIES and os.name == 'posix':
 
 @unittest.skipUnless(DEPENDENCIES and os.name == 'posix', 'Gallery developer checks need Pillow, wcwidth and POSIX PTYs')
 class GalleryTests(unittest.TestCase):
+    def test_bounded_sampler_covers_designs_geometries_and_independent_preferences(self):
+        cases = gallery.design_sampler_specs()
+        self.assertEqual(len(cases), 140)
+        self.assertEqual(len({gallery.case_identifier(c) for c in cases}), 140)
+        for design in gallery.DESIGNS:
+            selected = [c for c in cases if c['design'] == design]
+            structure = [c for c in selected if c['sample_group'] == 'structure']
+            self.assertEqual(len(structure), 24)
+            self.assertEqual({c['geometry'] for c in structure}, set(gallery.SIZES))
+            self.assertEqual({c['shell'] for c in structure}, {'bash', 'sh', 'powershell'})
+            self.assertEqual({c['preset'] for c in structure}, set(gallery.PRESETS))
+            contrasts = [c for c in selected if c['sample_group'] == 'density-at-full-detail']
+            self.assertEqual({c['density'] for c in contrasts}, set(gallery.DENSITIES))
+            self.assertTrue(all(c['detail'] == 'full' and c['geometry'] == (80, 50) for c in contrasts))
+            self.assertEqual({c['detail'] for c in selected}, set(gallery.DETAILS))
+
+    def test_shared_presentation_source_is_in_provenance(self):
+        sources = gallery.source_hashes()
+        self.assertIn('runtime/designs.sh', sources)
+        self.assertEqual(sources['runtime/designs.sh'], gallery.digest((ROOT/'runtime/designs.sh').read_bytes()))
+
     def test_ansi_styles_and_wide_combining_characters_map_to_cells(self):
         grid = gallery.TerminalGrid(10, 4).feed('\x1b[?1h\x1b=\x1b[1;32mA\x1b[0m\u754cE\u0301\r\nplain\r\n')
         self.assertEqual(grid.cells[0][0].fg, gallery.PALETTE[2])
@@ -116,7 +137,10 @@ class GalleryTests(unittest.TestCase):
             self.assertEqual(verified['verified_logical_cases'], 1)
             with self.assertRaises(gallery.GalleryError):
                 gallery.verify_gallery(folder, require_full=True)
+            with self.assertRaises(gallery.GalleryError):
+                gallery.verify_gallery(folder, require_sampler=True)
             case = manifest['cases'][0]
+            self.assertEqual((case['design'], case['density'], case['detail']), gallery.DEFAULT_PRESENTATION)
             transcript = Path(folder)/case['transcript']
             original = transcript.read_bytes()
             transcript.write_bytes(original + b'tampered\r\n')
