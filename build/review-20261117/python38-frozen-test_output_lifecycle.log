@@ -1,0 +1,8 @@
+test_archive_suffix_cannot_introduce_an_unregistered_path (test_output_lifecycle.OutputLifecycleTests) ... ok
+test_each_output_builds_archives_and_rolls_back_with_its_recipe (test_output_lifecycle.OutputLifecycleTests) ... ok
+test_fish_install_upgrade_repair_and_uninstall_preserve_unowned_text (test_output_lifecycle.OutputLifecycleTests) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.379s
+
+OK

@@ -1,0 +1,24 @@
+[1;36mDEMO | WORKSHOP STATUS / BRIEFING[0m
+[90mdemo-host | up 86400 s | Workshop | Por~[0m
+[1;36mAttention: DEMO fixture; no live machin~[0m
+
+[1;36mSystem: demo-host | up 86400 s | Linux[0m
+   Host: demo-host | Linux demo-ke~
+
+[1;36mCapacity: RAM 12582912 KiB available | ~[0m
+   Memory available: 12582912 KiB
+   Root: 42% used; 286 GiB avail~
+
+[1;36mServices: Services: 8 running; 0 failed[0m
+   sshd: running
+
+[1;36mTop workloads: CPU: compiler 32.4% (pid~[0m
+   RSS: database 842112 KiB~
+   I/O bytes: database 1090~
+   CPU = ps%; I/O = cumulat~
+
+[1;36mPeople online: Sessions: 3 logged-in te~[0m
+
+[1;36mConnections: TCP: 12 established; 5 lis~[0m
+
+[1;36mUseful commands: Tasks: top - CPU and m~[0m

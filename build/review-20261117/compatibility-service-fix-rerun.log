@@ -1,0 +1,15 @@
+bash3.2-dispatch 40 / 40
+bash3.2-portable 40 / 40
+dash 40 / 40
+busybox-ash 40 / 40
+mksh 40 / 40
+ksh93 40 / 40
+fish2 40 / 40
+fish3 40 / 40
+fish4 40 / 40
+test_transactions.py 0
+test_installation.py 0
+test_output_lifecycle.py 0
+test_path_safety.py 0
+test_portable_export.py 0
+All 10 PowerShell artifact hashes still match

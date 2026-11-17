@@ -17,7 +17,7 @@ class DesignConfigurationTests(unittest.TestCase):
         config = motd.preset_config()
         config['display'].update(design='briefing', density='comfortable', detail='brief', padding=2,
                                  section_gap=1, color_emphasis='quiet', priority=['attention', 'io'],
-                                 section_detail={'resources': 'full', 'services': 'normal'})
+                                 section_detail={'resources': 'full', 'services': 'normal'}, bar_layout='wide')
         for shell in motd.SHELLS:
             with self.subTest(shell=shell):
                 config['shell'] = shell
@@ -30,11 +30,13 @@ class DesignConfigurationTests(unittest.TestCase):
         self.assertEqual(config['display']['design'], 'classic')
         self.assertEqual(config['display']['theme'], 'amber')
         self.assertEqual(config['display']['section_detail'], {})
+        self.assertEqual(config['display']['bar_layout'], 'inline')
 
     def test_invalid_layout_data_is_rejected_before_literal_serialization(self):
         cases = [{'padding': '1+$(touch bad)'}, {'section_gap': True}, {'design': 'missing'},
                  {'priority': ['attention', 'attention']}, {'priority': ['not-a-section']},
-                 {'section_detail': {'resources': 'execute'}}, {'section_detail': {'missing': 'full'}}]
+                 {'section_detail': {'resources': 'execute'}}, {'section_detail': {'missing': 'full'}},
+                 {'bar_layout': 'unbounded'}, {'bar_layout': 1}]
         for case in cases:
             with self.subTest(case=case), self.assertRaises(motd.MotdError):
                 motd.validate_config({'display': case})
@@ -46,11 +48,13 @@ class DesignConfigurationTests(unittest.TestCase):
                 motd.main(['build', '--shell', 'sh', '--design', 'ledger', '--density', 'compact',
                     '--detail', 'brief', '--section-detail', 'resources=full', '--priority', 'attention,resources',
                     '--padding', '0', '--section-gap', '1', '--rows', '15', '--color-emphasis', 'quiet',
+                    '--bar-layout', 'wide',
                     '--output', str(artifact), '--save-config', str(recipe), '--create-only'])
             config = motd.load_config(recipe)
             self.assertEqual(config['display']['section_detail'], {'resources': 'full'})
             self.assertEqual(config['display']['rows'], 15)
             self.assertEqual(config['display']['design'], 'ledger')
+            self.assertEqual(config['display']['bar_layout'], 'wide')
             self.assertEqual(motd.extract_config(artifact.read_text()), config)
 
     def test_opaque_shell_import_does_not_guess_bash(self):

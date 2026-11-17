@@ -130,10 +130,18 @@ def wizard_frame(columns, rows, *, show_calls=False):
          patch.dict(os.environ, {'TERM': 'xterm-256color'}):
         os.environ.pop('NO_COLOR', None)
         ui = motd.WizardUI('screen'); ui.show_calls = show_calls
-        return ui.frame('Theme and call samples' if show_calls else 'Theme',
-            [' 1. Cyan', ' 2. Green [selected]', ' 3. Amber', ' 4. Mono'],
-            config=sample, footer='Number chooses | Enter accepts | P H Q',
-            prompt='Choice [2]: ')
+        # Build the menu through the live selection method so selection markers,
+        # navigation hints and question rows cannot drift from the actual UI.
+        def theme_sample(theme):
+            selected = motd.copy.deepcopy(sample)
+            selected['display']['theme'] = theme
+            return selected
+        with patch.object(ui, 'read', return_value=''):
+            ui.select('Theme', [(value.title(), value) for value in ('cyan', 'green', 'amber', 'mono')],
+                      default=1, preview_factory=theme_sample)
+        title, lines, selected_config, notice, footer = ui._page
+        return ui.frame(title, lines, config=selected_config, notice=notice,
+                        footer=footer, prompt='Choice [2]: ')
 
 
 frame = '\n'.join(wizard_frame(100, 38)) + '\n'

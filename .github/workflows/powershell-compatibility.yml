@@ -29,7 +29,7 @@ jobs:
         run: |
           $env:MOTD_TEST_POWERSHELL = @(Get-Command '${{ matrix.engine }}' -CommandType Application)[0].Source
           & $env:MOTD_TEST_POWERSHELL -NoProfile -Command '$PSVersionTable | Format-List'
-          foreach ($pattern in @('test_designs_powershell.py', 'test_windows_adapters.py', 'test_portable_export.py', 'test_python_compatibility.py')) {
+          foreach ($pattern in @('test_designs_powershell.py', 'test_runtime_review.py', 'test_legacy_powershell.py', 'test_windows_adapters.py', 'test_portable_export.py', 'test_python_compatibility.py')) {
             python -m unittest discover -s tests -p $pattern -v
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           }
@@ -43,7 +43,7 @@ jobs:
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: '3.11'
-      - name: Generate trusted standalone artifacts for every design
+      - name: Generate trusted standalone artifacts for every design and bar layout
         shell: pwsh
         run: |
           @'
@@ -52,10 +52,10 @@ jobs:
           folder = Path('build/legacy-powershell-inputs')
           folder.mkdir(parents=True, exist_ok=True)
           for design in motd.DESIGNS:
-              config = motd.preset_config('workshop', shell='powershell')
-              config['display']['design'] = design
-              config['display']['sections'] = list(motd.SECTION_IDS)
-              (folder / (design + '.ps1')).write_text(motd.generate_artifact(config), encoding='utf-8')
+              for bars in ('inline', 'wide'):
+                  config = motd.preset_config('workshop', shell='powershell')
+                  config['display'].update(design=design, bar_layout=bars, sections=list(motd.SECTION_IDS))
+                  (folder / (design + '-' + bars + '.ps1')).write_text(motd.generate_artifact(config), encoding='utf-8')
           '@ | python -
           exit $LASTEXITCODE
       - name: Probe actual PS2 and available Windows components
@@ -97,7 +97,7 @@ jobs:
           $available = $after.exit_code -eq 0 -and $after.version -match '^2\.'
           $status = 'blocked'
           if ($available) { $status = 'engine-available-tests-pending' }
-          $record = @{ status = $status; expected_major = 2; runner = 'windows-2022'; os = [Environment]::OSVersion.VersionString; before = $before; after = $after; optional_components_before = $features; component_installation = $installation; recorded_at_utc = [DateTime]::UtcNow.ToString('o') }
+          $record = @{ status = $status; expected_major = 2; expected_minor = 0; runner = 'windows-2022'; os = [Environment]::OSVersion.VersionString; before = $before; after = $after; optional_components_before = $features; component_installation = $installation; recorded_at_utc = [DateTime]::UtcNow.ToString('o') }
           $record | ConvertTo-Json -Depth 6 | Set-Content -Encoding UTF8 build/powershell-2-probe.json
           ('available=' + $available.ToString().ToLowerInvariant()) >> $env:GITHUB_OUTPUT
           if (-not $available) {
@@ -111,7 +111,7 @@ jobs:
           $harness = (Resolve-Path tools/test_legacy_powershell.ps1).Path.Replace("'", "''")
           $inputs = (Resolve-Path build/legacy-powershell-inputs).Path.Replace("'", "''")
           $output = (Join-Path (Get-Location).Path 'build/powershell-2-evidence.xml').Replace("'", "''")
-          $command = "& '$harness' -ArtifactsDirectory '$inputs' -ExpectedMajor 2 -Output '$output' -IncludeLive"
+          $command = "& '$harness' -ArtifactsDirectory '$inputs' -ExpectedMajor 2 -ExpectedMinor 0 -Output '$output' -IncludeLive"
           & (Join-Path $PSHOME 'powershell.exe') -Version 2 -NoLogo -NoProfile -NonInteractive -Command $command
           if ($LASTEXITCODE -ne 0) { throw 'The actual PowerShell2 evidence harness failed.' }
           $probe = Get-Content -Raw build/powershell-2-probe.json | ConvertFrom-Json

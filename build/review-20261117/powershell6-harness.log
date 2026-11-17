@@ -1,0 +1,59 @@
+test_matching_minor_and_major_only_default_execute_real_cases_without_hooks (test_legacy_powershell.LegacyPowerShellVersionTests.test_matching_minor_and_major_only_default_execute_real_cases_without_hooks) ... 
+  test_matching_minor_and_major_only_default_execute_real_cases_without_hooks (test_legacy_powershell.LegacyPowerShellVersionTests.test_matching_minor_and_major_only_default_execute_real_cases_without_hooks) (expected_minor=2) ... FAIL
+  test_matching_minor_and_major_only_default_execute_real_cases_without_hooks (test_legacy_powershell.LegacyPowerShellVersionTests.test_matching_minor_and_major_only_default_execute_real_cases_without_hooks) (expected_minor=None) ... FAIL
+test_minor_mismatch_and_invalid_constraint_refuse_before_artifact_execution (test_legacy_powershell.LegacyPowerShellVersionTests.test_minor_mismatch_and_invalid_constraint_refuse_before_artifact_execution) ... 
+  test_minor_mismatch_and_invalid_constraint_refuse_before_artifact_execution (test_legacy_powershell.LegacyPowerShellVersionTests.test_minor_mismatch_and_invalid_constraint_refuse_before_artifact_execution) (expected_minor=1) ... FAIL
+  test_minor_mismatch_and_invalid_constraint_refuse_before_artifact_execution (test_legacy_powershell.LegacyPowerShellVersionTests.test_minor_mismatch_and_invalid_constraint_refuse_before_artifact_execution) (expected_minor=-2) ... FAIL
+
+======================================================================
+FAIL: test_matching_minor_and_major_only_default_execute_real_cases_without_hooks (test_legacy_powershell.LegacyPowerShellVersionTests.test_matching_minor_and_major_only_default_execute_real_cases_without_hooks) (expected_minor=2)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/e6a94ceb1ad8/motd/tests/test_legacy_powershell.py", line 84, in test_matching_minor_and_major_only_default_execute_real_cases_without_hooks
+    result, evidence = self.run_harness(minor, live=True)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/e6a94ceb1ad8/motd/tests/test_legacy_powershell.py", line 52, in run_harness
+    self.assertTrue(self.report.exists(), result.stdout + result.stderr)
+AssertionError: False is not true : No usable version of libssl was found
+
+
+======================================================================
+FAIL: test_matching_minor_and_major_only_default_execute_real_cases_without_hooks (test_legacy_powershell.LegacyPowerShellVersionTests.test_matching_minor_and_major_only_default_execute_real_cases_without_hooks) (expected_minor=None)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/e6a94ceb1ad8/motd/tests/test_legacy_powershell.py", line 84, in test_matching_minor_and_major_only_default_execute_real_cases_without_hooks
+    result, evidence = self.run_harness(minor, live=True)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/e6a94ceb1ad8/motd/tests/test_legacy_powershell.py", line 52, in run_harness
+    self.assertTrue(self.report.exists(), result.stdout + result.stderr)
+AssertionError: False is not true : No usable version of libssl was found
+
+
+======================================================================
+FAIL: test_minor_mismatch_and_invalid_constraint_refuse_before_artifact_execution (test_legacy_powershell.LegacyPowerShellVersionTests.test_minor_mismatch_and_invalid_constraint_refuse_before_artifact_execution) (expected_minor=1)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/e6a94ceb1ad8/motd/tests/test_legacy_powershell.py", line 63, in test_minor_mismatch_and_invalid_constraint_refuse_before_artifact_execution
+    result, evidence = self.run_harness(minor)
+                       ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/e6a94ceb1ad8/motd/tests/test_legacy_powershell.py", line 52, in run_harness
+    self.assertTrue(self.report.exists(), result.stdout + result.stderr)
+AssertionError: False is not true : No usable version of libssl was found
+
+
+======================================================================
+FAIL: test_minor_mismatch_and_invalid_constraint_refuse_before_artifact_execution (test_legacy_powershell.LegacyPowerShellVersionTests.test_minor_mismatch_and_invalid_constraint_refuse_before_artifact_execution) (expected_minor=-2)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/e6a94ceb1ad8/motd/tests/test_legacy_powershell.py", line 63, in test_minor_mismatch_and_invalid_constraint_refuse_before_artifact_execution
+    result, evidence = self.run_harness(minor)
+                       ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/e6a94ceb1ad8/motd/tests/test_legacy_powershell.py", line 52, in run_harness
+    self.assertTrue(self.report.exists(), result.stdout + result.stderr)
+AssertionError: False is not true : No usable version of libssl was found
+
+
+----------------------------------------------------------------------
+Ran 2 tests in 1.948s
+
+FAILED (failures=4)

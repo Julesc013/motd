@@ -53,6 +53,28 @@ colour and charset comparison; the sampler is deliberately representative.
 Fish/cmd wrappers and historical engine execution belong in their native tests,
 not an implied additional PNG certification.
 
+## Inline and wide resource bars
+
+The separate `examples/bars/` comparison holds home-lab, balanced density, normal
+detail and the cyan/Unicode/colour settings constant. It varies cards/dashboard,
+inline/wide bars, Bash/sh/PowerShell and the four terminal sizes: **48 captures**.
+Wide gauges use their actual panel width; when rows are scarce, numeric labels
+are retained before optional bars. The recipe and manifest both record
+`bar_layout`, and verification rejects disagreement between them.
+
+The label identifies the quantity pictured. Portable sh memory/swap gauges show
+available/free observations, while enhanced Bash and PowerShell use their named
+used observations. This is a presentation comparison, not evidence that distinct
+OS providers measure identical quantities.
+
+```sh
+python3 tools/build_gallery.py --output examples/bars \
+  --presets home-lab --shells bash,sh,powershell --themes cyan \
+  --charsets unicode --colours colour --designs cards,dashboard \
+  --bar-layouts inline,wide --no-static --no-comparisons \
+  --powershell /path/to/pwsh --optimizer /path/to/oxipng
+```
+
 ## Resolution and compression
 
 Rendering uses an installed DejaVu Sans Mono font at 30 pixels, a consistent
@@ -88,8 +110,11 @@ developer gallery tool needs Pillow, wcwidth, the selected output interpreters,
 the installed monospace font and optional [oxipng](https://github.com/oxipng/oxipng).
 The build and verification tool runs on a POSIX host; it uses POSIX PTYs and
 `TIOCSWINSZ`. The PNGs and local HTML index can be viewed on any platform.
+The recorded builds disable PowerShell/.NET telemetry before starting any child
+interpreter. Use the same environment for a local capture:
 
 ```sh
+export POWERSHELL_TELEMETRY_OPTOUT=1 DOTNET_CLI_TELEMETRY_OPTOUT=1
 python3 tools/build_gallery.py \
   --powershell /path/to/pwsh \
   --optimizer /path/to/oxipng \
@@ -116,7 +141,7 @@ python3 tools/build_gallery.py --design-sampler \
   --powershell /path/to/pwsh --optimizer /path/to/oxipng
 ```
 
-For a deliberately selected experiment, `--designs`, `--densities` and `--details`
+For a deliberately selected experiment, `--designs`, `--densities`, `--details` and `--bar-layouts`
 accept comma-separated values. These options extend the selected matrix only;
 they do not change the default classic completeness contract. `--design-sampler`
 uses the fixed selections in the table above.
@@ -150,6 +175,7 @@ does not require Pillow, wcwidth or a particular installed raster font.
 ```sh
 python3 tools/build_gallery.py --verify --require-full
 python3 tools/build_gallery.py --output examples/designs --verify --require-sampler
+python3 tools/build_gallery.py --output examples/bars --verify
 ```
 
 This checks the complete 524-case matrix, repository source hashes, every recipe
@@ -161,3 +187,14 @@ smaller matrix; `--require-sampler` checks the exact separate 140-case selection
 Source provenance includes the shared `runtime/designs.sh` presentation source.
 Source changes invalidate the recorded build; recapture from the
 changed source before claiming the images demonstrate that version.
+
+The 0.4.0 retained-file verification is summarized in
+`build/verification-gallery-v04.json`: 524 classic cases, 140 design cases,
+346 gallery PNG files including comparison sheets, five wizard frames and
+16 generated example artifacts. It includes source/manifest hashes, exact PNG
+byte totals, archive hashes and the specific images inspected visually.
+
+The subsequent [discussion-review evidence](../build/verification-review-20261117.json)
+pins the regenerated source: 524 classic, 140 design and48 bar cases, with394
+gallery/comparison PNGs plus five wizard frames. It retains its own hashes and
+verification results; the preceding v0.4-stage record remains historical.

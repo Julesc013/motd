@@ -4,6 +4,18 @@ Build commands write standalone artifacts to an existing output directory.
 Generated working files here are ignored by Git. Curated portable outputs live
 in `examples/`; reusable human-readable recipes live in `presets/`.
 
+The current continuation is indexed by
+[`verification-review-20261117.json`](verification-review-20261117.json).
+It pins source/test hashes, local results, actual Python3.8 and additional Unix
+execution, exact PowerShell6/7 artifact lineage, three galleries, and native CI.
+[`review-20261117/file-map.json`](review-20261117/file-map.json) maps the original
+verification environment's paths to retained files and hashes. Raw logs, XML,
+runtime-download provenance and the environment-specific replay script are
+preserved there. Counts describe their named checks; they must not be added
+together as independent test coverage or applied to another source revision.
+
+The records below are historical stages and retain their original scope.
+
 The version0.4 records are `verification-v04.json` and its retained log,
 `verification-python38-v04.json` with its log, `verification-unix-v04.json`,
 `verification-powershell-v04.json`, and `verification-native-v04.json`. They

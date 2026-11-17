@@ -1,0 +1,20 @@
+{
+  "version_target": "3.2.0",
+  "source_url": "https://ftp.gnu.org/gnu/bash/bash-3.2.tar.gz",
+  "source_archive_sha256": "26c99025b59e30779300b68adb764f824974d267a4d7cc1b347d14a2393f9fb4",
+  "bytes": 2529838,
+  "recorded_at_utc": "2026-11-17T07:17:56.800068+00:00",
+  "source_modifications": [],
+  "build_commands": [
+    "./configure --without-bash-malloc --disable-nls 'CFLAGS=-O2 -std=gnu89 -fcommon'",
+    "make -j2",
+    "make -j2 CFLAGS_FOR_BUILD='-O2 -std=gnu89 -fcommon' bash"
+  ],
+  "installation": "No install; execute the built binary in scratch.",
+  "executable": "/workspace/scratch/e6a94ceb1ad8/work/bash-3.2-build/bash-3.2/bash",
+  "binary_sha256": "efe869936384c09c0ff5c8400d207d2263e173caed5025f8dd4f78392b7ff7d7",
+  "probe_returncode": 0,
+  "stdout": "GNU bash, version 3.2.0(2)-release (x86_64-unknown-linux-gnu)\nCopyright (C) 2005 Free Software Foundation, Inc.\n",
+  "stderr": "",
+  "build_note": "Default make failed on implicit declaration in the separate bashversion helper under modern GCC. Built the interpreter target with GNU89 compatibility flags; no source patch or host installation."
+}

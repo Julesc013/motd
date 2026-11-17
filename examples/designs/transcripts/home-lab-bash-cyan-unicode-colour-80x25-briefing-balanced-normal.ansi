@@ -1,0 +1,16 @@
+[1;36mDEMO | HOME LAB / BRIEFING[0m
+[90mws-bench-07 | up 4d 06h 12m | Home lab | local observations[0m
+[1;36mAttention: No configured alerts in collected scope.[0m
+
+[1;36mSystem: ws-bench-07 | up 4d 06h 12m | Debian GNU/Linux 13 (trixie)[0m
+   Domain workshop.example            | IP eno1 192.0.2.17/24
+
+[1;36mCapacity: RAM 8.0Gi/32.0Gi | Disk 220Gi/600Gi[0m
+   RAM  8.0Gi/32.0Gi    #########.........  avail 24.0Gi  25.0%
+   DISK 220Gi/600Gi     #######...........  free 375Gi
+
+[1;36mServices: 16 running; 0 failed[0m
+   SSH         RUN | RDP         RUN | SMB         RUN | FTP         STOP
+
+[1;36mUseful commands: Tasks                                                       top[0m
+   I/O                                                    iotop -o

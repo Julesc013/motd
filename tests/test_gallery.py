@@ -4,6 +4,7 @@ from __future__ import annotations
 import importlib.util
 import contextlib
 import io
+import json
 import os
 from pathlib import Path
 import shutil
@@ -43,6 +44,27 @@ class GalleryTests(unittest.TestCase):
         sources = gallery.source_hashes()
         self.assertIn('runtime/designs.sh', sources)
         self.assertEqual(sources['runtime/designs.sh'], gallery.digest((ROOT/'runtime/designs.sh').read_bytes()))
+
+    def test_bar_layout_captures_have_distinct_ids_and_recipes(self):
+        # A second bar layout must not overwrite the first capture or reuse
+        # its generated file. This protects the evidence, not just the names.
+        with tempfile.TemporaryDirectory(prefix='motd-bar-gallery-') as folder:
+            with contextlib.redirect_stdout(io.StringIO()):
+                manifest = gallery.main(['--output', folder, '--presets', 'home-lab', '--shells', 'bash',
+                    '--themes', 'cyan', '--charsets', 'ascii', '--colours', 'plain', '--sizes', '80x50',
+                    '--designs', 'cards', '--bar-layouts', 'inline,wide', '--no-static', '--no-comparisons'])
+                verified = gallery.verify_gallery(folder)
+            self.assertEqual(verified['verified_logical_cases'], 2)
+            self.assertEqual(len({case['id'] for case in manifest['cases']}), 2)
+            self.assertEqual(len({case['recipe'] for case in manifest['cases']}), 2)
+            self.assertEqual({case['bar_layout'] for case in manifest['cases']}, {'inline', 'wide'})
+            for case in manifest['cases']:
+                recipe = gallery.motd.load_config(Path(folder) / case['recipe'])
+                self.assertEqual(recipe['display']['bar_layout'], case['bar_layout'])
+            manifest['cases'][0]['bar_layout'] = 'wide' if manifest['cases'][0]['bar_layout'] == 'inline' else 'inline'
+            (Path(folder) / 'manifest.json').write_text(json.dumps(manifest), encoding='utf-8')
+            with self.assertRaisesRegex(gallery.GalleryError, 'Bar metadata'):
+                gallery.verify_gallery(folder)
 
     def test_ansi_styles_and_wide_combining_characters_map_to_cells(self):
         grid = gallery.TerminalGrid(10, 4).feed('\x1b[?1h\x1b=\x1b[1;32mA\x1b[0m\u754cE\u0301\r\nplain\r\n')

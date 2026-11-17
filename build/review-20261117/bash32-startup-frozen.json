@@ -1,0 +1,78 @@
+{
+  "recorded_at_utc": "2026-11-17T07:24:17.438966+00:00",
+  "engine": "/workspace/scratch/e6a94ceb1ad8/work/bash-3.2-build/bash-3.2/bash",
+  "actual_version": "GNU bash, version 3.2.0(2)-release (x86_64-unknown-linux-gnu)",
+  "source_start_sha256": "1639ce74b277363ecf71bdc1f9275abd39a43ac67f35fefcd1a019c3b9c2d8a4",
+  "source_end_sha256": "1639ce74b277363ecf71bdc1f9275abd39a43ac67f35fefcd1a019c3b9c2d8a4",
+  "scope": "Six real PTY startup-guard cases. Temporary HOME/startup/display only; --noprofile --norc prevent user/system startup files. Each managed block sourced twice to check duplicate suppression.",
+  "cases": 6,
+  "failed": 0,
+  "results": [
+    {
+      "frequency": "interactive",
+      "interactive": false,
+      "login": false,
+      "hushlogin": false,
+      "expected_displays": 0,
+      "actual_displays": 0,
+      "exit_code": 0,
+      "passed": true,
+      "stdout": ""
+    },
+    {
+      "frequency": "interactive",
+      "interactive": true,
+      "login": false,
+      "hushlogin": false,
+      "expected_displays": 1,
+      "actual_displays": 1,
+      "exit_code": 0,
+      "passed": true,
+      "stdout": "HISTORICAL-BASH32-DISPLAY\r\n"
+    },
+    {
+      "frequency": "interactive",
+      "interactive": true,
+      "login": false,
+      "hushlogin": true,
+      "expected_displays": 0,
+      "actual_displays": 0,
+      "exit_code": 0,
+      "passed": true,
+      "stdout": ""
+    },
+    {
+      "frequency": "login",
+      "interactive": true,
+      "login": false,
+      "hushlogin": false,
+      "expected_displays": 0,
+      "actual_displays": 0,
+      "exit_code": 0,
+      "passed": true,
+      "stdout": ""
+    },
+    {
+      "frequency": "login",
+      "interactive": true,
+      "login": true,
+      "hushlogin": false,
+      "expected_displays": 1,
+      "actual_displays": 1,
+      "exit_code": 0,
+      "passed": true,
+      "stdout": "HISTORICAL-BASH32-DISPLAY\r\n"
+    },
+    {
+      "frequency": "login",
+      "interactive": true,
+      "login": true,
+      "hushlogin": true,
+      "expected_displays": 0,
+      "actual_displays": 0,
+      "exit_code": 0,
+      "passed": true,
+      "stdout": ""
+    }
+  ]
+}

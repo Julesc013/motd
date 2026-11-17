@@ -1,13 +1,13 @@
-[1;36mMOTD 0.3.0 | Theme[0m[0m
- 1. Cyan[0m
- 2. Green [selected][0m
- 3. Amber[0m
- 4. Mono[0m
+[1;36mMOTD 0.4.0 | Theme[0m[0m
+  1. Cyan[0m
+> 2. Green[0m
+  3. Amber[0m
+  4. Mono[0m
 [0m
-[0m
-Number chooses | Enter accepts | P H Q[0m
+Number previews; Enter accepts.[0m
+Up/Down | Enter accepts | ? help Q quit[0m
 Choice [2]: [0m
-[1;36mPREVIEW 40x40 | demo | calls off[0m[0m
+[1;36mPREVIEW 40x40 | demo | H calls off[0m[0m
 [32m╔═[0m [1;32mws-bench-07 | ...[0m [32m═══[0m [90mDEMO 13:30:00[0m [32m╗[0m[0m
 [32m╠═[0m [1;32mSYSTEM[0m [32m══════════════[0m [90mup 4d 06h 12m[0m [32m╣[0m[0m
 [32m║[0m [37mDomain workshop.example             [0m [32m║[0m[0m

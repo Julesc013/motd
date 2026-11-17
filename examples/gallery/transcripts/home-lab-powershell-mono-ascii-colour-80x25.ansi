@@ -1,5 +1,5 @@
-[?1h=+------------------------------------------------------------------------------+
-| HOME LAB | DEMO - synthetic observations                                     |
+[?1h=+ DEMO - synthetic | HOME LAB -------------------------------------------------+
+| Host demo-host | Up 4d 06h                                                   |
 | SYSTEM  demo-host | 8 logical CPUs                                           |
 | Windows / Unix | User operator                                               |
 | Up 4d 06h | PowerShell capability demo                                       |

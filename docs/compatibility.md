@@ -3,13 +3,45 @@
 Reference date: **2026-11-17**. Separate the machine that runs the configurator,
 the interpreter that runs a generated file, and the mechanism that displays it.
 A language target is not evidence that every operating system, minor release or
-login route has been tested. The v0.4 records are
+login route has been tested. The retained v0.4-stage records are
 [Unix presentation evidence](../build/verification-unix-v04.json) and
 [PowerShell presentation evidence](../build/verification-powershell-v04.json).
 Read their source hashes, exact engines, test modes and limitations. The older
 `verification-*-current.json`, `*-legacy.json` and `verification-v03*.json` files
 retain v0.3 provenance; they do not verify changed v0.4 renderers. A configured
 CI job is not a successful run: consult the job for the exact commit being used.
+
+## Current review: additional verification
+
+The [17 November review record](../build/verification-review-20261117.json)
+identifies the exact source hashes, generated artifacts and native workflow runs
+for this follow-up. It separates new execution from the retained v0.4 stage at
+`4cc3228` below. Earlier passes do not automatically verify the new wide-bar
+layouts, journalled Fish/CMD output paths or exact-minor engine assertion.
+
+Actual Linux PowerShell **6.2.7 and 7.6.10 each passed 81 harness cases**: five
+designs, both inline and wide bars, four terminal sizes and ASCII/Unicode, plus
+one live local case. Configured marker hooks remained suppressed. The harness
+also refused a requested 7.5 engine on actual 7.6.10 before executing a marker
+script. Its optional `-ExpectedMinor` assertion distinguishes 5.0 from 5.1;
+omitting it preserves a major-only check. The exact historical Windows engines
+1.0, 3.0, 4.0 and 5.0 still require their own native execution evidence.
+
+The follow-up Unix matrix passed **360 cases** across actual Bash 3.2.0 (both
+dispatcher and portable-output routes), dash, BusyBox 1.37.0 ash, mksh R59,
+ksh93u+m 1.0.10 and Fish 2.4.0/3.6.0/4.0.2. It covers all five designs, both
+bar layouts and 40×8, 40×25, 80×50 and 81×50 viewports. Wide portable memory
+gauges are checked against the available-memory quantity they label. Separate
+PTY checks passed six Bash 3.2 startup scenarios and 42 Fish startup scenarios.
+Bash 3.2 was rebuilt from official GNU source on the current Linux host; this
+does not verify its original operating systems. Bash 1/2/4 and Zsh 2/3/4 results
+below remain retained-stage evidence, without a new wide-bar execution claim.
+
+On actual **Python 3.8.20**, the final generator passed 58 of 59 lifecycle,
+installation, path-safety and export tests, with the one numeric-ownership test
+explicitly skipped because it requires root. The new lifecycle tests exercise
+all ten output routes, saved recipes, archival suffixes, rollback and the Fish
+install/upgrade/repair/uninstall cycle in temporary directories.
 
 ## One recipe, adaptive outputs
 
@@ -35,7 +67,7 @@ export](install.md) for the two file-writing contracts.
 | Zsh | A small entry point delegates to `/bin/bash` when present, otherwise `/bin/sh`; the same file then selects the Unix renderer. | This is shared collection, not a second native-Zsh collector implementation. It needs a compatible sh/Bash destination, and does not assume every historical Zsh startup file is identical. |
 | Fish | A single file launches its embedded portable Unix payload through `/bin/sh`, forwarding arguments as data. | Requires Fish and `/bin/sh`; collectors remain shared. Large embedded payloads are explicitly bounded. Native startup semantics are tested separately from rendering. |
 | Portable sh | All nine section IDs, themes, ASCII/Unicode framing, dynamic row allocation and local Linux/Darwin/BSD/generic-Unix collection paths. | POSIX-like syntax does not imply every historical Bourne dialect, utility option or kernel interface exists. Unavailable data remains unavailable. |
-| PowerShell | Native file with PowerShell 1-era grammar, .NET 2-era fallback APIs, literal configuration, and feature checks for newer facilities. Windows PowerShell 1–5 and PowerShell 6–7 are explicit targets. | **PowerShell 1, 3, 4 and 5.0 remain unexecuted targets.** The PS2 probe must produce an actual-engine evidence file before PS2 is verified. Windows 5.1, PS6 and PS7 evidence are separate. No automatic Windows profile installation. |
+| PowerShell | Native file with PowerShell 1-era grammar, .NET 2-era fallback APIs, literal configuration, and feature checks for newer facilities. Windows PowerShell 1–5 and PowerShell 6–7 are explicit targets. | **PowerShell 1, 3, 4 and 5.0 remain unexecuted targets.** Actual PS2.0 passed 41 cases on Server2022 at the retained v0.4-stage commit `4cc3228`; current-review native evidence is linked above. Windows 5.1, PS6 and PS7 evidence are separate. No automatic Windows profile installation. |
 | CMD launcher | One `.cmd` file contains the same native PowerShell core as visible text and launches an installed `powershell.exe` or `pwsh.exe`. | Requires a PowerShell engine with `ScriptBlock.Create`; it is not an independent CMD metrics implementation. Treat the wrapper as PS2+ pending older-engine proof. Native filename and argument tests run on Windows. |
 | `issue` | Static public text encoded for an agetty-compatible issue consumer. | Not a universal getty escape dialect. |
 | `ssh-banner` | Static public text for an explicitly configured OpenSSH `Banner` file. | Generating/writing the file does not reconfigure or reload the server. |
@@ -56,7 +88,7 @@ record, rather than the open-ended label "7 or newer".
 [Microsoft PowerShell lifecycle][ps-lifecycle] · [GNU Bash releases][bash-releases]
 · [Zsh release archive][zsh-releases]
 
-## Executed versions and evidence boundaries
+## Retained v0.4-stage versions and evidence boundaries
 
 | Family | Executed versions and environment | Evidence scope |
 |---|---|---|
@@ -64,12 +96,12 @@ record, rather than the open-ended label "7 or newer".
 | Zsh 2–5 | 2.3.1, 3.0.8, 4.2.7 and 5.9 on current Linux | Actual entry-point execution and shared collection. Historical startup PTYs are separate from current design checks. |
 | Fish | 2.4.0, 3.6.0 and 4.0.2 on current Linux | Actual delegation and literal data tests. The relocated Fish2.4 executable uses local ncurses/tinfo libraries; relocated Fish4 uses `--no-config` because its compiled data-directory path is absent. These test conditions are recorded. |
 | Other Unix interpreters | Host dash, BusyBox 1.37.0 ash, mksh R59 and ksh93u+m 1.0.10 on current Linux | Portable generated output under these exact engines. This does not certify every BusyBox build or historical Unix OS. |
-| Windows PowerShell 5.1 | 5.1.26100.33648 on Windows Server 2025 Datacenter, build 10.0.26100 in the preceding native run | Existing native contracts and new design/adapter suites run in separate CI jobs; consult the exact revision's results. |
+| Windows PowerShell 5.1 | Native Windows job passed the design, adapter and export suites at `4cc3228` | The exact engine/OS is in that retained native job log. The earlier v0.3 record is retained separately. A 5.1 result does not verify 5.0. |
 | PowerShell 6 | 6.2.7 on Linux x86_64 | Native rendering and hooks. This portable runtime requires invariant globalization on this host; the XML/SHA evidence harness additionally needs its historical OpenSSL library, recorded explicitly. |
-| PowerShell 7 LTS | 7.6.10 on Linux; preceding Windows run used 7.6.9 on Windows Server 2025 | Native design, geometry, literal data, hooks and missing-data contracts. Current Windows results must come from the exact v0.4 job. |
+| PowerShell 7 LTS | 7.6.10 on Linux; the native PowerShell 7 jobs on Windows and macOS passed at `4cc3228` | Native design, geometry, literal data, hooks and missing-data contracts. Consult each native job for its exact patch version and OS. |
 | Additional PS7 engine | 7.7.0 on Linux x86_64 | A separately executed engine, not an LTS designation. |
-| macOS | 26.7.2 arm64 with built-in Bash 3.2.57 and Zsh 5.9 in preceding v0.3 evidence | Native-host identity, collection, geometry and delegation checks; v0.4 adds a separate native PowerShell design gate. |
-| PowerShell 2 | An actual `powershell.exe -Version 2` probe is configured on a disposable Windows Server 2022 CI host | Pending the exact job's probe and harness evidence. An unavailable optional component is recorded as blocked, and a 5.1 fallback cannot pass the major-version assertion. |
+| macOS | Native PowerShell design and cross-platform generation/export suites passed at `4cc3228` | Windows-only adapter execution cases are skipped on macOS. The initial executable-lookup failure was fixed and the native job rerun successfully. Older Bash3.2.57/Zsh5.9 host evidence remains separately recorded. |
+| PowerShell 2 | Actual 2.0, CLR2.0.50727.9188, x64 Windows NT10.0.20348.0 / Server2022 at `4cc3228` | **41/41 exact-engine harness cases passed**, including a live local case. The already-available engine needed no optional-component installation. All five artifact hashes match generation at that stage with native Windows CRLF line endings. |
 | PowerShell 1, 3, 4 and 5.0; other historical OS images; other Unix hosts | Not execution-verified | Compatibility targets or collector fixtures only. A Windows PowerShell 5.1 pass does not certify 5.0. No blanket all-versions/all-OS claim. |
 
 The v0.3 Unix matrix contains **608 successful cases**, including 8/15-row compact
@@ -85,10 +117,28 @@ records for current counts and source hashes. Local isolated-template checks are
 labelled separately from integrated generator checks. Neither a YAML workflow nor
 a green job with an explicitly skipped PS2 step proves that PS2 executed.
 
-The v0.4 Unix record contains **800 successful demonstration cases**: 640 cases
-across 16 engines, five designs, four sizes and two character sets, plus 160
-explicit no-Bash Zsh delegation cases. It separately records **80 live literal-hook
-checks**. The integrated Linux PowerShell record contains **36 passing unit tests
+The [first v0.4 native run][native-v04-initial] executed the actual PS2 engine and
+the Windows PowerShell 5.1 and PowerShell 7 suites at commit
+[`16996e8`](https://github.com/Julesc013/motd/commit/16996e839694a1588d454eba57e4e7def37b0f79).
+Its [PS2 evidence artifact][ps2-v04-artifact] includes the unmodified probe and XML:
+the XML asserts major2, lists all 41 passing cases and hashes each tested output.
+The [retained v0.4-stage native run][native-v04-final] repeats those checks after the header,
+ordering and omission fixes at commit
+[`4cc3228`](https://github.com/Julesc013/motd/commit/4cc32280509d02e1d12475060e30f830265f62d0).
+All four jobs passed: Windows PowerShell5.1, PowerShell7 on Windows, PowerShell7
+on macOS, and actual PowerShell2. Retained [PS2 XML](../build/verification-powershell2-v04.xml)
+and [probe JSON](../build/verification-powershell2-v04-probe.json) preserve the
+observations. Each XML artifact hash was regenerated and matched using Windows'
+native CRLF output convention. The separate [retained workflow artifact][ps2-v04-final-artifact]
+preserves the downloaded originals.
+
+The retained v0.4 Unix record contains **1,000 successful demonstration cases**: 800 cases
+across 16 engines, five designs, five sizes and two character sets, plus 200
+explicit no-Bash Zsh delegation cases. The five sizes include 40×8 and the four
+requested gallery sizes. It separately records **80 live literal-hook checks**
+and **42 Fish startup scenarios**. This interpreter matrix captures explicit
+geometry through pipes; the gallery supplies separate PTY capture evidence.
+The retained integrated Linux PowerShell record contains **39 passing unit tests
 and 41 passing exact-engine harness cases per engine** on 6.2.7, 7.6.10 and 7.7.0.
 These counts describe those inputs and hosts, not every possible recipe or OS.
 
@@ -134,8 +184,9 @@ See the [actual terminal PNG gallery](../examples/gallery/README.md).
 
 The five designs are structural presentations of the same collected sections:
 `classic`, framed `cards`, aligned unboxed `ledger`, attention-first `briefing`,
-and metric-led `dashboard`. Dashboard cards sit side by side at wider widths and
-stack on narrow terminals. `density`, `padding` and `section_gap` alter spacing;
+and paired-card `dashboard`. Dashboard preserves the configured section order;
+cards sit side by side at wider widths and stack on narrow terminals. `density`,
+`padding` and `section_gap` alter spacing;
 `detail = "brief" | "normal" | "full"` and `section_detail` alter visible row
 allocation. `priority` controls which complete sections survive when space is
 short, and `color_emphasis` controls tone intensity. Brief mode promotes an
@@ -143,6 +194,19 @@ observation into a briefing headline instead of showing an empty section label.
 These are presentation controls, not additional collectors or permission to
 relabel unavailable observations. Unix templates embed the shared presentation
 source from `runtime/designs.sh`; PowerShell uses the corresponding native core.
+
+Synthetic output keeps a visible DEMO label; the new presentation paths lead
+with it so a long title cannot hide it. Their context rows retain host and uptime
+within the available geometry. Native PowerShell also retains this context when
+System is disabled and places the classic title in its top frame border without
+adding a header row. Legacy Unix classic defaults preserve their older layout:
+Bash places DEMO at the right of the top border and uptime in System; portable
+sh's default subtitle is the site/backend. Disabling System or using an emergency
+short layout can therefore remove Unix classic host/uptime context. Long field values may
+be shortened to the available width; uptime is explicitly unavailable when no
+supported source succeeds. Hidden section names wrap into fully budgeted footer
+rows. At 40×8 with many enabled sections, header/context plus the complete hidden
+list can consume the viewport, leaving no room for a complete card.
 
 The built-in before/after action `argv = ["motd:print", "literal line"]` prints
 data without launching a shell or evaluating expressions. External calls retain
@@ -193,11 +257,26 @@ those characters.
 
 `tools/test_legacy_powershell.ps1` is a standalone evidence harness for a trusted
 generated file or directory of generated files. Invoke it with the actual target
-engine and `-ExpectedMajor 1..7`. It refuses a different major **before running
-the supplied scripts**. Its XML records the exact engine, CLR, OS, bitness,
+engine and `-ExpectedMajor 1..7`. Add `-ExpectedMinor 0` to require 5.0 rather
+than accepting either 5.0 or 5.1 with `-ExpectedMajor 5`; use
+`-ExpectedMajor 5 -ExpectedMinor 1` for 5.1. The default minor value `-1`
+accepts any minor version of the required major. It refuses a mismatched major
+or requested minor **before reading or running the supplied scripts**. Its XML
+records both expected version components and the exact engine, CLR, OS, bitness,
 automation assembly, `ScriptBlock.Create` availability, artifact SHA256 values,
 geometry cases and result. `-IncludeLive` adds a local collector smoke case with
 hooks suppressed. Python is not required on that destination.
+
+For example, on a separately owned Windows PowerShell 5.0 host:
+
+```text
+powershell.exe -NoProfile -Command "& '.\tools\test_legacy_powershell.ps1' -ArtifactsDirectory '.\build\legacy-powershell-inputs' -ExpectedMajor 5 -ExpectedMinor 0 -Output '.\build\powershell-5.0-evidence.xml' -IncludeLive"
+```
+
+The assertion checks the engine actually running; it does not switch versions.
+A 5.1 host rejects this command and writes failed evidence without executing the
+generated files. Use separate compatible Windows installations for 3.0, 4.0,
+5.0 and 5.1 evidence. The hosted PS2 workflow explicitly requires 2.0.
 
 The separate compatibility workflow attempts PS2 only on Windows Server 2022.
 It first probes the real engine, then may enable the existing Windows optional
@@ -206,6 +285,8 @@ failed startup produces an explicit blocked record. This does not enable any
 feature on the user's destination. Microsoft lists the PS2 component for Server
 2022; it removed PS2 from Windows 11 24H2 and Server 2025 during 2025.
 [Server 2022 components][server2022] · [Windows removed features][removed-features]
+Both retained v0.4-stage actual runs found PS2 already available and passed the
+harness without installing any component. [Retained run and evidence][ps2-v04-final-artifact]
 
 The exact-version harness is also suitable for separately owned older Windows
 hosts. This project has not acquired or executed PS1, PS3, PS4 or PS5.0 hosts, and
@@ -319,6 +400,10 @@ machine if the destination cannot run Python 3.8+.
 [scriptblock-ps2]: https://devblogs.microsoft.com/scripting/use-powershell-to-combine-multiple-commands-for-ease-of-use/
 [dotnet-openssl]: https://learn.microsoft.com/en-us/dotnet/core/compatibility/3.0#net-core-30-prefers-openssl-11x-to-openssl-10x
 [libssl11]: https://packages.debian.org/bullseye/amd64/libssl1.1/download
+[native-v04-initial]: https://github.com/Julesc013/motd/actions/runs/43995922674
+[ps2-v04-artifact]: https://github.com/Julesc013/motd/actions/runs/43995922674/artifacts/14290006975
+[native-v04-final]: https://github.com/Julesc013/motd/actions/runs/43997494337
+[ps2-v04-final-artifact]: https://github.com/Julesc013/motd/actions/runs/43997494337/artifacts/14290472775
 
 [ps-lifecycle]: https://learn.microsoft.com/powershell/scripting/install/powershell-support-lifecycle?view=powershell-7.6
 [bash-releases]: https://ftp.gnu.org/gnu/bash/

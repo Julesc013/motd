@@ -32,6 +32,7 @@ detail = "normal"
 padding = 1
 section_gap = 1
 color_emphasis = "balanced"
+bar_layout = "wide"
 width = 100
 rows = 25
 top_entries = 3
@@ -68,7 +69,7 @@ Installation scope, destination paths, shell startup file, and state directory a
 | `audience` | `all`, `ssh`, `local`; filters eligible shell sessions. |
 | `frequency` | `login`, `interactive`; shell display frequency. |
 | `messages` | Up to 24 display-only strings. |
-| `public_text` | Public static notice, including newlines; up to 16,000 characters. |
+| `public_text` | Public static notice, including newlines; up to 16,000 characters. Native `batch-text` requires ASCII here and in `display.title`; validation preserves the prior wizard draft on an invalid edit. |
 | `display.title`, `display.site` | Text, up to 100 characters each. |
 | `display.theme` | `cyan`, `green`, `amber`, `mono`. |
 | `display.charset` | `auto` (default), `ascii`, `unicode`; a saved default that runtime switches may override. |
@@ -79,6 +80,7 @@ Installation scope, destination paths, shell startup file, and state directory a
 | `display.padding` | Integer 0–3; horizontal inset within the chosen design. |
 | `display.section_gap` | Integer 0–2; blank-row preference between section bands, adjusted by density. Fewer retained bands need fewer gaps. |
 | `display.color_emphasis` | `quiet`, `balanced` (default), `vivid`; colour emphasis within the chosen palette. |
+| `display.bar_layout` | `inline` (default), `wide`; wide puts the numeric label and its gauge on separate rows, filling the current panel width. |
 | `display.width`, `display.rows` | Integers: width 40–240; total terminal row budget 8–200, including the reserved prompt row. |
 | `display.top_entries` | Integer, 1–10. |
 | `display.sections` | A nonempty list of distinct supported section IDs, in display order. |
@@ -91,6 +93,26 @@ Installation scope, destination paths, shell startup file, and state directory a
 | `collection.journal` | Boolean; journal collection defaults to `false`. |
 
 Section IDs are `system`, `resources`, `services`, `processes`, `sessions`, `connections`, `attention`, `hints`, and `io`. The layout reduces optional detail, then omits complete lower-priority sections if needed. Density and the retained section bands determine spacing; requested gaps are generally retained, with an emergency minimum layout for extremely short viewports. A named `Hidden:` footer makes omissions visible. Enabling a section does not grant access to unavailable system information. Hidden sections may still share collection work or feed warnings; section selection is not a promise to disable every associated system query.
+
+### Wide resource bars
+
+`--bar-layout wide` uses a label/value row followed by a gauge spanning the
+current panel's content width. It reuses collected observations and makes no
+additional system query. A dashboard gauge fills its card, not neighbouring
+cards. Under row pressure, numeric labels survive before their optional gauges;
+whole lower-priority sections can still be omitted.
+
+Read the quantity named in each label. Enhanced Bash shows RAM used as
+`total - available` and aggregate storage used; this differs from its classic
+physical-allocation segmented bar. Portable sh shows RAM available (or explicitly
+free when available is unknown), swap free, and the root filesystem percentage
+reported by `df`. PowerShell uses its observed used/total readings. These provider
+differences remain explicit; a design does not redefine a metric. Unknown or
+invalid fractions do not become zero-filled healthy bars.
+
+Generated Unix outputs accept `--bar-layout inline|wide`; native PowerShell
+accepts `-BarLayout inline|wide`. Omitting the setting keeps the existing inline
+appearance. See the [retained comparisons](../examples/bars/README.md).
 
 ## Choose a structure, then tune it
 

@@ -1,13 +1,13 @@
-MOTD 0.3.0 | Theme
- 1. Cyan
- 2. Green [selected]
- 3. Amber
- 4. Mono
+MOTD 0.4.0 | Theme
+  1. Cyan
+> 2. Green
+  3. Amber
+  4. Mono
 
-
-Number chooses | Enter accepts | P H Q
+Number previews; Enter accepts.
+Up/Down | Enter accepts | ? help Q quit
 Choice [2]:
-PREVIEW 100x28 | demo | calls off
+PREVIEW 100x28 | demo | H calls off
 ╔═ WORKSHOP STATUS | ws-bench-07 ═══════════════════════════════════════════════════ DEMO 13:30:00 ╗
 ╠═ SYSTEM ══════════════════════════════════════════════════════════════════════════ up 4d 06h 12m ╣
 ║ Domain workshop.example                        │ IP eno1 192.0.2.17/24                           ║

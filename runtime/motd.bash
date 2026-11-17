@@ -41,6 +41,7 @@ MAX_WIDTH=132                   # Use available width up to this cap.
 THEME=cyan                     # cyan | amber | mono
 CHARSET=auto                    # auto | ascii | unicode; CLI flags override.
 COLOR_MODE=auto                 # auto | always | never; NO_COLOR still wins.
+BAR_LAYOUT=inline               # inline | wide; wide retains numeric labels.
 DESIGN=classic                  # classic | cards | ledger | briefing | dashboard
 DENSITY=balanced                # compact | balanced | comfortable
 DETAIL=normal                   # brief | normal | full; independent of spacing
@@ -283,6 +284,7 @@ usage() {
       '       [--design classic|cards|ledger|briefing|dashboard] [--detail brief|normal|full]' \
       '       [--density compact|balanced|comfortable] [--padding 0..3] [--section-gap 0..2]' \
       '       [--color-emphasis quiet|balanced|vivid]' \
+      '       [--bar-layout inline|wide]' \
       '       [--sections system,resources,services,processes,sessions,connections,attention,hints]' \
       '       [--hide SECTION,...] [--show SECTION,...]' \
       '       [--hide-item SECTION.ITEM,...] [--show-item SECTION.ITEM,...]' \
@@ -326,6 +328,8 @@ parse_options() {
                 case ${2-} in brief|normal|full) DETAIL=$2 ;; *) return 2 ;; esac; shift 2 ;;
             --color-emphasis)
                 case ${2-} in quiet|balanced|vivid) COLOR_EMPHASIS=$2 ;; *) return 2 ;; esac; shift 2 ;;
+            --bar-layout)
+                case ${2-} in inline|wide) BAR_LAYOUT=$2 ;; *) return 2 ;; esac; shift 2 ;;
             --padding)
                 case ${2-} in 0|1|2|3) PADDING=$2 ;; *) return 2 ;; esac; shift 2 ;;
             --section-gap)
@@ -2164,6 +2168,38 @@ ui_storage_worst() {
         if ((percent>UI_WORST_PCT)); then UI_WORST=$id; UI_WORST_PCT=$percent; fi
     done
 }
+ui_wide_resource_pair() {
+    # Wide bars use the quantity named in the numeric row. In particular RAM
+    # is used-versus-available, not the separate physical allocation categories
+    # represented by the classic inline segmented bar. No observation is read
+    # again here. If only one row survives allocation, keep its exact numbers.
+    ((UI_REMAIN>0)) || return 0
+    ui_row "$1" "${COLOR[heading]}"
+    ((UI_REMAIN>0)) || return 0
+    motd_view_fraction_bar "$2" "$3" "$TEXT_WIDTH"
+    [[ $MV_BAR_VALID != 1 ]] || ui_row "$MV_BAR" "${COLOR[other]}"
+}
+ui_resources_wide() {
+    if ui_enabled resources memory; then
+        if ((${MODEL[mem_valid]:-0})); then
+            ui_wide_resource_pair "RAM ${VIEW[mem_used]}/${VIEW[mem_total]} | ${VIEW[mem_percent]}% used" "${MODEL[mem_total]}" "${MODEL[mem_used]}"
+        else ui_row 'RAM unavailable' "${COLOR[muted]}"; fi
+    fi
+    if ui_enabled resources storage; then
+        if [[ ${MODEL[storage_state]-} == ok ]] && ((${MODEL[storage_total]:-0}>0)); then
+            ui_wide_resource_pair "DISK ${VIEW[storage_used]}/${VIEW[storage_total]} used" "${MODEL[storage_total]}" "${MODEL[storage_used]}"
+        else ui_row "DISK ${MODEL[storage_state]:-unavailable}" "${COLOR[muted]}"; fi
+    fi
+    if ui_enabled resources swap; then
+        if ((${MODEL[swap_valid]:-0}==0)); then ui_row 'SWAP unavailable' "${COLOR[muted]}"
+        elif ((${MODEL[swap_total]:-0}==0)); then ui_row 'SWAP not configured' "${COLOR[muted]}"
+        else ui_wide_resource_pair "SWAP ${VIEW[swap_used]}/${VIEW[swap_total]} | free ${VIEW[swap_free]}" "${MODEL[swap_total]}" "${MODEL[swap_used]}"; fi
+    fi
+    if ((UI_REMAIN>0)) && ui_enabled resources memory; then
+        ui_row "Cache ${VIEW[mem_cache]:-?} | available ${VIEW[mem_available]:-?}" "${COLOR[muted]}"
+    fi
+    if ((UI_REMAIN>0)) && ui_enabled resources compression; then ui_compression_details; fi
+}
 ui_resources() {
     local budget=$1 summary='' bar='' width=18 row='' value tail='' id inode='' shade=${COLOR[muted]} comp_label=Comp swap_label=Swap
     ui_storage_worst
@@ -2173,6 +2209,7 @@ ui_resources() {
         ((UI_WORST_PCT<DISK_CRITICAL)) || shade=${COLOR[error]}
     fi
     ui_begin resources "$budget" "$summary" "$shade"
+    if [[ $BAR_LAYOUT == wide ]]; then ui_resources_wide; return; fi
     if [[ $MODE == verbose ]]; then
         ui_enabled resources memory && ui_memory_details
         ui_enabled resources compression && ui_compression_details
@@ -2812,7 +2849,7 @@ motd_view_capture() {
 
 ui_classic_defaults() {
     [[ $DESIGN == classic && $DENSITY == balanced && $DETAIL == normal && $PADDING == 1 &&
-       $SECTION_GAP == 0 && $COLOR_EMPHASIS == balanced && ${#SECTION_DETAIL[@]} == 0 &&
+       $SECTION_GAP == 0 && $COLOR_EMPHASIS == balanced && $BAR_LAYOUT == inline && ${#SECTION_DETAIL[@]} == 0 &&
        ${SECTION_PRIORITY[*]} == 'attention resources system services processes io sessions connections hints' ]]
 }
 

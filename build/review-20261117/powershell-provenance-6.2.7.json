@@ -1,0 +1,28 @@
+{
+  "version": "6.2.7",
+  "official_release": "https://github.com/PowerShell/PowerShell/releases/tag/v6.2.7",
+  "asset_url": "https://github.com/PowerShell/PowerShell/releases/download/v6.2.7/powershell-6.2.7-linux-x64.tar.gz",
+  "asset_id": 22944929,
+  "bytes": 57500384,
+  "archive_sha256": "6073852fb8373fd3037fae00793aecf5ccc1d3c6f4f18ccf0a85a433617abc17",
+  "expected_digest_source": "Official release body SHA256 table",
+  "binary_sha256": "00adf8aa10958aebfbe119b4c656f4e3a5985ae3a6723a9fddd1d9ed52798b07",
+  "executable": "/workspace/scratch/e6a94ceb1ad8/work/powershell/6.2.7/pwsh",
+  "environment": {
+    "DOTNET_SYSTEM_GLOBALIZATION_INVARIANT": "1",
+    "LD_LIBRARY_PATH": "/workspace/scratch/c65930e4593e/work/powershell-6-libs/extracted/usr/lib/x86_64-linux-gnu"
+  },
+  "recorded_at_utc": "2026-11-17T07:13:10.201992+00:00",
+  "probe_returncode": 0,
+  "stdout": "{\n  \"PSRemotingProtocolVersion\": {\n    \"Major\": 2,\n    \"Minor\": 3,\n    \"Build\": -1,\n    \"Revision\": -1,\n    \"MajorRevision\": -1,\n    \"MinorRevision\": -1\n  },\n  \"WSManStackVersion\": {\n    \"Major\": 3,\n    \"Minor\": 0,\n    \"Build\": -1,\n    \"Revision\": -1,\n    \"MajorRevision\": -1,\n    \"MinorRevision\": -1\n  },\n  \"PSVersion\": {\n    \"Major\": 6,\n    \"Minor\": 2,\n    \"Patch\": 7,\n    \"PreReleaseLabel\": null,\n    \"BuildLabel\": null\n  },\n  \"GitCommitId\": \"6.2.7\",\n  \"Platform\": \"Unix\",\n  \"PSEdition\": \"Core\",\n  \"OS\": \"Linux 6.18.57 #1 SMP Tue Oct 20 21:56:04 UTC 2026\",\n  \"SerializationVersion\": {\n    \"Major\": 1,\n    \"Minor\": 1,\n    \"Build\": 0,\n    \"Revision\": 1,\n    \"MajorRevision\": 0,\n    \"MinorRevision\": 1\n  },\n  \"PSCompatibleVersions\": [\n    {\n      \"Major\": 1,\n      \"Minor\": 0,\n      \"Build\": -1,\n      \"Revision\": -1,\n      \"MajorRevision\": -1,\n      \"MinorRevision\": -1\n    },\n    {\n      \"Major\": 2,\n      \"Minor\": 0,\n      \"Build\": -1,\n      \"Revision\": -1,\n      \"MajorRevision\": -1,\n      \"MinorRevision\": -1\n    },\n    {\n      \"Major\": 3,\n      \"Minor\": 0,\n      \"Build\": -1,\n      \"Revision\": -1,\n      \"MajorRevision\": -1,\n      \"MinorRevision\": -1\n    },\n    {\n      \"Major\": 4,\n      \"Minor\": 0,\n      \"Build\": -1,\n      \"Revision\": -1,\n      \"MajorRevision\": -1,\n      \"MinorRevision\": -1\n    },\n    {\n      \"Major\": 5,\n      \"Minor\": 0,\n      \"Build\": -1,\n      \"Revision\": -1,\n      \"MajorRevision\": -1,\n      \"MinorRevision\": -1\n    },\n    {\n      \"Major\": 5,\n      \"Minor\": 1,\n      \"Build\": 10032,\n      \"Revision\": 0,\n      \"MajorRevision\": 0,\n      \"MinorRevision\": 0\n    },\n    {\n      \"Major\": 6,\n      \"Minor\": 2,\n      \"Build\": 7,\n      \"Revision\": -1,\n      \"MajorRevision\": -1,\n      \"MinorRevision\": -1\n    }\n  ]\n}\n",
+  "stderr": "",
+  "dependency": {
+    "package": "libssl1.1_1.1.1w-0+deb11u8_amd64.deb",
+    "package_sha256": "dcc68a543de6cb955a57077b66dcdb15f61d1e31e072f2c6cc4082c37da1b00d",
+    "origin_record": "/workspace/scratch/c65930e4593e/motd/build/verification-powershell-v04.json",
+    "hash_source": "https://packages.debian.org/bullseye/amd64/libssl1.1/download",
+    "download_source": "https://archive.debian.org/debian-archive/debian-security/pool/updates/main/o/openssl/libssl1.1_1.1.1w-0+deb11u8_amd64.deb",
+    "note": "Preserved package; local hash checked against prior official-source provenance. Extracted workspace library only, no host package installation."
+  },
+  "observed_dependency_failure": "Initial XML harness without LD_LIBRARY_PATH aborted with No usable version of libssl was found. Renderer tests ran; exactminor harness passed after scoped LD_LIBRARY_PATH."
+}

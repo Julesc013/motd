@@ -23,6 +23,7 @@ import sys
 import tempfile
 import time
 import unittest
+from unittest.mock import patch
 
 
 SOURCE = Path(__file__).resolve().parents[1] / "motd.py"
@@ -98,6 +99,20 @@ class CliTests(unittest.TestCase):
         self.assertEqual(json.loads(text)["change_count"], 0)
         self.assertEqual(self.snapshot(), before)
 
+    def test_static_preview_displays_controls_without_modifying_import(self):
+        source = self.root / 'notice.txt'
+        original = 'Café\tNotice\x1b[2J\rhidden\x9b31m\n'
+        with source.open('w', encoding='utf-8', newline='') as stream:
+            stream.write(original)
+        status, output, _ = self.cli('preview', '--artifact', source, '--target', 'text')
+        self.assertEqual(status, 0)
+        self.assertIn('Café\tNotice\\x1b[2J', output)
+        self.assertIn('\\x9b31m', output)
+        self.assertNotIn('\x1b', output)
+        self.assertNotIn('\x9b', output)
+        self.assertEqual(source.read_bytes(), original.encode('utf-8'))
+        self.assertFalse(Path(self.state).exists())
+
     def test_missing_artifacts_fail_without_creating_outputs_or_state(self):
         missing = self.root / "missing.bash"
         recovered = self.root / "recovered.toml"
@@ -116,6 +131,16 @@ class CliTests(unittest.TestCase):
                 self.cli(*command)
             self.assertEqual(self.snapshot(), before)
             self.assertFalse(Path(self.state).exists())
+
+    def test_cancelled_interactive_reconfigure_restores_ui_and_keeps_install(self):
+        self.install_recipe()
+        before = self.snapshot()
+        with patch.object(motd, 'WizardUI') as ui, \
+                patch.object(motd, '_configure', side_effect=motd.WizardCancelled):
+            with self.assertRaises(motd.WizardCancelled):
+                self.cli('reconfigure', '--name', 'cli-test', *self.destinations())
+        ui.return_value.finish.assert_called_once_with()
+        self.assertEqual(self.snapshot(), before)
 
     def test_opaque_import_requires_trust_and_has_no_inferred_recipe(self):
         source = self.root / "opaque.bash"

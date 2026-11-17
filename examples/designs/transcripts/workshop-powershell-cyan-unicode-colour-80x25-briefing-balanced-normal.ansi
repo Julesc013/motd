@@ -1,0 +1,24 @@
+[?1h=[36m DEMO - synthetic | WORKSHOP STATUS | BRIEFING                                  [0m
+[90m Host demo-host | Up 4d 06h                                                     [0m
+[90m Attention: Scope: selected local observations.                                 [0m
+[36m System: demo-host | 8 logical CPUs                                             [0m
+   Windows / Unix | User operator                                               
+   Up 4d 06h | PowerShell capability demo                                       
+[36m Resources: MEMORY 6.0 GiB / 16.0 GiB [████░░░░░░░░]                            [0m
+   STORAGE / 120.0 GiB / 512.0 GiB [███░░░░░░░░░]                               
+   Swap/pagefile 512M/8.0G                                                      
+[90m   Compressed memory: 256 MiB (demo)                                            [0m
+[36m Services: 16 run / 21 loaded                                                   [0m
+[32m   [RUN] sshd  [RUN] storage-worker                                             [0m
+   [RUN] backup  [STOP] optional-web                                            
+[36m Processes: CPU total (s) / memory                                              [0m
+   CPU   152.4s   812 storage-worker                                            
+   MEM     2.0G  1120 database                                                  
+   CPU    38.6s  1120 database                                                  
+   MEM     768M   812 storage-worker                                            
+[36m Sessions: 4 registered logins                                                  [0m
+   operator  tty1   console                                                     
+[36m Connections: 8 TCP / 3 listeners                                               [0m
+   :22 -> 192.0.2.24:51042 Established                                          
+ Hints: Tasks: Get-Process - Local processes                                    
+   Services: Get-Service - Windows services                                     

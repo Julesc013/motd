@@ -28,6 +28,40 @@ motd_view_repeat() {
     done
 }
 
+motd_view_fraction_bar() {
+    # A bounded data-only formatter shared by both Unix adapters. Work in at
+    # most six significant decimal digits before multiplication, keeping a
+    # 240-cell bar within signed 32-bit arithmetic on old shells. The discarded
+    # low digits are far smaller than one terminal cell. Callers supply the
+    # original numeric observation in the label, so the bar is only a picture.
+    MV_BAR=''; MV_BAR_VALID=0; mv_bar_total=$1; mv_bar_part=$2; mv_bar_width=$3
+    case "$mv_bar_total" in ''|*[!0-9]*) return ;; esac
+    case "$mv_bar_part" in ''|*[!0-9]*) return ;; esac
+    while [ "${mv_bar_total#0}" != "$mv_bar_total" ] && [ "${#mv_bar_total}" -gt 1 ]; do mv_bar_total=${mv_bar_total#0}; done
+    while [ "${mv_bar_part#0}" != "$mv_bar_part" ] && [ "${#mv_bar_part}" -gt 1 ]; do mv_bar_part=${mv_bar_part#0}; done
+    [ "${#mv_bar_part}" -le "${#mv_bar_total}" ] || return
+    if [ "${#mv_bar_part}" -eq "${#mv_bar_total}" ]; then
+        # Validate before discarding low digits: a one-unit excess on a large
+        # device is still invalid, even if both values round to the same bar.
+        mv_bar_check_total=$mv_bar_total; mv_bar_check_part=$mv_bar_part
+        while [ -n "$mv_bar_check_total" ]; do
+            mv_bar_digit_total=${mv_bar_check_total%"${mv_bar_check_total#?}"}
+            mv_bar_digit_part=${mv_bar_check_part%"${mv_bar_check_part#?}"}
+            [ "$mv_bar_digit_part" -le "$mv_bar_digit_total" ] || return
+            [ "$mv_bar_digit_part" -eq "$mv_bar_digit_total" ] || break
+            mv_bar_check_total=${mv_bar_check_total#?}; mv_bar_check_part=${mv_bar_check_part#?}
+        done
+    fi
+    while [ "${#mv_bar_total}" -gt 6 ]; do
+        mv_bar_total=${mv_bar_total%?}; mv_bar_part=${mv_bar_part%?}; mv_bar_part=${mv_bar_part:-0}
+    done
+    [ "$mv_bar_total" -gt 0 ] && [ "$mv_bar_part" -le "$mv_bar_total" ] || return
+    mv_bar_filled=$(((mv_bar_part * mv_bar_width + mv_bar_total / 2) / mv_bar_total))
+    motd_view_repeat '#' "$mv_bar_filled"; MV_BAR=$MV_REPEAT
+    motd_view_repeat '.' "$((mv_bar_width - mv_bar_filled))"; MV_BAR=$MV_BAR$MV_REPEAT
+    MV_BAR_VALID=1
+}
+
 motd_view_get() {
     MV_ALLOCATED=0
     for mv_get_record in $MV_PLAN; do
@@ -68,8 +102,15 @@ motd_view_content_width() {
             mv_content_label=12; [ "$MV_COLUMNS" -ge 60 ] || mv_content_label=10
             MV_CONTENT_WIDTH=$((MV_COLUMNS - PADDING - mv_content_label - 3)) ;;
         briefing)
-            motd_view_caption "$1"; mv_content_prefix=${#MV_HEADLINE}
-            MV_CONTENT_WIDTH=$((MV_COLUMNS - mv_content_prefix - 2)) ;;
+            if [ "$1" = resources ] && [ "${BAR_LAYOUT-inline}" = wide ]; then
+                # Resource labels identify their own quantities. Give every
+                # numeric/bar pair the same indented width rather than losing
+                # the first denominator to an additional "Capacity: " prefix.
+                MV_CONTENT_WIDTH=$((MV_COLUMNS - 2 * PADDING - 2))
+            else
+                motd_view_caption "$1"; mv_content_prefix=${#MV_HEADLINE}
+                MV_CONTENT_WIDTH=$((MV_COLUMNS - mv_content_prefix - 2))
+            fi ;;
     esac
 }
 
@@ -143,6 +184,13 @@ motd_view_plan() {
                 case "$mv_plan_id" in resources|io) mv_plan_rows=3 ;; processes) mv_plan_rows=4 ;;
                     *) mv_plan_rows=2 ;; esac ;;
         esac
+        # A wide resource can use one numeric row and one bar row. Ask for
+        # enough space for RAM, storage and optional swap; the adapter still
+        # returns a numeric summary if a smaller final allocation cannot fit
+        # both rows. Other sections and inline defaults are unchanged.
+        if [ "$mv_plan_id" = resources ] && [ "${BAR_LAYOUT-inline}" = wide ]; then
+            case "$mv_plan_detail" in normal) mv_plan_rows=6 ;; full) mv_plan_rows=9 ;; esac
+        fi
         # Charge populated rows, not an arbitrary rectangle of empty space.
         # This is formatting of the existing model, never a second collection.
         # A short section can therefore leave room for another complete panel.
@@ -338,7 +386,7 @@ motd_design_render() {
                 mv_render_label_width=12; [ "$MV_COLUMNS" -ge 60 ] || mv_render_label_width=10
                 motd_view_content_width "$mv_render_id"; mv_render_content_width=$MV_CONTENT_WIDTH
                 MV_TEXT=$(motd_view_capture "$mv_render_id" "$mv_render_content_width" "$mv_render_rows" "$DESIGN")
-                if [ "$DESIGN" = briefing ]; then
+                if [ "$DESIGN" = briefing ] && { [ "$mv_render_id" != resources ] || [ "${BAR_LAYOUT-inline}" != wide ]; }; then
                     # A concise first sentence comes from the same one-row
                     # section adapter. Keep the first actual observation: it
                     # may be a service, address or session, not a heading.
@@ -362,7 +410,7 @@ $MV_TEXT"
                 while [ "$mv_render_index" -lt "$mv_render_rows" ]; do
                     motd_view_take_line
                     if [ "$DESIGN" = briefing ]; then
-                        if [ "$mv_render_index" -eq 0 ]; then motd_view_plain_row "$mv_render_headline: $MV_LINE" "$MV_TITLE_COLOR"
+                        if [ "$mv_render_index" -eq 0 ] && { [ "$mv_render_id" != resources ] || [ "${BAR_LAYOUT-inline}" != wide ]; }; then motd_view_plain_row "$mv_render_headline: $MV_LINE" "$MV_TITLE_COLOR"
                         else printf '%*s' "$((PADDING + 2))" ''; motd_view_clean "$MV_LINE" "$mv_render_content_width"; printf '%s\n' "$MV_CLEAN"; fi
                     else
                         motd_view_clean "$mv_render_caption" "$mv_render_label_width"; mv_render_label=$MV_CLEAN

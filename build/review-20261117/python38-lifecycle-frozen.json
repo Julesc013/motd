@@ -1,0 +1,110 @@
+{
+  "recorded_at_utc": "2026-11-17T07:28:33.829552+00:00",
+  "python": "Python 3.8.20",
+  "motd_source_start_sha256": "eda912a538325d00f798dc969f8da4389f5c34ad5d4d13f2caba99087622a130",
+  "motd_source_end_sha256": "eda912a538325d00f798dc969f8da4389f5c34ad5d4d13f2caba99087622a130",
+  "results": [
+    {
+      "test_pattern": "test_transactions.py",
+      "command": [
+        "/workspace/scratch/c65930e4593e/work/python-runtimes/cpython-3.8.20-linux-x86_64-gnu/bin/python3.8",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-p",
+        "test_transactions.py",
+        "-v"
+      ],
+      "exit_code": 0,
+      "tests_run": 27,
+      "skipped": 1,
+      "log": "/workspace/scratch/e6a94ceb1ad8/work/python38-frozen-test_transactions.log",
+      "test_source_sha256": "f260a911d50972c3de1d59d85e4c2d15c6a27d3b3af86e082c3b149716ef6871",
+      "output_sha256": "9f9ba6b9bf33d6e2d59e85a62897c369875242fc2e8ae02269db1453a3225add"
+    },
+    {
+      "test_pattern": "test_installation.py",
+      "command": [
+        "/workspace/scratch/c65930e4593e/work/python-runtimes/cpython-3.8.20-linux-x86_64-gnu/bin/python3.8",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-p",
+        "test_installation.py",
+        "-v"
+      ],
+      "exit_code": 0,
+      "tests_run": 17,
+      "skipped": 0,
+      "log": "/workspace/scratch/e6a94ceb1ad8/work/python38-frozen-test_installation.log",
+      "test_source_sha256": "0c207ca08c72d4d52b67a5e7924151fac58af6f366af97fb8762ac504a98b482",
+      "output_sha256": "32a1781c6d2506ea7ab9ac5606dff07f4e24acfd825fc404aaaca21bbd8c463f"
+    },
+    {
+      "test_pattern": "test_output_lifecycle.py",
+      "command": [
+        "/workspace/scratch/c65930e4593e/work/python-runtimes/cpython-3.8.20-linux-x86_64-gnu/bin/python3.8",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-p",
+        "test_output_lifecycle.py",
+        "-v"
+      ],
+      "exit_code": 0,
+      "tests_run": 3,
+      "skipped": 0,
+      "log": "/workspace/scratch/e6a94ceb1ad8/work/python38-frozen-test_output_lifecycle.log",
+      "test_source_sha256": "2d8d359d4c5682547008f25e5f5eee844acb1d351b99f2065199a280bd86486e",
+      "output_sha256": "a5d59085b07c32f3a573d1f034886f331fdb13b343794058b9ef2261633f1dcb"
+    },
+    {
+      "test_pattern": "test_path_safety.py",
+      "command": [
+        "/workspace/scratch/c65930e4593e/work/python-runtimes/cpython-3.8.20-linux-x86_64-gnu/bin/python3.8",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-p",
+        "test_path_safety.py",
+        "-v"
+      ],
+      "exit_code": 0,
+      "tests_run": 3,
+      "skipped": 0,
+      "log": "/workspace/scratch/e6a94ceb1ad8/work/python38-frozen-test_path_safety.log",
+      "test_source_sha256": "f9be78dcb78925a5590eaf6976a2aff71d8e1b103eb1490c74f744b5d4796bfc",
+      "output_sha256": "5e2b1291652de6e00e32b73f0634a9398b627d94560f133dc8745f8aba6b205d"
+    },
+    {
+      "test_pattern": "test_portable_export.py",
+      "command": [
+        "/workspace/scratch/c65930e4593e/work/python-runtimes/cpython-3.8.20-linux-x86_64-gnu/bin/python3.8",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests",
+        "-p",
+        "test_portable_export.py",
+        "-v"
+      ],
+      "exit_code": 0,
+      "tests_run": 9,
+      "skipped": 0,
+      "log": "/workspace/scratch/e6a94ceb1ad8/work/python38-frozen-test_portable_export.log",
+      "test_source_sha256": "00a353d61433dffe1995bc6f525cad2c4bda3867a866c00055c53e513759a066",
+      "output_sha256": "9aea71c7a4096a6a83b446b821c94cbd4dc279a8d6cb73b4d6a3de9eb83c32aa"
+    }
+  ],
+  "verification_script": "/workspace/scratch/e6a94ceb1ad8/work/rerun_compatibility_review.py",
+  "verification_script_sha256": "6884635414cc45a3c409becdd48b5253a405f79f7129daee9841ffec7d74fa2c"
+}

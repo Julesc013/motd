@@ -2,7 +2,7 @@
 
 524 logical captures; 196 unique lossless PNGs.
 
-Open [index.html](index.html) locally to filter by preset, interpreter, size, theme, character set and colour mode.
+Open [index.html](index.html) locally to filter by preset, interpreter, size, design, density, detail, theme, character set and colour mode.
 
 The requested sizes are **40×25, 40×50, 80×25 and 80×50**. The full grid is preserved; no terminal output was cropped or resized to make a layout fit. The final row is reserved for the shell prompt.
 

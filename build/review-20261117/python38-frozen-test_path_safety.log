@@ -1,0 +1,8 @@
+test_direct_transaction_path_checks_do_not_bypass_control_rejection (test_path_safety.PathSafetyTests) ... ok
+test_displayed_paths_cannot_inject_terminal_controls_or_managed_markers (test_path_safety.PathSafetyTests) ... ok
+test_large_existing_target_is_refused_without_creating_a_journal (test_path_safety.PathSafetyTests) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.001s
+
+OK

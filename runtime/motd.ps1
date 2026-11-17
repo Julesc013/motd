@@ -14,6 +14,7 @@ param(
     [switch] $NoHooks,
     [int] $Width = 0,
     [int] $Rows = 0,
+    [string] $BarLayout = '',
     [switch] $Version,
     [switch] $Help
 )
@@ -23,12 +24,17 @@ param(
 if ($Version) { Write-Output ('MOTD ' + $MotdVersion + ' (native PowerShell 1+ syntax)'); return }
 if ($Help) {
     Write-Output 'MOTD PowerShell: -Demo -DemoAlerts -Plain -Color -Ascii -Unicode -NoHooks -Width 40..240 -Rows 8..200'
+    Write-Output 'Resource bars: -BarLayout inline|wide (numeric labels remain when space is limited).'
     Write-Output 'Demonstrations use synthetic data and never run before/after calls.'
     Write-Output 'Local capability checks select CIM, WMI, .NET or Unix sources. Unavailable is not zero.'
     return
 }
 if ($Width -ne 0 -and ($Width -lt 40 -or $Width -gt 240)) { throw 'Width must be 40..240, or 0 for the recipe.' }
 if ($Rows -ne 0 -and ($Rows -lt 8 -or $Rows -gt 200)) { throw 'Rows must be 8..200, or 0 for the recipe.' }
+$MotdBarLayout = 'inline'
+if ($MotdConfig['display'].ContainsKey('bar_layout')) { $MotdBarLayout = [string]$MotdConfig['display']['bar_layout'] }
+if ($BarLayout -ne '') { $MotdBarLayout = $BarLayout }
+if ($MotdBarLayout -ne 'inline' -and $MotdBarLayout -ne 'wide') { throw 'BarLayout must be inline or wide.' }
 if ($DemoAlerts) { $Demo = $true }
 
 # The mutable result object is shared with trap's child scope. A failed read
@@ -119,10 +125,11 @@ function Format-MotdShortBytes([double] $Bytes) {
     return ('{0:N0}B' -f $Bytes)
 }
 
-function Format-MotdBar([double] $Used, [double] $Total) {
-    if ($Total -le 0 -or $Used -lt 0) { return '[unavailable]' }
+function Format-MotdBar([double] $Used, [double] $Total, [int] $OuterWidth = 0) {
+    if ($Total -le 0 -or $Used -lt 0 -or $Used -gt $Total) { return '[unavailable]' }
     $length = 12
     if ((Get-MotdResourceWidth) -lt 60) { $length = 8 }
+    if ($OuterWidth -gt 2) { $length = $OuterWidth - 2 }
     $filled = [int][Math]::Round($length * [Math]::Max(0.0, [Math]::Min(1.0, $Used / $Total)))
     $full = '#'; $empty = '-'
     if ($Unicode -and -not $Ascii) { $full = [string][char]0x2588; $empty = [string][char]0x2591 }
@@ -134,6 +141,36 @@ function Get-MotdResourceWidth {
         return [int][Math]::Floor(($MotdWidth - 2) / 2)
     }
     return $MotdWidth
+}
+
+function Get-MotdWideResourceWidth {
+    # Format to the final panel width, including its padding/labels. This
+    # happens after geometry selection and never queries a provider again.
+    $design = [string]$MotdConfig['display']['design']
+    $width = (Get-MotdResourceWidth) - 2 * [int]$MotdConfig['display']['padding']
+    if ($design -eq 'classic' -or $design -eq 'cards' -or $design -eq 'dashboard') { $width -= 2 }
+    if ($design -eq 'ledger') {
+        if ($MotdWidth -ge 60) { $width -= 12 } else { $width -= 2 }
+    }
+    if ($design -eq 'briefing') { $width -= 2 }
+    return [Math]::Max(3, $width)
+}
+
+function Add-MotdWideResource([string] $Label, [double] $Used, [double] $Total, [bool] $AllowEmpty = $false) {
+    if ($AllowEmpty -and $Total -eq 0 -and $Used -eq 0) {
+        Add-MotdLine ($Label + ': not configured') 'muted'
+    } elseif ($Total -le 0 -or $Used -lt 0 -or $Used -gt $Total) {
+        Add-MotdLine ($Label + ': unavailable') 'warning'
+    } else {
+        Add-MotdLine ($Label + ' ' + (Format-MotdShortBytes $Used) + '/' + (Format-MotdShortBytes $Total) + ' used') 'accent'
+        Add-MotdLine (Format-MotdBar $Used $Total (Get-MotdWideResourceWidth)) 'accent'
+        # Keep the fraction alongside its formatted row. An unpaired dashboard
+        # card can expand after planning; the renderer then refits this same
+        # observation to its actual width without querying anything again.
+        $lines = $MotdSections[$MotdCurrentSection].Lines
+        $lines[$lines.Count - 1]['BarUsed'] = $Used
+        $lines[$lines.Count - 1]['BarTotal'] = $Total
+    }
 }
 
 function ConvertTo-MotdWindowsArgument([string] $Argument) {
@@ -343,14 +380,18 @@ function Add-MotdResources {
             if ($size.Ok -and $size.Value.Count -eq 2) { $diskTotal = [double]$size.Value[0]; $diskUsed = $diskTotal - [double]$size.Value[1] }
         }
     }
-    if ((Get-MotdResourceWidth) -lt 60) {
+    if ($MotdBarLayout -eq 'wide') {
+        Add-MotdWideResource 'MEMORY' $used $total
+        Add-MotdWideResource ('STORAGE ' + $rootPath) $diskUsed $diskTotal
+        if ($MotdConfig['display']['show_swap']) { Add-MotdWideResource 'Swap/pagefile' $swapUsed $swapTotal $true }
+    } elseif ((Get-MotdResourceWidth) -lt 60) {
         Add-MotdLine ('MEM ' + (Format-MotdShortBytes $used) + '/' + (Format-MotdShortBytes $total) + ' ' + (Format-MotdBar $used $total)) 'accent'
         Add-MotdLine ('DISK ' + (Format-MotdShortBytes $diskUsed) + '/' + (Format-MotdShortBytes $diskTotal) + ' ' + (Format-MotdBar $diskUsed $diskTotal))
     } else {
         Add-MotdLine ('MEMORY ' + (Format-MotdBytes $used) + ' / ' + (Format-MotdBytes $total) + ' ' + (Format-MotdBar $used $total)) 'accent'
         Add-MotdLine ('STORAGE ' + $rootPath + ' ' + (Format-MotdBytes $diskUsed) + ' / ' + (Format-MotdBytes $diskTotal) + ' ' + (Format-MotdBar $diskUsed $diskTotal))
     }
-    if ($MotdConfig['display']['show_swap']) { Add-MotdLine ('Swap/pagefile ' + (Format-MotdShortBytes $swapUsed) + '/' + (Format-MotdShortBytes $swapTotal)) }
+    if ($MotdBarLayout -ne 'wide' -and $MotdConfig['display']['show_swap']) { Add-MotdLine ('Swap/pagefile ' + (Format-MotdShortBytes $swapUsed) + '/' + (Format-MotdShortBytes $swapTotal)) }
     if ($MotdConfig['display']['show_compression']) {
         if ($Demo) { Add-MotdLine 'Compressed memory: 256 MiB (demo)' 'muted' }
         else { Add-MotdLine 'Compression amount: unavailable' 'muted' }
@@ -812,7 +853,12 @@ function Get-MotdCardRows([string] $Id, $Rows, [int] $Count, [int] $Width, [int]
     [void]$output.Add((Format-MotdDesignTone $top 'accent'))
     for ($i = 0; $i -lt $BandHeight; $i++) {
         $text = ''; $tone = 'normal'
-        if ($i -lt $Count) { $text = $Rows[$i].Text; $tone = $Rows[$i].Tone }
+        if ($i -lt $Count) {
+            $text = $Rows[$i].Text; $tone = $Rows[$i].Tone
+            if ($Rows[$i].ContainsKey('BarTotal')) {
+                $text = Format-MotdBar $Rows[$i].BarUsed $Rows[$i].BarTotal ($Width - 2 - 2 * $Padding)
+            }
+        }
         [void]$output.Add((Format-MotdDesignTone (Format-MotdDesignCell $text $Width $Padding $true) $tone))
     }
     [void]$output.Add((Format-MotdDesignTone ($characters.BL + ($characters.H * ($Width - 2)) + $characters.BR) 'accent'))
@@ -844,7 +890,7 @@ function Write-MotdPresentation {
     $configuredPriority = Join-MotdText @(Get-MotdDisplaySetting 'priority' @('attention', 'resources', 'system', 'services', 'processes', 'io', 'sessions', 'connections', 'hints')) ','
     $classicMinimum = 0
     foreach ($id in $MotdSectionOrder) { $classicMinimum += Get-MotdPresentationMinimum $id $MotdSections[$id].Lines.Count 'classic' }
-    if ($design -eq 'classic' -and $classicMinimum -le $MotdHeight - 4 -and $padding -eq 1 -and (Get-MotdDisplaySetting 'density' 'balanced') -eq 'balanced' -and (Get-MotdDisplaySetting 'detail' 'normal') -eq 'normal' -and (Get-MotdDisplaySetting 'section_gap' 0) -eq 0 -and (Get-MotdDisplaySetting 'section_detail' @{}).Count -eq 0 -and $defaultPriority -eq $configuredPriority) {
+    if ($design -eq 'classic' -and $MotdBarLayout -eq 'inline' -and $classicMinimum -le $MotdHeight - 4 -and $padding -eq 1 -and (Get-MotdDisplaySetting 'density' 'balanced') -eq 'balanced' -and (Get-MotdDisplaySetting 'detail' 'normal') -eq 'normal' -and (Get-MotdDisplaySetting 'section_gap' 0) -eq 0 -and (Get-MotdDisplaySetting 'section_detail' @{}).Count -eq 0 -and $defaultPriority -eq $configuredPriority) {
         Write-MotdFrame
         return
     }

@@ -1,0 +1,22 @@
+test_active_install_repair_after_identical_reinstall (test_installation.InstallationTests) ... ok
+test_active_install_repair_after_rollback_of_rollback (test_installation.InstallationTests) ... ok
+test_active_install_repair_includes_unchanged_hook_after_upgrade (test_installation.InstallationTests) ... ok
+test_install_and_identical_reinstall_are_idempotent (test_installation.InstallationTests) ... ok
+test_installation_plan_is_read_only (test_installation.InstallationTests) ... ok
+test_interactive_hook_runs_once_and_quotes_output_path (test_installation.InstallationTests) ... ok
+test_modified_managed_block_blocks_upgrade_and_uninstall (test_installation.InstallationTests) ... ok
+test_modified_runtime_blocks_upgrade_and_uninstall (test_installation.InstallationTests) ... ok
+test_noninteractive_shells_never_print_dashboard_even_with_tty (test_installation.InstallationTests) ... ok
+test_symlink_runtime_and_shell_file_are_rejected (test_installation.InstallationTests) ... ok
+test_uninstall_preserves_mode_only_shell_change (test_installation.InstallationTests) ... ok
+test_uninstall_preserves_outside_edits_made_before_upgrade (test_installation.InstallationTests) ... ok
+test_uninstall_preserves_outside_hook_edits_and_private_mode (test_installation.InstallationTests) ... ok
+test_uninstall_preserves_second_instance_added_before_upgrade (test_installation.InstallationTests) ... ok
+test_uninstall_rollback_restores_active_install (test_installation.InstallationTests) ... ok
+test_upgrade_can_be_rolled_back_again_after_redo (test_installation.InstallationTests) ... ok
+test_upgrade_rollback_redo_then_uninstall_restores_originals (test_installation.InstallationTests) ... ok
+
+----------------------------------------------------------------------
+Ran 17 tests in 0.203s
+
+OK

@@ -1,0 +1,188 @@
+test_colon_service_names_remain_distinct_with_requirements_and_exclusions (test_runtime_review.PortableServiceReviewTests.test_colon_service_names_remain_distinct_with_requirements_and_exclusions) ... 
+  test_colon_service_names_remain_distinct_with_requirements_and_exclusions (test_runtime_review.PortableServiceReviewTests.test_colon_service_names_remain_distinct_with_requirements_and_exclusions) (design='classic', excluded=[]) ... FAIL
+  test_colon_service_names_remain_distinct_with_requirements_and_exclusions (test_runtime_review.PortableServiceReviewTests.test_colon_service_names_remain_distinct_with_requirements_and_exclusions) (design='cards', excluded=[]) ... FAIL
+  test_colon_service_names_remain_distinct_with_requirements_and_exclusions (test_runtime_review.PortableServiceReviewTests.test_colon_service_names_remain_distinct_with_requirements_and_exclusions) (design='ledger', excluded=[]) ... FAIL
+  test_colon_service_names_remain_distinct_with_requirements_and_exclusions (test_runtime_review.PortableServiceReviewTests.test_colon_service_names_remain_distinct_with_requirements_and_exclusions) (design='briefing', excluded=[]) ... FAIL
+  test_colon_service_names_remain_distinct_with_requirements_and_exclusions (test_runtime_review.PortableServiceReviewTests.test_colon_service_names_remain_distinct_with_requirements_and_exclusions) (design='dashboard', excluded=[]) ... FAIL
+  test_colon_service_names_remain_distinct_with_requirements_and_exclusions (test_runtime_review.PortableServiceReviewTests.test_colon_service_names_remain_distinct_with_requirements_and_exclusions) (design='classic', excluded=['foo:one.service']) ... FAIL
+  test_colon_service_names_remain_distinct_with_requirements_and_exclusions (test_runtime_review.PortableServiceReviewTests.test_colon_service_names_remain_distinct_with_requirements_and_exclusions) (design='cards', excluded=['foo:one.service']) ... FAIL
+  test_colon_service_names_remain_distinct_with_requirements_and_exclusions (test_runtime_review.PortableServiceReviewTests.test_colon_service_names_remain_distinct_with_requirements_and_exclusions) (design='ledger', excluded=['foo:one.service']) ... FAIL
+  test_colon_service_names_remain_distinct_with_requirements_and_exclusions (test_runtime_review.PortableServiceReviewTests.test_colon_service_names_remain_distinct_with_requirements_and_exclusions) (design='briefing', excluded=['foo:one.service']) ... FAIL
+  test_colon_service_names_remain_distinct_with_requirements_and_exclusions (test_runtime_review.PortableServiceReviewTests.test_colon_service_names_remain_distinct_with_requirements_and_exclusions) (design='dashboard', excluded=['foo:one.service']) ... FAIL
+
+======================================================================
+FAIL: test_colon_service_names_remain_distinct_with_requirements_and_exclusions (test_runtime_review.PortableServiceReviewTests.test_colon_service_names_remain_distinct_with_requirements_and_exclusions) (design='classic', excluded=[])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/e6a94ceb1ad8/motd/tests/test_runtime_review.py", line 45, in test_colon_service_names_remain_distinct_with_requirements_and_exclusions
+    self.assertEqual(result.stdout.count('foo:two.service: running'), 1, result.stdout)
+AssertionError: 0 != 1 : + DEMO | WORKSHOP STATUS --------------------------------------------------------------------------+
+| demo-host | up 86400 s | Workshop | Portable Unix                                                |
++ SERVICES ----------------------------------------------------------------------------------------+
+| Services: 8 running; 0 failed                                                                    |
+| foo:two.service: unavailable (not reported)                                                      |
+| sshd: running                                                                                    |
+| cron: running                                                                                    |
+| docker: running                                                                                  |
+| nginx: running                                                                                   |
++--------------------------------------------------------------------------------------------------+
+
+
+======================================================================
+FAIL: test_colon_service_names_remain_distinct_with_requirements_and_exclusions (test_runtime_review.PortableServiceReviewTests.test_colon_service_names_remain_distinct_with_requirements_and_exclusions) (design='cards', excluded=[])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/e6a94ceb1ad8/motd/tests/test_runtime_review.py", line 45, in test_colon_service_names_remain_distinct_with_requirements_and_exclusions
+    self.assertEqual(result.stdout.count('foo:two.service: running'), 1, result.stdout)
+AssertionError: 0 != 1 : DEMO | WORKSHOP STATUS / CARDS
+demo-host | up 86400 s | Workshop | Portable Unix
++ SERVICES ----------------------------------------------------------------------------------------+
+| Services: 8 running; 0 failed                                                                    |
+| foo:two.service: unavailable (not reported)                                                      |
+| sshd: running                                                                                    |
+| cron: running                                                                                    |
+| docker: running                                                                                  |
+| nginx: running                                                                                   |
++--------------------------------------------------------------------------------------------------+
+
+
+======================================================================
+FAIL: test_colon_service_names_remain_distinct_with_requirements_and_exclusions (test_runtime_review.PortableServiceReviewTests.test_colon_service_names_remain_distinct_with_requirements_and_exclusions) (design='ledger', excluded=[])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/e6a94ceb1ad8/motd/tests/test_runtime_review.py", line 45, in test_colon_service_names_remain_distinct_with_requirements_and_exclusions
+    self.assertEqual(result.stdout.count('foo:two.service: running'), 1, result.stdout)
+AssertionError: 0 != 1 : DEMO | WORKSHOP STATUS / LEDGER
+demo-host | up 86400 s | Workshop | Portable Unix
+ SERVICES     | Services: 8 running; 0 failed                                                       
+              | foo:two.service: unavailable (not reported)                                         
+              | sshd: running                                                                       
+              | cron: running                                                                       
+              | docker: running                                                                     
+              | nginx: running                                                                      
+
+
+======================================================================
+FAIL: test_colon_service_names_remain_distinct_with_requirements_and_exclusions (test_runtime_review.PortableServiceReviewTests.test_colon_service_names_remain_distinct_with_requirements_and_exclusions) (design='briefing', excluded=[])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/e6a94ceb1ad8/motd/tests/test_runtime_review.py", line 45, in test_colon_service_names_remain_distinct_with_requirements_and_exclusions
+    self.assertEqual(result.stdout.count('foo:two.service: running'), 1, result.stdout)
+AssertionError: 0 != 1 : DEMO | WORKSHOP STATUS / BRIEFING
+demo-host | up 86400 s | Workshop | Portable Unix
+Services: Services: 8 running; 0 failed
+   foo:two.service: unavailable (not reported)
+   sshd: running
+   cron: running
+   docker: running
+   nginx: running
+
+
+======================================================================
+FAIL: test_colon_service_names_remain_distinct_with_requirements_and_exclusions (test_runtime_review.PortableServiceReviewTests.test_colon_service_names_remain_distinct_with_requirements_and_exclusions) (design='dashboard', excluded=[])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/e6a94ceb1ad8/motd/tests/test_runtime_review.py", line 45, in test_colon_service_names_remain_distinct_with_requirements_and_exclusions
+    self.assertEqual(result.stdout.count('foo:two.service: running'), 1, result.stdout)
+AssertionError: 0 != 1 : DEMO | WORKSHOP STATUS / DASHBOARD
+demo-host | up 86400 s
++ SERVICES -------------------------------------+
+| Services: 8 running; 0 failed                 |
+| foo:two.service: unavailable (not reported)   |
+| sshd: running                                 |
+| cron: running                                 |
+| docker: running                               |
+| nginx: running                                |
++-----------------------------------------------+
+
+
+======================================================================
+FAIL: test_colon_service_names_remain_distinct_with_requirements_and_exclusions (test_runtime_review.PortableServiceReviewTests.test_colon_service_names_remain_distinct_with_requirements_and_exclusions) (design='classic', excluded=['foo:one.service'])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/e6a94ceb1ad8/motd/tests/test_runtime_review.py", line 45, in test_colon_service_names_remain_distinct_with_requirements_and_exclusions
+    self.assertEqual(result.stdout.count('foo:two.service: running'), 1, result.stdout)
+AssertionError: 0 != 1 : + DEMO | WORKSHOP STATUS --------------------------------------------------------------------------+
+| demo-host | up 86400 s | Workshop | Portable Unix                                                |
++ SERVICES ----------------------------------------------------------------------------------------+
+| Services: 8 running; 0 failed                                                                    |
+| foo:two.service: unavailable (not reported)                                                      |
+| sshd: running                                                                                    |
+| cron: running                                                                                    |
+| docker: running                                                                                  |
+| nginx: running                                                                                   |
++--------------------------------------------------------------------------------------------------+
+
+
+======================================================================
+FAIL: test_colon_service_names_remain_distinct_with_requirements_and_exclusions (test_runtime_review.PortableServiceReviewTests.test_colon_service_names_remain_distinct_with_requirements_and_exclusions) (design='cards', excluded=['foo:one.service'])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/e6a94ceb1ad8/motd/tests/test_runtime_review.py", line 45, in test_colon_service_names_remain_distinct_with_requirements_and_exclusions
+    self.assertEqual(result.stdout.count('foo:two.service: running'), 1, result.stdout)
+AssertionError: 0 != 1 : DEMO | WORKSHOP STATUS / CARDS
+demo-host | up 86400 s | Workshop | Portable Unix
++ SERVICES ----------------------------------------------------------------------------------------+
+| Services: 8 running; 0 failed                                                                    |
+| foo:two.service: unavailable (not reported)                                                      |
+| sshd: running                                                                                    |
+| cron: running                                                                                    |
+| docker: running                                                                                  |
+| nginx: running                                                                                   |
++--------------------------------------------------------------------------------------------------+
+
+
+======================================================================
+FAIL: test_colon_service_names_remain_distinct_with_requirements_and_exclusions (test_runtime_review.PortableServiceReviewTests.test_colon_service_names_remain_distinct_with_requirements_and_exclusions) (design='ledger', excluded=['foo:one.service'])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/e6a94ceb1ad8/motd/tests/test_runtime_review.py", line 45, in test_colon_service_names_remain_distinct_with_requirements_and_exclusions
+    self.assertEqual(result.stdout.count('foo:two.service: running'), 1, result.stdout)
+AssertionError: 0 != 1 : DEMO | WORKSHOP STATUS / LEDGER
+demo-host | up 86400 s | Workshop | Portable Unix
+ SERVICES     | Services: 8 running; 0 failed                                                       
+              | foo:two.service: unavailable (not reported)                                         
+              | sshd: running                                                                       
+              | cron: running                                                                       
+              | docker: running                                                                     
+              | nginx: running                                                                      
+
+
+======================================================================
+FAIL: test_colon_service_names_remain_distinct_with_requirements_and_exclusions (test_runtime_review.PortableServiceReviewTests.test_colon_service_names_remain_distinct_with_requirements_and_exclusions) (design='briefing', excluded=['foo:one.service'])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/e6a94ceb1ad8/motd/tests/test_runtime_review.py", line 45, in test_colon_service_names_remain_distinct_with_requirements_and_exclusions
+    self.assertEqual(result.stdout.count('foo:two.service: running'), 1, result.stdout)
+AssertionError: 0 != 1 : DEMO | WORKSHOP STATUS / BRIEFING
+demo-host | up 86400 s | Workshop | Portable Unix
+Services: Services: 8 running; 0 failed
+   foo:two.service: unavailable (not reported)
+   sshd: running
+   cron: running
+   docker: running
+   nginx: running
+
+
+======================================================================
+FAIL: test_colon_service_names_remain_distinct_with_requirements_and_exclusions (test_runtime_review.PortableServiceReviewTests.test_colon_service_names_remain_distinct_with_requirements_and_exclusions) (design='dashboard', excluded=['foo:one.service'])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/workspace/scratch/e6a94ceb1ad8/motd/tests/test_runtime_review.py", line 45, in test_colon_service_names_remain_distinct_with_requirements_and_exclusions
+    self.assertEqual(result.stdout.count('foo:two.service: running'), 1, result.stdout)
+AssertionError: 0 != 1 : DEMO | WORKSHOP STATUS / DASHBOARD
+demo-host | up 86400 s
++ SERVICES -------------------------------------+
+| Services: 8 running; 0 failed                 |
+| foo:two.service: unavailable (not reported)   |
+| sshd: running                                 |
+| cron: running                                 |
+| docker: running                               |
+| nginx: running                                |
++-----------------------------------------------+
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.080s
+
+FAILED (failures=10)

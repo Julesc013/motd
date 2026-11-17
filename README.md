@@ -8,6 +8,9 @@ Version 0.4 adds five different presentations, independent spacing and detail pr
 
 ## Start here
 
+The [first-run guide](docs/quickstart.md) walks through choosing a design,
+previewing, saving, building and reopening your settings.
+
 Download `motd.py` and run:
 
 ```sh
@@ -32,7 +35,7 @@ installer show create/open/export actions, rather than offering unsupported
 installation choices. Windows exports create new files and a hash manifest;
 they do not overwrite existing files or claim a Linux-style rollback journal.
 
-On a suitable terminal, the wizard uses successive screens with numbered choices. Destination, design, readability, sections, content and calls are grouped into pages. Type a number and Enter, or use Up/Down and Enter in selection menus. `?` explains choices and controls. Appearance choices show a synthetic preview; you can go back, request a full preview, review the installation plan, save/build, or cancel. Choosing options does not install anything.
+On a suitable terminal, the wizard uses successive screens with numbered choices. Destination, design, readability, sections, content and calls are grouped into pages. In screen menus with a live choice preview, type a number and Enter to preview, then Enter again to accept; Up/Down also moves the selection. Ordinary menus and line mode accept a number and Enter directly. `?` explains choices and controls. You can go back, request a full preview, review the installation plan, save/build, or cancel. Choosing options does not install anything.
 
 ## Choose a presentation
 
@@ -48,10 +51,16 @@ The [design sampler](examples/designs/README.md) shows actual generated output a
 the four requested terminal sizes. Its [local filterable index](examples/designs/index.html)
 also includes density/detail contrasts. These choices reuse collection code.
 
+Resource bars can sit beside a reading (`inline`, the existing default) or use
+their own full panel row (`wide`). The [bar comparison](examples/bars/README.md)
+shows both at the four terminal sizes on Bash, portable sh and PowerShell.
+Labels remain when a short viewport cannot fit a gauge; missing data stays
+unavailable. A dashboard bar fills its own card, including when cards are paired.
+
 ```sh
 python3 motd.py preview --preset workshop --design dashboard --width 80 --rows 25
 python3 motd.py build --preset home-lab --design cards --density comfortable \
-  --detail brief --section-detail resources=full --color-emphasis quiet \
+  --detail brief --section-detail resources=full --bar-layout wide --color-emphasis quiet \
   --padding 2 --section-gap 1 --output ./home-lab.bash --save-config ./home-lab.toml
 ```
 
@@ -101,7 +110,7 @@ each selection. Cold preview startup still depends on the selected interpreter.
 | 80×50 | 10 | 80×40 |
 
 The renderers reduce detail and omit whole sections when a short viewport needs
-it, keeping complete borders and a visible omitted-section count. Normal runtime
+it, keeping complete borders and naming omitted sections. Normal runtime
 overrides accept 8–200 rows and 40–240 columns. The preview uses those limits in
 unusually large windows. If the window becomes too small during an answer, the
 answer remains intact and the full screen returns when the window is enlarged.
@@ -213,6 +222,7 @@ examples are rebuilt from the canonical sources.
 - [Current shell, surface and wizard specification](specs/compatibility.md)
 - [Version 0.4 presentation and portability contract](specs/v0.4.md)
 - [Discussion, implementation and architecture audit](docs/audit-2026-11-17.md)
+- [Complete historical discussion review and continuation plan](docs/discussion-and-design-review-2026-11-17.md)
 - [Roadmap](ROADMAP.md) and [concrete task list](TODO.md)
 - [Historical v0.1 acceptance contract](specs/v0.1.md)
 

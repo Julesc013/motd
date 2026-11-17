@@ -1,0 +1,16 @@
+[1;36mDEMO | HOME LAB / BRIEFING[0m
+[90mws-bench-07 | up 4d 06h 12m | Home lab ~[0m
+[1;36mAttention: No configured alerts in co...[0m
+
+[1;36mSystem: ws-bench-07 | up 4d 06h 12m | D~[0m
+   Domain workshop.example
+
+[1;36mCapacity: RAM 8.0Gi/32.0Gi | Disk 220Gi~[0m
+   RAM  8.0Gi/32.0Gi    ####....
+   DISK 220Gi/600Gi     ###.....
+
+[1;36mServices: 16 running; 0 failed[0m
+   SSH       RUN | RDP        RUN
+
+[1;36mUseful commands: Tasks               top[0m
+   I/O            iotop -o

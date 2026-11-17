@@ -1,0 +1,12 @@
+[1;36mDEMO | HOME LAB / LEDGER[0m
+[90mws-bench-07 | up 4d 06h 12m | Home lab ~[0m
+ [1;36mSYSTEM    [0m | Domain workshop.example   [0m
+ [1;36m          [0m | IP eno1 192.0.2.17/24     [0m
+ [1;36mRESOURCES [0m | RAM  8.0Gi/32.0Gi    ##...[0m
+ [1;36m          [0m | DISK 220Gi/600Gi     ##...[0m
+ [1;36m          [0m | Cache 8.3Gi  Z 640Mi  S...[0m
+ [1;36mSERVICES  [0m | SSH                    RUN[0m
+ [1;36m          [0m | RDP                    RUN[0m
+ [1;36mATTENTION [0m | No configured alerts in...[0m
+ [1;36mHINTS     [0m | Tasks                  top[0m
+ [1;36m          [0m | I/O               iotop -o[0m

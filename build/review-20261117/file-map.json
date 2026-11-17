@@ -1,0 +1,176 @@
+[
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/final-unittest.log",
+    "retained_path": "build/review-20261117/final-unittest.log",
+    "sha256": "5bcd6347b77bb04210c65b6e25c792e875e794b974a45923564d0cebbc552afc",
+    "bytes": 41899
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/unix-compatibility-frozen.json",
+    "retained_path": "build/review-20261117/unix-compatibility-frozen.json",
+    "sha256": "5c0b5f81e0723cbbaeebbf49a5c1946e598febf56d029c64fdaaaa0641d43f09",
+    "bytes": 141333
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/runtime-review-evidence.json",
+    "retained_path": "build/review-20261117/runtime-review-evidence.json",
+    "sha256": "cb797fa1ee1a2ee2fef2f190bd5009b43beca103229f64e36893ccecc4fb6383",
+    "bytes": 1811
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/python38-lifecycle-frozen.json",
+    "retained_path": "build/review-20261117/python38-lifecycle-frozen.json",
+    "sha256": "a6dc781fbc5d6a13a425e7ebfb1f4f8c0fb2341e9fe590c1b0d1706658de26bd",
+    "bytes": 3927
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/legacy-version-final-evidence.json",
+    "retained_path": "build/review-20261117/legacy-version-final-evidence.json",
+    "sha256": "957bb3efb50ca9481cbfa165308dffbc911a440126417cc9f72f9599f29cfbdf",
+    "bytes": 12904
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/compatibility-review-final.json",
+    "retained_path": "build/review-20261117/compatibility-review-final.json",
+    "sha256": "d009b52af1ed77db383176c6bdd4f6ece7a36a32e3eb01c1a8453571fbcffe80",
+    "bytes": 5530
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/bash32-startup-frozen.json",
+    "retained_path": "build/review-20261117/bash32-startup-frozen.json",
+    "sha256": "76121954381ad177e159f830cb1c5b9d7a006db9012781d7f2bc31780f9b5fff",
+    "bytes": 2157
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/compatibility-service-fix-rerun.log",
+    "retained_path": "build/review-20261117/compatibility-service-fix-rerun.log",
+    "sha256": "47cd059379ca0c2ce60b9250d0dae70f8591f802e775277c6adad23c5e2b65cc",
+    "bytes": 319
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/rerun_compatibility_review.py",
+    "retained_path": "build/review-20261117/rerun_compatibility_review.py",
+    "sha256": "6884635414cc45a3c409becdd48b5253a405f79f7129daee9841ffec7d74fa2c",
+    "bytes": 13108
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/powershell-6.2.7-final.xml",
+    "retained_path": "build/review-20261117/powershell-6.2.7-final.xml",
+    "sha256": "169bac82098356e315695fb5965ef79d7d84b0283c075c3c71b87cd02d1897b2",
+    "bytes": 10510
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/powershell-7.6.10-final.xml",
+    "retained_path": "build/review-20261117/powershell-7.6.10-final.xml",
+    "sha256": "d9096b4d17fd0fab46efc08b61fd32a6bfa5cb8c14b7139a0eb75a713096e039",
+    "bytes": 10505
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/powershell-7.5-refused.xml",
+    "retained_path": "build/review-20261117/powershell-7.5-refused.xml",
+    "sha256": "436ec261e57b0022bfc5b8a7725d9b1363c9a6bf742337c0febb23038e71b543",
+    "bytes": 547
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/python38-frozen-test_transactions.log",
+    "retained_path": "build/review-20261117/python38-frozen-test_transactions.log",
+    "sha256": "9f9ba6b9bf33d6e2d59e85a62897c369875242fc2e8ae02269db1453a3225add",
+    "bytes": 2835
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/python38-frozen-test_installation.log",
+    "retained_path": "build/review-20261117/python38-frozen-test_installation.log",
+    "sha256": "32a1781c6d2506ea7ab9ac5606dff07f4e24acfd825fc404aaaca21bbd8c463f",
+    "bytes": 1787
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/python38-frozen-test_output_lifecycle.log",
+    "retained_path": "build/review-20261117/python38-frozen-test_output_lifecycle.log",
+    "sha256": "a5d59085b07c32f3a573d1f034886f331fdb13b343794058b9ef2261633f1dcb",
+    "bytes": 445
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/python38-frozen-test_path_safety.log",
+    "retained_path": "build/review-20261117/python38-frozen-test_path_safety.log",
+    "sha256": "5e2b1291652de6e00e32b73f0634a9398b627d94560f133dc8745f8aba6b205d",
+    "bytes": 429
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/python38-frozen-test_portable_export.log",
+    "retained_path": "build/review-20261117/python38-frozen-test_portable_export.log",
+    "sha256": "9aea71c7a4096a6a83b446b821c94cbd4dc279a8d6cb73b4d6a3de9eb83c32aa",
+    "bytes": 1034
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/unix-fish-startup-frozen.log",
+    "retained_path": "build/review-20261117/unix-fish-startup-frozen.log",
+    "sha256": "eca8f5d42996278f646e687baeda15b0b86872559257580264f921aa3aaea320",
+    "bytes": 271
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/unix-shell-guards-frozen.log",
+    "retained_path": "build/review-20261117/unix-shell-guards-frozen.log",
+    "sha256": "2645d7ea8cf2c79f553e400bef56f3ee9eada6c6097eddca45792eb5e67fa978",
+    "bytes": 4853
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/powershell6-designs-frozen.log",
+    "retained_path": "build/review-20261117/powershell6-designs-frozen.log",
+    "sha256": "d71cfa848a9ffd77539150caacf89a6bf43463d3070f1b3256e1f50fcaff976a",
+    "bytes": 2714
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/powershell6-runtime-frozen.log",
+    "retained_path": "build/review-20261117/powershell6-runtime-frozen.log",
+    "sha256": "b9d82339b287c2fd0093753aa2209ccb23962cf210c963be1f76ff525d294a3b",
+    "bytes": 1311
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/powershell6-harness-frozen.log",
+    "retained_path": "build/review-20261117/powershell6-harness-frozen.log",
+    "sha256": "bec3bf9b3ba9cc704bd7dcfa5e4f03b90a0eaa01b46a1859a443625fe85c607e",
+    "bytes": 524
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/powershell6-harness.log",
+    "retained_path": "build/review-20261117/powershell6-harness.log",
+    "sha256": "52a30af8d0acbca119a30a3d37ee604b3912f6d1ff430c0b1d9d91252f0e91b7",
+    "bytes": 5217
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/powershell/provenance.json",
+    "retained_path": "build/review-20261117/powershell-provenance.json",
+    "sha256": "97fdce24580994abb7711da3fe5bf9974ef54dab646f4b46e47c05cf3919a6c3",
+    "bytes": 2754
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/powershell/provenance-6.2.7.json",
+    "retained_path": "build/review-20261117/powershell-provenance-6.2.7.json",
+    "sha256": "581e9f3b9d9c51efcb5d6f0d251b71860cbc199290f3bda6bc4ac7ca64799dac",
+    "bytes": 3754
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/oxipng/provenance.json",
+    "retained_path": "build/review-20261117/oxipng-provenance.json",
+    "sha256": "3da1ec9dc0d3ad30ee62769f62b1917720153e6af5d62e2d8df75ee10cd40607",
+    "bytes": 745
+  },
+  {
+    "original_path": "/workspace/scratch/e6a94ceb1ad8/work/bash-3.2-build/provenance.json",
+    "retained_path": "build/review-20261117/bash-3.2-build-provenance.json",
+    "sha256": "0a153febf760c2983baf0b205bf0bfd51d6f0c513441c20ef54c032389c71ceb",
+    "bytes": 1120
+  },
+  {
+    "original_path": "/tmp/motd-colon-service-before.log",
+    "retained_path": "build/review-20261117/motd-colon-service-before.log",
+    "sha256": "3e011015d5caefb5b7be686f4502ac4d1d32c9e8f9b6bceae74aff908385855d",
+    "bytes": 16351
+  },
+  {
+    "original_path": "/tmp/motd-runtime-review-tests.log",
+    "retained_path": "build/review-20261117/motd-runtime-review-tests.log",
+    "sha256": "85498fc6016a69dcdbe053fb04120dbfe4fbbcf800d375b37cc45d9bd25969dc",
+    "bytes": 1515
+  }
+]

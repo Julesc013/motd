@@ -53,6 +53,7 @@ COLOURS = ('colour', 'plain')
 DESIGNS = ('classic', 'cards', 'ledger', 'briefing', 'dashboard')
 DENSITIES = ('compact', 'balanced', 'comfortable')
 DETAILS = ('brief', 'normal', 'full')
+BAR_LAYOUTS = ('inline', 'wide')
 DEFAULT_PRESENTATION = ('classic', 'balanced', 'normal')
 PALETTE = ('#171d2b', '#ed6a73', '#74d19b', '#edce77', '#76a9fa', '#c19deb', '#63d1df', '#e4e9f0',
            '#8390a3', '#ff8590', '#9beaaf', '#ffe599', '#9bc2ff', '#d7b5ff', '#8ae5ef', '#ffffff')
@@ -366,7 +367,7 @@ def write_index(output, manifest):
 <h1>MOTD terminal gallery</h1><p>Actual output captured through sized pseudo-terminals, with synthetic data and disabled hooks. Each PNG preserves the entire requested terminal grid, including unused rows. Every PNG is lossless; identical pictures share a file without losing their individual capture records.</p>
 <p>CASES logical captures · UNIQUE unique PNGs · <a href="manifest.json">Evidence manifest</a> · <a href="README.md">Reproduction notes</a></p>
 <div class="filters" id="filters"></div><div class="status" id="status"></div><div class="cards" id="cards"></div>
-<script>const cases=PAYLOAD;const keys=['preset','shell','size','design','density','detail','theme','charset','colour'];const filters=document.getElementById('filters');for(const key of keys){const label=document.createElement('label');label.textContent=key;const select=document.createElement('select');select.dataset.key=key;for(const value of ['All',...new Set(cases.map(c=>c[key]))]){const option=document.createElement('option');option.textContent=value;select.append(option)}select.addEventListener('change',render);label.append(select);filters.append(label)}function render(){const selected=cases.filter(c=>[...filters.querySelectorAll('select')].every(s=>s.value==='All'||c[s.dataset.key]===s.value));document.getElementById('status').textContent=selected.length+' cases shown';const cards=document.getElementById('cards');cards.replaceChildren();for(const c of selected){const card=document.createElement('article');card.className='card';const link=document.createElement('a');link.href=c.png;link.target='_blank';const image=document.createElement('img');image.loading='lazy';image.src=c.png;image.alt=c.id;link.append(image);card.append(link);const meta=document.createElement('div');meta.className='meta';const h=document.createElement('h2');h.textContent=c.preset+' · '+c.shell+' · '+c.size;meta.append(h);const p=document.createElement('p');p.textContent=c.design+' / '+c.density+' / '+c.detail+' · '+c.theme+' / '+c.charset+' / '+c.colour+' · '+c.content_rows+' used rows';meta.append(p);const actions=document.createElement('div');actions.className='actions';for(const [text,path]of[['PNG',c.png],['ANSI transcript',c.transcript],['Recipe',c.recipe]]){const a=document.createElement('a');a.textContent=text;a.href=path;actions.append(a)}meta.append(actions);card.append(meta);cards.append(card)}}render();</script></html>'''
+<script>const cases=PAYLOAD;const keys=['preset','shell','size','design','density','detail','bar_layout','theme','charset','colour'];const filters=document.getElementById('filters');for(const key of keys){const label=document.createElement('label');label.textContent=key;const select=document.createElement('select');select.dataset.key=key;for(const value of ['All',...new Set(cases.map(c=>c[key]))]){const option=document.createElement('option');option.textContent=value;select.append(option)}select.addEventListener('change',render);label.append(select);filters.append(label)}function render(){const selected=cases.filter(c=>[...filters.querySelectorAll('select')].every(s=>s.value==='All'||c[s.dataset.key]===s.value));document.getElementById('status').textContent=selected.length+' cases shown';const cards=document.getElementById('cards');cards.replaceChildren();for(const c of selected){const card=document.createElement('article');card.className='card';const link=document.createElement('a');link.href=c.png;link.target='_blank';const image=document.createElement('img');image.loading='lazy';image.src=c.png;image.alt=c.id;link.append(image);card.append(link);const meta=document.createElement('div');meta.className='meta';const h=document.createElement('h2');h.textContent=c.preset+' · '+c.shell+' · '+c.size;meta.append(h);const p=document.createElement('p');p.textContent=c.design+' / '+c.density+' / '+c.detail+' / '+c.bar_layout+' bars · '+c.theme+' / '+c.charset+' / '+c.colour+' · '+c.content_rows+' used rows';meta.append(p);const actions=document.createElement('div');actions.className='actions';for(const [text,path]of[['PNG',c.png],['ANSI transcript',c.transcript],['Recipe',c.recipe]]){const a=document.createElement('a');a.textContent=text;a.href=path;actions.append(a)}meta.append(actions);card.append(meta);cards.append(card)}}render();</script></html>'''
     document = document.replace('CASES', str(total)).replace('UNIQUE', str(unique)).replace('PAYLOAD', payload)
     (output / 'index.html').write_text(document, encoding='utf-8')
     overview = ['# Actual terminal PNG gallery', '',
@@ -383,6 +384,13 @@ def write_index(output, manifest):
             '| Terminal | Five-design comparison |', '|---|---|']
         overview += [f'| {c["size"]} | [Open PNG]({c["path"]}) |' for c in manifest['comparisons'] if c.get('kind') == 'designs']
         overview += ['', 'Use the HTML filters for individual Bash, sh and PowerShell captures and their exact recipes.', '']
+        (output / 'README.md').write_text('\n'.join(overview) + '\n', encoding='utf-8')
+        return
+    if any(c.get('bar_layout') == 'wide' for c in manifest['cases']):
+        overview += ['## Usage-bar comparisons', '',
+            'Wide bars occupy their available panel width. The numeric reading survives when the viewport is too short for an extra bar row. These layouts reuse the same observations; the memory/storage meaning remains backend-specific and explicitly labelled.', '',
+            '| Preset / backend | Design | Bars | Terminal | Preview |', '|---|---|---|---|---|']
+        overview += [f'| {c["preset"]} / {c["shell"]} | {c["design"]} | {c["bar_layout"]} | {c["size"]} | [PNG]({c["png"]}) · [Recipe]({c["recipe"]}) |' for c in manifest['cases']]
         (output / 'README.md').write_text('\n'.join(overview) + '\n', encoding='utf-8')
         return
     for preset in PRESETS:
@@ -464,6 +472,8 @@ def case_identifier(case):
     name += f'-{columns}x{rows}'
     if presentation(case) != DEFAULT_PRESENTATION:
         name += '-' + '-'.join(presentation(case))
+    if case.get('bar_layout', 'inline') != 'inline':
+        name += '-bars-' + case['bar_layout']
     return name
 
 
@@ -487,9 +497,9 @@ def design_sampler_specs():
 
 def capture_specs(args):
     if args.design_sampler: return design_sampler_specs()
-    keys = ('preset', 'shell', 'theme', 'charset', 'colour', 'geometry', 'design', 'density', 'detail')
+    keys = ('preset', 'shell', 'theme', 'charset', 'colour', 'geometry', 'design', 'density', 'detail', 'bar_layout')
     return [dict(zip(keys, values)) for values in itertools.product(args.presets, args.shells,
-            args.themes, args.charsets, args.colours, args.sizes, args.designs, args.densities, args.details)]
+            args.themes, args.charsets, args.colours, args.sizes, args.designs, args.densities, args.details, args.bar_layouts)]
 
 
 def parse_csv(raw, allowed, name):
@@ -562,11 +572,14 @@ def verify_gallery(output, *, require_full=False, require_sampler=False):
         if recipe not in recipes:
             path = inside(output, recipe)
             config = motd.load_config(path)
-            recipes[recipe] = (digest(path.read_bytes()), digest(motd.generate_artifact(config).encode()), presentation(config['display']))
+            recipes[recipe] = (digest(path.read_bytes()), digest(motd.generate_artifact(config).encode()),
+                               presentation(config['display']), config['display']['bar_layout'])
         if recipes[recipe][:2] != (case['recipe_sha256'], case['artifact_sha256']):
             raise GalleryError('Recipe or generated-source mismatch: ' + recipe)
         if not case['shell'].startswith('static-') and recipes[recipe][2] != presentation(case):
             raise GalleryError('Presentation metadata differs from the captured recipe: ' + recipe)
+        if not case['shell'].startswith('static-') and recipes[recipe][3] != case.get('bar_layout', 'inline'):
+            raise GalleryError('Bar metadata differs from the captured recipe: ' + recipe)
         png = case['png']
         if png not in images:
             path = inside(output, png)
@@ -626,13 +639,16 @@ def build(args):
             preset, shell, theme, charset, colour = (specification[x] for x in ('preset', 'shell', 'theme', 'charset', 'colour'))
             columns, rows = specification['geometry']
             design, density, detail = presentation(specification)
-            key = (preset, shell, theme, design, density, detail)
+            bar_layout = specification.get('bar_layout', 'inline')
+            key = (preset, shell, theme, design, density, detail, bar_layout)
             if key not in templates:
                 config = motd.preset_config(preset); motd.select_shell(config, shell)
-                config['display'].update(theme=theme, design=design, density=density, detail=detail)
+                config['display'].update(theme=theme, design=design, density=density, detail=detail,
+                                         bar_layout=bar_layout)
                 config = motd.validate_config(config)
                 artifact = motd.generate_artifact(config)
-                stem = '-'.join(key[:3] if presentation(specification) == DEFAULT_PRESENTATION else key)
+                stem = '-'.join(key[:3] if presentation(specification) == DEFAULT_PRESENTATION else key[:-1])
+                if bar_layout != 'inline': stem += '-bars-' + bar_layout
                 path = temporary / (stem + motd.artifact_suffix(config))
                 path.write_text(artifact, encoding='utf-8')
                 recipe = Path('recipes') / (stem + '.toml')
@@ -665,7 +681,7 @@ def build(args):
                 png_cache[grid_hash] = (png, details)
             normalized_command = [str(x).replace(str(artifact), '<generated-script>') for x in command]
             cases.append({'id': identifier, 'preset': preset, 'shell': shell, 'theme': theme,
-                          'design': design, 'density': density, 'detail': detail,
+                          'design': design, 'density': density, 'detail': detail, 'bar_layout': bar_layout,
                           'sample_group': specification.get('sample_group', 'matrix'),
                           'charset': charset, 'colour': colour, 'size': f'{columns}x{rows}', 'columns': columns, 'rows': rows,
                           'content_rows': grid.highest_row + 1, 'maximum_columns_used': grid.max_columns,
@@ -699,7 +715,8 @@ def build(args):
                         png_cache[grid.fingerprint()] = (png, details)
                     cases.append({'id': identifier, 'preset': 'public-console', 'shell': 'static-' + target,
                                   'theme': 'literal', 'charset': 'literal', 'colour': 'plain',
-                                  'design': 'literal', 'density': 'literal', 'detail': 'literal', 'sample_group': 'static',
+                                  'design': 'literal', 'density': 'literal', 'detail': 'literal',
+                                  'bar_layout': 'literal', 'sample_group': 'static',
                                   'size': f'{columns}x{rows}', 'columns': columns, 'rows': rows,
                                   'content_rows': grid.highest_row + 1, 'maximum_columns_used': grid.max_columns,
                                   'png': str(png), 'transcript': str(transcript), 'recipe': str(recipe),
@@ -775,6 +792,7 @@ def main(argv=None):
     parser.add_argument('--designs', default='classic', help='Comma-separated presentation designs (default: classic)')
     parser.add_argument('--densities', default='balanced', help='Comma-separated spacing densities (default: balanced)')
     parser.add_argument('--details', default='normal', help='Comma-separated requested detail levels (default: normal)')
+    parser.add_argument('--bar-layouts', default='inline', help='Comma-separated bar layouts: inline, wide')
     parser.add_argument('--sizes', default=','.join(f'{c}x{r}' for c, r in SIZES))
     parser.add_argument('--powershell', default=shutil.which('pwsh') or shutil.which('powershell'))
     parser.add_argument('--font', default=DEFAULT_FONT)
@@ -789,8 +807,10 @@ def main(argv=None):
     if not args.output:
         args.output = str(ROOT / ('examples/designs' if args.design_sampler or args.require_sampler else 'examples/gallery'))
     if args.verify: return verify_gallery(args.output, require_full=args.require_full, require_sampler=args.require_sampler)
-    for name, allowed in [('presets', PRESETS), ('shells', SHELLS), ('themes', THEMES), ('charsets', CHARSETS), ('colours', COLOURS), ('designs', DESIGNS), ('densities', DENSITIES), ('details', DETAILS)]:
+    for name, allowed in [('presets', PRESETS), ('shells', SHELLS), ('themes', THEMES), ('charsets', CHARSETS), ('colours', COLOURS), ('designs', DESIGNS), ('densities', DENSITIES), ('details', DETAILS), ('bar_layouts', BAR_LAYOUTS)]:
         setattr(args, name, parse_csv(getattr(args, name), allowed, name))
+    if args.design_sampler and args.bar_layouts != ('inline',):
+        raise GalleryError('The fixed design sampler uses inline bars; use a separate --output for a wide-bar matrix')
     sizes = parse_csv(args.sizes, tuple(f'{c}x{r}' for c, r in SIZES), 'sizes')
     args.sizes = tuple(tuple(map(int, x.split('x'))) for x in sizes)
     return build(args)

@@ -1,0 +1,313 @@
+{
+  "format": "motd-native-evidence-v1",
+  "version": "0.4.0",
+  "source_commit": "4cc32280509d02e1d12475060e30f830265f62d0",
+  "recorded_at_utc": "2026-11-17T01:46:58Z",
+  "native_workflow": {
+    "id": 43997494337,
+    "url": "https://github.com/Julesc013/motd/actions/runs/43997494337",
+    "conclusion": "success"
+  },
+  "jobs": [
+    {
+      "name": "macos-designs",
+      "job_id": 133753032696,
+      "workflow_run_id": 43997494337,
+      "url": "https://github.com/Julesc013/motd/actions/runs/43997494337/job/133753032696",
+      "conclusion": "success",
+      "observed_powershell": "7.6.9",
+      "unit_groups": [
+        {
+          "run": 14,
+          "seconds": 51.716,
+          "skipped": 0,
+          "passed": 14,
+          "failures": 0,
+          "errors": 0
+        },
+        {
+          "run": 10,
+          "seconds": 0.039,
+          "skipped": 5,
+          "passed": 5,
+          "failures": 0,
+          "errors": 0
+        },
+        {
+          "run": 9,
+          "seconds": 0.024,
+          "skipped": 0,
+          "passed": 9,
+          "failures": 0,
+          "errors": 0
+        },
+        {
+          "run": 6,
+          "seconds": 0.071,
+          "skipped": 1,
+          "passed": 5,
+          "failures": 0,
+          "errors": 0
+        }
+      ],
+      "evidence_excerpt": "##[group]Operating System\nmacOS\n26.7.2\nSuccessfully set up CPython (3.11.9)\n##[endgroup]\n##[group]Run $env:MOTD_TEST_POWERSHELL = @(Get-Command 'pwsh' -CommandType Application)[0].Source\nName  : PSVersion\nValue : 7.6.9\n\nName  : OS\nValue : macOS 26.7.2\n\nName  : Platform\nValue : Unix\n\nRan 14 tests in 51.716s\n\nOK\ntest_cmd_recipe_is_after_the_batch_exit_not_a_command_length_hazard (test_windows_adapters.AdapterGenerationTests.test_cmd_recipe_is_after_the_batch_exit_not_a_command_length_hazard) ... ok\ntest_create_only_cli_build_and_recover_do_not_create_install_state (test_windows_adapters.AdapterGenerationTests.test_create_only_cli_build_and_recover_do_not_create_install_state) ... ok\nRan 10 tests in 0.039s\n\nOK (skipped=5)\ntest_existing_destination_is_not_overwritten_and_other_files_are_not_created (test_portable_export.PortableExportTests.test_existing_destination_is_not_overwritten_and_other_files_are_not_created) ... ok\ntest_failure_compensates_only_owned_new_files (test_portable_export.PortableExportTests.test_failure_compensates_only_owned_new_files) ... ok\nRan 9 tests in 0.024s\n\nOK\ntest_all_presets_round_trip_through_bundled_parser (test_python_compatibility.BundledTomlTests.test_all_presets_round_trip_through_bundled_parser) ... ok\ntest_generated_plain_embedding_matches_licensed_source (test_python_compatibility.BundledTomlTests.test_generated_plain_embedding_matches_licensed_source) ... ok\nRan 6 tests in 0.071s\n\nOK (skipped=1)\nPost job cleanup.\nPost job cleanup."
+    },
+    {
+      "name": "windows-pwsh-designs",
+      "job_id": 133753032947,
+      "workflow_run_id": 43997494337,
+      "url": "https://github.com/Julesc013/motd/actions/runs/43997494337/job/133753032947",
+      "conclusion": "success",
+      "observed_powershell": "7.6.9",
+      "unit_groups": [
+        {
+          "run": 14,
+          "seconds": 69.514,
+          "skipped": 0,
+          "passed": 14,
+          "failures": 0,
+          "errors": 0
+        },
+        {
+          "run": 10,
+          "seconds": 9.342,
+          "skipped": 0,
+          "passed": 10,
+          "failures": 0,
+          "errors": 0
+        },
+        {
+          "run": 9,
+          "seconds": 1.302,
+          "skipped": 1,
+          "passed": 8,
+          "failures": 0,
+          "errors": 0
+        },
+        {
+          "run": 6,
+          "seconds": 0.143,
+          "skipped": 1,
+          "passed": 5,
+          "failures": 0,
+          "errors": 0
+        }
+      ],
+      "evidence_excerpt": "##[group]Operating System\nMicrosoft Windows Server 2025\n10.0.26100\nSuccessfully set up CPython (3.11.9)\n##[endgroup]\n##[group]Run $env:MOTD_TEST_POWERSHELL = @(Get-Command 'pwsh' -CommandType Application)[0].Source\nName  : PSVersion\nValue : 7.6.9\n\nName  : OS\nValue : Microsoft Windows 10.0.26100\n\nName  : Platform\nValue : Win32NT\n\nRan 14 tests in 69.514s\n\nOK\ntest_cmd_recipe_is_after_the_batch_exit_not_a_command_length_hazard (test_windows_adapters.AdapterGenerationTests.test_cmd_recipe_is_after_the_batch_exit_not_a_command_length_hazard) ... ok\ntest_create_only_cli_build_and_recover_do_not_create_install_state (test_windows_adapters.AdapterGenerationTests.test_create_only_cli_build_and_recover_do_not_create_install_state) ... ok\nRan 10 tests in 9.342s\n\nOK\ntest_existing_destination_is_not_overwritten_and_other_files_are_not_created (test_portable_export.PortableExportTests.test_existing_destination_is_not_overwritten_and_other_files_are_not_created) ... ok\ntest_failure_compensates_only_owned_new_files (test_portable_export.PortableExportTests.test_failure_compensates_only_owned_new_files) ... ok\nRan 9 tests in 1.302s\n\nOK (skipped=1)\ntest_all_presets_round_trip_through_bundled_parser (test_python_compatibility.BundledTomlTests.test_all_presets_round_trip_through_bundled_parser) ... ok\ntest_generated_plain_embedding_matches_licensed_source (test_python_compatibility.BundledTomlTests.test_generated_plain_embedding_matches_licensed_source) ... ok\nRan 6 tests in 0.143s\n\nOK (skipped=1)\nPost job cleanup.\nPost job cleanup."
+    },
+    {
+      "name": "windows-powershell51-designs",
+      "job_id": 133753033053,
+      "workflow_run_id": 43997494337,
+      "url": "https://github.com/Julesc013/motd/actions/runs/43997494337/job/133753033053",
+      "conclusion": "success",
+      "observed_powershell": "5.1.26100.33648",
+      "unit_groups": [
+        {
+          "run": 14,
+          "seconds": 44.139,
+          "skipped": 0,
+          "passed": 14,
+          "failures": 0,
+          "errors": 0
+        },
+        {
+          "run": 10,
+          "seconds": 1.684,
+          "skipped": 0,
+          "passed": 10,
+          "failures": 0,
+          "errors": 0
+        },
+        {
+          "run": 9,
+          "seconds": 0.046,
+          "skipped": 1,
+          "passed": 8,
+          "failures": 0,
+          "errors": 0
+        },
+        {
+          "run": 6,
+          "seconds": 0.061,
+          "skipped": 1,
+          "passed": 5,
+          "failures": 0,
+          "errors": 0
+        }
+      ],
+      "evidence_excerpt": "##[group]Operating System\nMicrosoft Windows Server 2025\n10.0.26100\nSuccessfully set up CPython (3.11.9)\n##[endgroup]\n##[group]Run $env:MOTD_TEST_POWERSHELL = @(Get-Command 'powershell' -CommandType Application)[0].Source\nName  : PSVersion\nValue : 5.1.26100.33648\n\nRan 14 tests in 44.139s\n\nOK\ntest_cmd_recipe_is_after_the_batch_exit_not_a_command_length_hazard (test_windows_adapters.AdapterGenerationTests.test_cmd_recipe_is_after_the_batch_exit_not_a_command_length_hazard) ... ok\ntest_create_only_cli_build_and_recover_do_not_create_install_state (test_windows_adapters.AdapterGenerationTests.test_create_only_cli_build_and_recover_do_not_create_install_state) ... ok\nRan 10 tests in 1.684s\n\nOK\ntest_existing_destination_is_not_overwritten_and_other_files_are_not_created (test_portable_export.PortableExportTests.test_existing_destination_is_not_overwritten_and_other_files_are_not_created) ... ok\ntest_failure_compensates_only_owned_new_files (test_portable_export.PortableExportTests.test_failure_compensates_only_owned_new_files) ... ok\nRan 9 tests in 0.046s\n\nOK (skipped=1)\ntest_all_presets_round_trip_through_bundled_parser (test_python_compatibility.BundledTomlTests.test_all_presets_round_trip_through_bundled_parser) ... ok\ntest_generated_plain_embedding_matches_licensed_source (test_python_compatibility.BundledTomlTests.test_generated_plain_embedding_matches_licensed_source) ... ok\nRan 6 tests in 0.061s\n\nOK (skipped=1)\nPost job cleanup.\nPost job cleanup."
+    },
+    {
+      "name": "macos-runtime",
+      "job_id": 133753032744,
+      "workflow_run_id": 43997494265,
+      "url": "https://github.com/Julesc013/motd/actions/runs/43997494265/job/133753032744",
+      "conclusion": "success",
+      "observed_powershell": "7.6.9",
+      "unit_groups": [
+        {
+          "run": 4,
+          "seconds": 0.948,
+          "skipped": 0,
+          "passed": 4,
+          "failures": 0,
+          "errors": 0
+        },
+        {
+          "run": 25,
+          "seconds": 27.677,
+          "skipped": 0,
+          "passed": 25,
+          "failures": 0,
+          "errors": 0
+        }
+      ],
+      "evidence_excerpt": "##[group]Operating System\nmacOS\n26.7.2\nSuccessfully set up CPython (3.11.9)\n##[endgroup]\n##[group]Run sw_vers\nProductVersion:\t\t26.7.2\nBuildVersion:\t\t25G332\nGNU bash, version 3.2.57(1)-release (arm64-apple-darwin25)\nCopyright (C) 2007 Free Software Foundation, Inc.\nzsh 5.9 (arm64-apple-darwin25.0)\n##[group]Run python3 tools/embed_runtime.py --check\npython3 tools/embed_runtime.py --check\nRan 4 tests in 0.948s\n\nOK\n##[group]Run pwsh -NoLogo -NoProfile -Command '$PSVersionTable | Format-List'\npwsh -NoLogo -NoProfile -Command '$PSVersionTable | Format-List'\nName  : PSVersion\nValue : 7.6.9\n\nName  : OS\nValue : macOS 26.7.2\n\nName  : Platform\nValue : Unix\n\nRan 25 tests in 27.677s\n\nOK\nPost job cleanup.\nPost job cleanup."
+    },
+    {
+      "name": "windows-pwsh-runtime",
+      "job_id": 133753032513,
+      "workflow_run_id": 43997494265,
+      "url": "https://github.com/Julesc013/motd/actions/runs/43997494265/job/133753032513",
+      "conclusion": "success",
+      "observed_powershell": "7.6.9",
+      "unit_groups": [
+        {
+          "run": 25,
+          "seconds": 28.834,
+          "skipped": 0,
+          "passed": 25,
+          "failures": 0,
+          "errors": 0
+        }
+      ],
+      "evidence_excerpt": "##[group]Operating System\nMicrosoft Windows Server 2025\n10.0.26100\nSuccessfully set up CPython (3.11.9)\n##[endgroup]\n##[group]Run $env:MOTD_TEST_POWERSHELL = @(Get-Command 'pwsh' -CommandType Application)[0].Source\nName  : PSVersion\nValue : 7.6.9\n\nName  : OS\nValue : Microsoft Windows 10.0.26100\n\nName  : Platform\nValue : Win32NT\n\nRan 25 tests in 28.834s\n\nOK\nPost job cleanup.\nPost job cleanup."
+    },
+    {
+      "name": "windows-powershell51-runtime",
+      "job_id": 133753032911,
+      "workflow_run_id": 43997494265,
+      "url": "https://github.com/Julesc013/motd/actions/runs/43997494265/job/133753032911",
+      "conclusion": "success",
+      "observed_powershell": "5.1.26100.33648",
+      "unit_groups": [
+        {
+          "run": 25,
+          "seconds": 17.961,
+          "skipped": 0,
+          "passed": 25,
+          "failures": 0,
+          "errors": 0
+        }
+      ],
+      "evidence_excerpt": "##[group]Operating System\nMicrosoft Windows Server 2025\n10.0.26100\nSuccessfully set up CPython (3.11.9)\n##[endgroup]\n##[group]Run $env:MOTD_TEST_POWERSHELL = @(Get-Command 'powershell' -CommandType Application)[0].Source\nName  : PSVersion\nValue : 5.1.26100.33648\n\nRan 25 tests in 17.961s\n\nOK\nPost job cleanup.\nPost job cleanup."
+    },
+    {
+      "name": "python38-ci",
+      "job_id": 133753032791,
+      "workflow_run_id": 43997494265,
+      "url": "https://github.com/Julesc013/motd/actions/runs/43997494265/job/133753032791",
+      "conclusion": "success",
+      "observed_powershell": null,
+      "unit_groups": [
+        {
+          "run": 6,
+          "seconds": 0.129,
+          "skipped": 1,
+          "passed": 5,
+          "failures": 0,
+          "errors": 0
+        },
+        {
+          "run": 13,
+          "seconds": 0.178,
+          "skipped": 0,
+          "passed": 13,
+          "failures": 0,
+          "errors": 0
+        },
+        {
+          "run": 7,
+          "seconds": 0.07,
+          "skipped": 0,
+          "passed": 7,
+          "failures": 0,
+          "errors": 0
+        },
+        {
+          "run": 9,
+          "seconds": 0.014,
+          "skipped": 0,
+          "passed": 9,
+          "failures": 0,
+          "errors": 0
+        },
+        {
+          "run": 27,
+          "seconds": 0.616,
+          "skipped": 1,
+          "passed": 26,
+          "failures": 0,
+          "errors": 0
+        }
+      ],
+      "evidence_excerpt": "##[group]Operating System\nUbuntu\n22.04.5\nSuccessfully set up CPython (3.8.18)\n##[endgroup]\n##[group]Run python3 tools/embed_runtime.py --check\nRan 6 tests in 0.129s\n\nOK (skipped=1)\ntest_artifact_digest_and_embedded_recipe_are_exact (test_generation.GenerationTests) ... ok\ntest_changed_body_cannot_silently_supply_configuration (test_generation.GenerationTests) ... ok\nRan 13 tests in 0.178s\n\nOK\ntest_cli_readability_choices_are_saved_and_recovered (test_design_configuration.DesignConfigurationTests) ... ok\ntest_design_preferences_survive_toml_and_all_executable_exports (test_design_configuration.DesignConfigurationTests) ... ok\nRan 7 tests in 0.070s\n\nOK\ntest_existing_destination_is_not_overwritten_and_other_files_are_not_created (test_portable_export.PortableExportTests) ... ok\ntest_failure_compensates_only_owned_new_files (test_portable_export.PortableExportTests) ... ok\nRan 9 tests in 0.014s\n\nOK\ntest_apply_rechecks_after_separate_stage (test_transactions.TransactionTests) ... ok\ntest_corrupted_backup_is_rejected_before_apply (test_transactions.TransactionTests) ... ok\nRan 27 tests in 0.616s\n\nOK (skipped=1)\nPost job cleanup.\nPost job cleanup."
+    },
+    {
+      "name": "linux-suite",
+      "job_id": 133753032817,
+      "workflow_run_id": 43997494265,
+      "url": "https://github.com/Julesc013/motd/actions/runs/43997494265/job/133753032817",
+      "conclusion": "failure-at-stale-example-gate",
+      "observed_powershell": null,
+      "unit_groups": [
+        {
+          "run": 238,
+          "seconds": 175.924,
+          "skipped": 11,
+          "passed": 227,
+          "failures": 0,
+          "errors": 0
+        }
+      ],
+      "evidence_excerpt": "##[group]Operating System\nUbuntu\n26.04.1\nSuccessfully set up CPython (3.11.18)\n##[endgroup]\n##[group]Run python3 tools/embed_runtime.py --check\nRan 238 tests in 175.924s\n\nOK (skipped=11)\n##[group]Run python3 tools/build_examples.py\npython3 tools/build_examples.py"
+    }
+  ],
+  "powershell2": {
+    "actual_version": "2.0",
+    "cases": 41,
+    "failed": 0,
+    "clr": "2.0.50727.9188",
+    "os": "Microsoft Windows NT 10.0.20348.0",
+    "host": "Windows Server 2022",
+    "bitness": 64,
+    "component_installation": "not needed",
+    "xml": "build/verification-powershell2-v04.xml",
+    "probe": "build/verification-powershell2-v04-probe.json",
+    "artifact_id": 14290472775,
+    "archive_sha256": "4830a3c327fb034b20cf810f5b9b81f2c034933c27bdeebe394853a321e39e72",
+    "artifact_url": "https://github.com/Julesc013/motd/actions/runs/43997494337/artifacts/14290472775",
+    "line_endings": "CRLF, produced by Path.write_text on Windows; all five hashes match regeneration followed by that exact newline translation."
+  },
+  "scope": [
+    "These jobs ran on the identified source commit; subsequent gallery/report changes do not alter those runtime bytes.",
+    "The general Verify workflow stopped at the expected stale-example reproducibility gate in this source-only snapshot; all its runtime/unit/Python/native steps passed. Full gallery/reproducibility release gates run after regenerated files are committed.",
+    "Native Windows rendering, wrappers, export and mocked key-decoding tests do not certify a real interactive Windows console resize session.",
+    "PS1, PS3, PS4 and PS5.0 are still unexecuted targets. Passing actual PS2 does not infer those versions."
+  ],
+  "source_sha256": {
+    "motd.py": "dd4c8e379796adce0b44b3809ac292c5ab848693c3cb9f69ead360034a35c6a4",
+    "runtime/motd.ps1": "ea883b1b33ccf5953a0a828e201a494d1f7cb20136a50a290b18eb8487004832",
+    "runtime/motd.bash": "138368aac5c27b3de7ab72e56c9a1a055577704d9bc2e47feef77fa265cc2368",
+    "runtime/motd.sh": "4f95498151cb1ece7ad3c07897b77be93f4e7f5384998884f024d47296c76214",
+    "runtime/designs.sh": "8b3063487ad72aa43d51158f7ecc3a9121f1fa0b6d04a01fe95c89e7f309c64c",
+    "tools/test_legacy_powershell.ps1": "373678b8592672c8d1c070f07eb0525cc4a9a5b973ff03328d147f5c89178301",
+    ".github/workflows/powershell-compatibility.yml": "d001fefdcb297a2587ea72957cdad704c396a590eea6cd4e6b6e25c69fbe1a03",
+    ".github/workflows/ci.yml": "e601784081dcc0829dbc12d62bf6f9217e23b4364ac46e6ab3fb40f525ba1981"
+  },
+  "retained_powershell2_files_sha256": {
+    "build/verification-powershell2-v04.xml": "01fbf7083851d21e5278d7aab056f7aa4e292296c05b7ab6624d843a78e1b1b6",
+    "build/verification-powershell2-v04-probe.json": "42a27ec7d978eb36fd1da7207337c884da7974d12a5181ba1a97aae320dff375"
+  }
+}

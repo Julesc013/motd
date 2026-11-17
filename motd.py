@@ -38,8 +38,16 @@ else:
     tomllib = None
 
 VERSION = '0.4.0'
-SHELLS = ('bash', 'zsh', 'sh', 'fish', 'powershell', 'cmd')
-TARGETS = ('shell', 'issue', 'ssh-banner', 'text', 'batch-text')
+# Output names and archival suffixes share one registry. A newly added backend
+# must be exportable and recoverable through the same transaction path; a second
+# allowlist here previously rejected Fish and CMD after successful generation.
+SHELL_SUFFIXES = {'bash': '.bash', 'zsh': '.zsh', 'sh': '.sh', 'fish': '.fish',
+                  'powershell': '.ps1', 'cmd': '.cmd'}
+STATIC_TARGET_SUFFIXES = {'issue': '.txt', 'ssh-banner': '.txt', 'text': '.txt',
+                          'batch-text': '.cmd'}
+SHELLS = tuple(SHELL_SUFFIXES)
+TARGETS = ('shell',) + tuple(STATIC_TARGET_SUFFIXES)
+ARTIFACT_SUFFIXES = frozenset(SHELL_SUFFIXES.values()) | frozenset(STATIC_TARGET_SUFFIXES.values())
 SECTION_IDS = ('system', 'resources', 'services', 'processes', 'sessions',
                'connections', 'attention', 'hints', 'io')
 PRESET_NAMES = ('workshop', 'home-lab', 'public-console')
@@ -76,6 +84,7 @@ SETTING_HELP = {
     'display.width': 'Maximum output width in character cells. The live wizard preview temporarily uses the actual terminal width.',
     'display.rows': 'Maximum output height, including space for the next shell prompt. The wizard preview uses the rows left below its ten control rows.',
     'display.color_emphasis': 'Quiet reduces visual noise; balanced separates headings and facts; vivid uses stronger emphasis. Plain and NO_COLOR still take precedence.',
+    'display.bar_layout': 'Inline keeps bars beside their values. Wide gives each usage bar its own full panel row. Short views keep the numeric reading when there is not enough space for a bar.',
     'display.charset': 'ASCII uses basic characters for older terminals. Unicode uses box drawing where the terminal font supports it.',
     'display.sections': 'Selected sections appear in this order. Disabled sections are hidden; shared collectors can still supply other sections and warning checks.',
     'services.required': 'Optional service names that matter on your computer. Leave empty if you do not know them. Missing required services are reported; the wizard never installs a service.',
@@ -104,6 +113,7 @@ def preset_config(name='workshop', shell='bash'):
                     'charset': 'auto', 'color': 'auto',
                     'design': 'classic', 'density': 'balanced', 'detail': 'normal',
                     'padding': 1, 'section_gap': 0, 'color_emphasis': 'balanced',
+                    'bar_layout': 'inline',
                     'priority': list(DEFAULT_PRIORITY), 'section_detail': {},
                     'width': 132, 'rows': 25, 'top_entries': 3,
                     'sections': list(SECTION_IDS[:-1]), 'show_swap': True,
@@ -203,6 +213,8 @@ def validate_config(data):
     d = c['display']
     for key in ('title', 'site'):
         _text(d[key], f'display.{key}', 100)
+    if c['target'] == 'batch-text' and not (d['title'] + c['public_text']).isascii():
+        raise MotdError('Native batch text requires ASCII; choose text or PowerShell for Unicode')
     if d['theme'] not in ('cyan', 'green', 'amber', 'mono'):
         raise MotdError('Theme must be cyan, green, amber or mono')
     if d['charset'] not in ('auto', 'ascii', 'unicode'):
@@ -210,7 +222,8 @@ def validate_config(data):
     if d['color'] not in ('auto', 'always', 'never'):
         raise MotdError('Colour mode must be auto, always or never')
     for key, options in [('design', DESIGNS), ('density', ('compact', 'balanced', 'comfortable')),
-                         ('detail', DETAILS), ('color_emphasis', ('quiet', 'balanced', 'vivid'))]:
+                         ('detail', DETAILS), ('color_emphasis', ('quiet', 'balanced', 'vivid')),
+                         ('bar_layout', ('inline', 'wide'))]:
         if d[key] not in options:
             raise MotdError(f'display.{key} must be one of {", ".join(options)}')
     for key, lo, hi in [('width', 40, 240), ('rows', 8, 200), ('top_entries', 1, 10),
@@ -329,7 +342,8 @@ def runtime_assignments(config):
               'CHARSET': d['charset'], 'COLOR_MODE': d['color'],
               'DESIGN': d['design'], 'DENSITY': d['density'], 'DETAIL': d['detail'],
               'PADDING': d['padding'], 'SECTION_GAP': d['section_gap'],
-              'COLOR_EMPHASIS': d['color_emphasis'], 'SECTION_PRIORITY': d['priority'],
+              'COLOR_EMPHASIS': d['color_emphasis'], 'BAR_LAYOUT': d['bar_layout'],
+              'SECTION_PRIORITY': d['priority'],
               'MAX_WIDTH': d['width'], 'COMPACT_ROWS': d['rows'],
               'TOP_N': d['top_entries'], 'IO_TOP_N': d['top_entries'],
               'SECTIONS': d['sections'], 'SHOW_SWAP': d['show_swap'],
@@ -414,7 +428,8 @@ def portable_runtime_assignments(config):
         'CHARSET': d['charset'], 'COLOR_MODE': d['color'],
         'DESIGN': d['design'], 'DENSITY': d['density'], 'DETAIL': d['detail'],
         'PADDING': d['padding'], 'SECTION_GAP': d['section_gap'],
-        'COLOR_EMPHASIS': d['color_emphasis'], 'SECTION_PRIORITY': ' '.join(d['priority']),
+        'COLOR_EMPHASIS': d['color_emphasis'], 'BAR_LAYOUT': d['bar_layout'],
+        'SECTION_PRIORITY': ' '.join(d['priority']),
         'MAX_WIDTH': d['width'], 'ROWS': d['rows'],
         'TOP_N': d['top_entries'],
         # A hard portable-shell cap avoids tens of thousands of shell reads.
@@ -624,9 +639,8 @@ def batch_notice(text, columns):
 
 
 def artifact_suffix(config):
-    if config['target'] == 'batch-text': return '.cmd'
-    return {"bash": ".bash", "zsh": ".zsh", "sh": ".sh", "fish": ".fish",
-            "powershell": ".ps1", "cmd": ".cmd"}[config["shell"]] if config["target"] == "shell" else ".txt"
+    return (SHELL_SUFFIXES[config['shell']] if config['target'] == 'shell'
+            else STATIC_TARGET_SUFFIXES[config['target']])
 
 
 def generate_artifact(config):
@@ -1506,7 +1520,8 @@ def _tx_metadata(metadata):
     for key in ("config_toml", "artifact_text"):
         if key in metadata and not isinstance(metadata[key], str):
             raise TxError("invalid_metadata", key + " must be text.")
-    if metadata.get("artifact_suffix", ".txt") not in (".bash", ".zsh", ".sh", ".ps1", ".txt"):
+    suffix = metadata.get("artifact_suffix", ".txt")
+    if not isinstance(suffix, str) or suffix not in ARTIFACT_SUFFIXES:
         raise TxError("invalid_metadata", "Unsupported generated output suffix.")
     return metadata
 
@@ -2014,7 +2029,7 @@ def tx_repair(state_dir, transaction_id):
 
 def apply_display_options(config, args, *, imported=False):
     """Apply CLI choices to recipe data only; imported code retains exact bytes."""
-    fields = ('design', 'density', 'detail', 'padding', 'section_gap', 'color_emphasis',
+    fields = ('design', 'density', 'detail', 'padding', 'section_gap', 'color_emphasis', 'bar_layout',
               'width', 'rows', 'charset', 'color')
     present = any(getattr(args, key, None) is not None for key in fields + ('sections', 'priority', 'section_detail'))
     if imported and present:
@@ -2242,10 +2257,22 @@ def export_files(config, artifact, output, recipe_path=None, *, state_dir=None, 
     return result
 
 
+def terminal_preview_text(text):
+    """Show static imported bytes without interpreting terminal control codes.
+
+    Newlines and tabs remain useful text layout. Other C0/C1 controls are shown
+    as visible escapes; this display boundary never rewrites the saved artifact.
+    """
+    return ''.join('\\x%02x' % ord(ch)
+                   if (ord(ch) < 32 and ch not in '\n\t') or 127 <= ord(ch) <= 159
+                   else ch for ch in text)
+
+
 def preview(config, artifact, *, live=False, imported=False, trust=False):
     if config['target'] != 'shell':
-        print(config['display']['title'] + '\n\n' + config['public_text'].strip() + '\n'
-              if config['target'] == 'batch-text' and not imported else artifact, end='')
+        text = (config['display']['title'] + '\n\n' + config['public_text'].strip() + '\n'
+                if config['target'] == 'batch-text' and not imported else artifact)
+        print(terminal_preview_text(text), end='')
         return 0
     if imported:
         try:
@@ -2773,10 +2800,16 @@ class WizardUI:
             end = min(len(choices), offset + self.QUESTION_ROWS) if paginate else len(choices)
             first = offset if paginate else 0
             notice = f'Choices {first + 1}-{end}/{len(choices)} | [ / ] more' if end - first < len(choices) else ''
+            previews_choice = bool(preview_factory and self.screen)
+            choice_hint = 'Number previews; Enter accepts.' if previews_choice else 'Choose a number, then Enter.'
+            footer = 'Up/Down | Enter accepts | ? help Q quit' if self.screen else 'Enter accepts default | ? help | Q quit'
+            if notice and previews_choice:
+                # Pagination consumes the notice row. Keep the two-step choice
+                # rule visible in the footer even on a 40-column terminal.
+                footer = 'Num previews; Enter accepts | ? help Q'
             self.page(title, [('> ' if i == selected else '  ') + f'{i + 1}. {label}'
                               for i, (label, _) in enumerate(choices) if first <= i < end], config=current,
-                      notice=notice or 'Choose a number, then Enter. ? explains the keys.',
-                      footer='Up/Down | Enter accepts | ? help Q quit')
+                      notice=notice or choice_hint, footer=footer)
             raw = self.read(f'Choice [{selected + 1}]: ', navigation=True, selection=True).strip().lower()
             if raw == 'q': raise WizardCancelled()
             if raw == 'p' and current is not None: self.full_preview(current); continue
@@ -2796,7 +2829,10 @@ class WizardUI:
     def full_preview(self, config):
         if not self.screen:
             print('Synthetic demonstration; before/after hooks are skipped.')
-            print('\n'.join(self.sample(config, min(240, max(40, terminal_size().columns)))))
+            before = hook_preview_lines(config, 'before') if self.show_calls else []
+            after = hook_preview_lines(config, 'after') if self.show_calls else []
+            sample = self.sample(config, min(240, max(40, terminal_size().columns)))
+            print('\n'.join(before + sample + after))
             return
         self.page('Preview at this terminal size', ['Resize this window to reflow the MOTD.',
                   'The 10 control rows stay fixed.', 'H toggles sample before/after output.',
@@ -2811,8 +2847,8 @@ class WizardUI:
         """Explain controls/choices without exposing implementation terminology."""
         previous = self._page
         paragraphs = ([text] if text else []) + [
-            'Type a number and press Enter to choose. In menus, Up/Down moves the selection and Enter accepts it.',
-            'N or Enter continues; B goes back. P opens the preview. Q cancels the draft.',
+            'Type a number and press Enter. Menus that preview a choice ask for Enter again to accept it. In screen mode, Up/Down moves the selection.',
+            'On settings pages, N or Enter continues; B goes back. P opens the preview. Q cancels from menus and settings pages.',
             'H toggles sample output before and after the message. Configured commands never run in a preview.',
             '[ and ] show more choices. J and K scroll long call samples. Resize the window at any time.',
         ]
@@ -2869,7 +2905,8 @@ def _configuration_pages(config):
         pages.append(('Characters and colour', [('Character set', 'display.charset', 'choice'),
                                                 ('Colour mode', 'display.color', 'choice'),
                                                 ('Inside padding', 'display.padding', 'int'),
-                                                ('Blank rows between sections', 'display.section_gap', 'int')]))
+                                                ('Blank rows between sections', 'display.section_gap', 'int'),
+                                                ('Usage bars', 'display.bar_layout', 'choice')]))
         pages.append(('Sections', [(SECTION_LABELS[name], name, 'section') for name in SECTION_IDS]))
         pages.append(('Detail per section', [(SECTION_LABELS[name], name, 'section_detail') for name in SECTION_IDS]))
         pages.append(('Content', [('Required services', 'services.required', 'list'),
@@ -2913,6 +2950,8 @@ def _configure(config, ui=None):
                            ('Full: expand when there is space', 'full')],
         'display.color_emphasis': [('Quiet: less visual noise', 'quiet'), ('Balanced emphasis', 'balanced'),
                                    ('Vivid: stronger colour emphasis', 'vivid')],
+        'display.bar_layout': [('Inline: bars beside readings', 'inline'),
+                               ('Wide: a full panel row per bar', 'wide')],
     }
     while True:
         pages = _configuration_pages(c); page_index = min(page_index, len(pages) - 1)
@@ -2927,8 +2966,9 @@ def _configure(config, ui=None):
                 if isinstance(value, list): value = ', '.join(value) or '(none)'
                 value = str(value).replace('\n', ' / ')
             lines.append(f' {number}. {label}: {value}')
-        ui.page(f'{title} | page {page_index + 1}/{len(pages)}', lines, config=c, notice=notice,
-                footer='N next B back P preview ? help Q quit')
+        ui.page(f'{title} | page {page_index + 1}/{len(pages)}', lines, config=c,
+                notice=notice or 'Enter keeps settings. P opens preview.',
+                footer='1-5 edit | N next B back ? help Q quit')
         ui._context_help = (notice + ' ' if notice else '') + '\n'.join(
             label + ': ' + SETTING_HELP.get(path, 'Choose this field to edit it; the preview shows the draft.')
             for label, path, kind in fields)
@@ -3016,11 +3056,17 @@ def _configure(config, ui=None):
                 value = ui.ask(label, default, config=c,
                     help_text=SETTING_HELP.get(path, 'Blank keeps; - clears; \\n separates lines.' if kind != 'int' else 'Whole number; blank keeps the value.'))
                 if kind != 'int' and value == '-': value = ''
-                if kind == 'int': value = int(value)
+                if kind == 'int':
+                    try:
+                        value = int(value)
+                    except ValueError:
+                        raise MotdError('Enter a whole number, for example 80. Blank keeps the current value.')
                 elif kind == 'list': value = [v.strip() for v in value.split(',') if v.strip()]
                 elif kind == 'messages': value = value.split('\\n') if value else []
                 elif kind == 'multiline': value = value.replace('\\n', '\n')
                 _set_setting(candidate, path, value)
+            # Target-specific constraints are validated before replacing the
+            # draft, including ASCII-only native batch output.
             c = validate_config(candidate)
         except (MotdError, ValueError, TypeError) as exc:
             notice = str(exc)
@@ -3159,7 +3205,7 @@ def _wizard_session(args, ui):
                     print('Opaque scripts have no synthetic preview. Inspect the source; trusted live execution is a separate CLI action.')
                     ui.pause()
                 elif opaque:
-                    print(artifact, end=''); ui.pause()
+                    print(terminal_preview_text(artifact), end=''); ui.pause()
                 else: ui.full_preview(config)
                 continue
             if choice == 'settings':
@@ -3224,6 +3270,8 @@ def parser():
             p.add_argument('--padding', type=int, help='Horizontal inside padding, 0–3 cells')
             p.add_argument('--section-gap', type=int, help='Preferred blank rows between sections, 0–2')
             p.add_argument('--color-emphasis', choices=('quiet', 'balanced', 'vivid'))
+            p.add_argument('--bar-layout', choices=('inline', 'wide'),
+                           help='Place usage bars beside readings or on a full panel row')
             p.add_argument('--width', type=int, help='Maximum columns, 40–240')
             p.add_argument('--rows', type=int, help='Maximum rows, 8–200, including the shell prompt')
             p.add_argument('--charset', choices=('auto', 'ascii', 'unicode'))
@@ -3296,7 +3344,12 @@ def main(argv=None):
         if prior['metadata'].get('artifact_origin') == 'opaque-import':
             raise MotdError('Opaque imports need an explicit replacement --artifact or new --config; settings cannot be inferred')
         c = validate_config(tomllib.loads(prior['metadata']['config_toml']))
-        if args.command == 'reconfigure' and not args.yes: c = _configure(c, WizardUI(args.ui))
+        if args.command == 'reconfigure' and not args.yes:
+            ui = WizardUI(args.ui)
+            try:
+                c = _configure(c, ui)
+            finally:
+                ui.finish()
         for key in ('target', 'shell', 'audience'):
             if getattr(args, key, None) is not None:
                 if key == 'shell': select_shell(c, args.shell)
@@ -3372,6 +3425,40 @@ motd_view_repeat() {
     done
 }
 
+motd_view_fraction_bar() {
+    # A bounded data-only formatter shared by both Unix adapters. Work in at
+    # most six significant decimal digits before multiplication, keeping a
+    # 240-cell bar within signed 32-bit arithmetic on old shells. The discarded
+    # low digits are far smaller than one terminal cell. Callers supply the
+    # original numeric observation in the label, so the bar is only a picture.
+    MV_BAR=''; MV_BAR_VALID=0; mv_bar_total=$1; mv_bar_part=$2; mv_bar_width=$3
+    case "$mv_bar_total" in ''|*[!0-9]*) return ;; esac
+    case "$mv_bar_part" in ''|*[!0-9]*) return ;; esac
+    while [ "${mv_bar_total#0}" != "$mv_bar_total" ] && [ "${#mv_bar_total}" -gt 1 ]; do mv_bar_total=${mv_bar_total#0}; done
+    while [ "${mv_bar_part#0}" != "$mv_bar_part" ] && [ "${#mv_bar_part}" -gt 1 ]; do mv_bar_part=${mv_bar_part#0}; done
+    [ "${#mv_bar_part}" -le "${#mv_bar_total}" ] || return
+    if [ "${#mv_bar_part}" -eq "${#mv_bar_total}" ]; then
+        # Validate before discarding low digits: a one-unit excess on a large
+        # device is still invalid, even if both values round to the same bar.
+        mv_bar_check_total=$mv_bar_total; mv_bar_check_part=$mv_bar_part
+        while [ -n "$mv_bar_check_total" ]; do
+            mv_bar_digit_total=${mv_bar_check_total%"${mv_bar_check_total#?}"}
+            mv_bar_digit_part=${mv_bar_check_part%"${mv_bar_check_part#?}"}
+            [ "$mv_bar_digit_part" -le "$mv_bar_digit_total" ] || return
+            [ "$mv_bar_digit_part" -eq "$mv_bar_digit_total" ] || break
+            mv_bar_check_total=${mv_bar_check_total#?}; mv_bar_check_part=${mv_bar_check_part#?}
+        done
+    fi
+    while [ "${#mv_bar_total}" -gt 6 ]; do
+        mv_bar_total=${mv_bar_total%?}; mv_bar_part=${mv_bar_part%?}; mv_bar_part=${mv_bar_part:-0}
+    done
+    [ "$mv_bar_total" -gt 0 ] && [ "$mv_bar_part" -le "$mv_bar_total" ] || return
+    mv_bar_filled=$(((mv_bar_part * mv_bar_width + mv_bar_total / 2) / mv_bar_total))
+    motd_view_repeat '#' "$mv_bar_filled"; MV_BAR=$MV_REPEAT
+    motd_view_repeat '.' "$((mv_bar_width - mv_bar_filled))"; MV_BAR=$MV_BAR$MV_REPEAT
+    MV_BAR_VALID=1
+}
+
 motd_view_get() {
     MV_ALLOCATED=0
     for mv_get_record in $MV_PLAN; do
@@ -3412,8 +3499,15 @@ motd_view_content_width() {
             mv_content_label=12; [ "$MV_COLUMNS" -ge 60 ] || mv_content_label=10
             MV_CONTENT_WIDTH=$((MV_COLUMNS - PADDING - mv_content_label - 3)) ;;
         briefing)
-            motd_view_caption "$1"; mv_content_prefix=${#MV_HEADLINE}
-            MV_CONTENT_WIDTH=$((MV_COLUMNS - mv_content_prefix - 2)) ;;
+            if [ "$1" = resources ] && [ "${BAR_LAYOUT-inline}" = wide ]; then
+                # Resource labels identify their own quantities. Give every
+                # numeric/bar pair the same indented width rather than losing
+                # the first denominator to an additional "Capacity: " prefix.
+                MV_CONTENT_WIDTH=$((MV_COLUMNS - 2 * PADDING - 2))
+            else
+                motd_view_caption "$1"; mv_content_prefix=${#MV_HEADLINE}
+                MV_CONTENT_WIDTH=$((MV_COLUMNS - mv_content_prefix - 2))
+            fi ;;
     esac
 }
 
@@ -3487,6 +3581,13 @@ motd_view_plan() {
                 case "$mv_plan_id" in resources|io) mv_plan_rows=3 ;; processes) mv_plan_rows=4 ;;
                     *) mv_plan_rows=2 ;; esac ;;
         esac
+        # A wide resource can use one numeric row and one bar row. Ask for
+        # enough space for RAM, storage and optional swap; the adapter still
+        # returns a numeric summary if a smaller final allocation cannot fit
+        # both rows. Other sections and inline defaults are unchanged.
+        if [ "$mv_plan_id" = resources ] && [ "${BAR_LAYOUT-inline}" = wide ]; then
+            case "$mv_plan_detail" in normal) mv_plan_rows=6 ;; full) mv_plan_rows=9 ;; esac
+        fi
         # Charge populated rows, not an arbitrary rectangle of empty space.
         # This is formatting of the existing model, never a second collection.
         # A short section can therefore leave room for another complete panel.
@@ -3682,7 +3783,7 @@ motd_design_render() {
                 mv_render_label_width=12; [ "$MV_COLUMNS" -ge 60 ] || mv_render_label_width=10
                 motd_view_content_width "$mv_render_id"; mv_render_content_width=$MV_CONTENT_WIDTH
                 MV_TEXT=$(motd_view_capture "$mv_render_id" "$mv_render_content_width" "$mv_render_rows" "$DESIGN")
-                if [ "$DESIGN" = briefing ]; then
+                if [ "$DESIGN" = briefing ] && { [ "$mv_render_id" != resources ] || [ "${BAR_LAYOUT-inline}" != wide ]; }; then
                     # A concise first sentence comes from the same one-row
                     # section adapter. Keep the first actual observation: it
                     # may be a service, address or session, not a heading.
@@ -3706,7 +3807,7 @@ $MV_TEXT"
                 while [ "$mv_render_index" -lt "$mv_render_rows" ]; do
                     motd_view_take_line
                     if [ "$DESIGN" = briefing ]; then
-                        if [ "$mv_render_index" -eq 0 ]; then motd_view_plain_row "$mv_render_headline: $MV_LINE" "$MV_TITLE_COLOR"
+                        if [ "$mv_render_index" -eq 0 ] && { [ "$mv_render_id" != resources ] || [ "${BAR_LAYOUT-inline}" != wide ]; }; then motd_view_plain_row "$mv_render_headline: $MV_LINE" "$MV_TITLE_COLOR"
                         else printf '%*s' "$((PADDING + 2))" ''; motd_view_clean "$MV_LINE" "$mv_render_content_width"; printf '%s\n' "$MV_CLEAN"; fi
                     else
                         motd_view_clean "$mv_render_caption" "$mv_render_label_width"; mv_render_label=$MV_CLEAN
@@ -3778,6 +3879,7 @@ MAX_WIDTH=132                   # Use available width up to this cap.
 THEME=cyan                     # cyan | amber | mono
 CHARSET=auto                    # auto | ascii | unicode; CLI flags override.
 COLOR_MODE=auto                 # auto | always | never; NO_COLOR still wins.
+BAR_LAYOUT=inline               # inline | wide; wide retains numeric labels.
 DESIGN=classic                  # classic | cards | ledger | briefing | dashboard
 DENSITY=balanced                # compact | balanced | comfortable
 DETAIL=normal                   # brief | normal | full; independent of spacing
@@ -4020,6 +4122,7 @@ usage() {
       '       [--design classic|cards|ledger|briefing|dashboard] [--detail brief|normal|full]' \
       '       [--density compact|balanced|comfortable] [--padding 0..3] [--section-gap 0..2]' \
       '       [--color-emphasis quiet|balanced|vivid]' \
+      '       [--bar-layout inline|wide]' \
       '       [--sections system,resources,services,processes,sessions,connections,attention,hints]' \
       '       [--hide SECTION,...] [--show SECTION,...]' \
       '       [--hide-item SECTION.ITEM,...] [--show-item SECTION.ITEM,...]' \
@@ -4063,6 +4166,8 @@ parse_options() {
                 case ${2-} in brief|normal|full) DETAIL=$2 ;; *) return 2 ;; esac; shift 2 ;;
             --color-emphasis)
                 case ${2-} in quiet|balanced|vivid) COLOR_EMPHASIS=$2 ;; *) return 2 ;; esac; shift 2 ;;
+            --bar-layout)
+                case ${2-} in inline|wide) BAR_LAYOUT=$2 ;; *) return 2 ;; esac; shift 2 ;;
             --padding)
                 case ${2-} in 0|1|2|3) PADDING=$2 ;; *) return 2 ;; esac; shift 2 ;;
             --section-gap)
@@ -5901,6 +6006,38 @@ ui_storage_worst() {
         if ((percent>UI_WORST_PCT)); then UI_WORST=$id; UI_WORST_PCT=$percent; fi
     done
 }
+ui_wide_resource_pair() {
+    # Wide bars use the quantity named in the numeric row. In particular RAM
+    # is used-versus-available, not the separate physical allocation categories
+    # represented by the classic inline segmented bar. No observation is read
+    # again here. If only one row survives allocation, keep its exact numbers.
+    ((UI_REMAIN>0)) || return 0
+    ui_row "$1" "${COLOR[heading]}"
+    ((UI_REMAIN>0)) || return 0
+    motd_view_fraction_bar "$2" "$3" "$TEXT_WIDTH"
+    [[ $MV_BAR_VALID != 1 ]] || ui_row "$MV_BAR" "${COLOR[other]}"
+}
+ui_resources_wide() {
+    if ui_enabled resources memory; then
+        if ((${MODEL[mem_valid]:-0})); then
+            ui_wide_resource_pair "RAM ${VIEW[mem_used]}/${VIEW[mem_total]} | ${VIEW[mem_percent]}% used" "${MODEL[mem_total]}" "${MODEL[mem_used]}"
+        else ui_row 'RAM unavailable' "${COLOR[muted]}"; fi
+    fi
+    if ui_enabled resources storage; then
+        if [[ ${MODEL[storage_state]-} == ok ]] && ((${MODEL[storage_total]:-0}>0)); then
+            ui_wide_resource_pair "DISK ${VIEW[storage_used]}/${VIEW[storage_total]} used" "${MODEL[storage_total]}" "${MODEL[storage_used]}"
+        else ui_row "DISK ${MODEL[storage_state]:-unavailable}" "${COLOR[muted]}"; fi
+    fi
+    if ui_enabled resources swap; then
+        if ((${MODEL[swap_valid]:-0}==0)); then ui_row 'SWAP unavailable' "${COLOR[muted]}"
+        elif ((${MODEL[swap_total]:-0}==0)); then ui_row 'SWAP not configured' "${COLOR[muted]}"
+        else ui_wide_resource_pair "SWAP ${VIEW[swap_used]}/${VIEW[swap_total]} | free ${VIEW[swap_free]}" "${MODEL[swap_total]}" "${MODEL[swap_used]}"; fi
+    fi
+    if ((UI_REMAIN>0)) && ui_enabled resources memory; then
+        ui_row "Cache ${VIEW[mem_cache]:-?} | available ${VIEW[mem_available]:-?}" "${COLOR[muted]}"
+    fi
+    if ((UI_REMAIN>0)) && ui_enabled resources compression; then ui_compression_details; fi
+}
 ui_resources() {
     local budget=$1 summary='' bar='' width=18 row='' value tail='' id inode='' shade=${COLOR[muted]} comp_label=Comp swap_label=Swap
     ui_storage_worst
@@ -5910,6 +6047,7 @@ ui_resources() {
         ((UI_WORST_PCT<DISK_CRITICAL)) || shade=${COLOR[error]}
     fi
     ui_begin resources "$budget" "$summary" "$shade"
+    if [[ $BAR_LAYOUT == wide ]]; then ui_resources_wide; return; fi
     if [[ $MODE == verbose ]]; then
         ui_enabled resources memory && ui_memory_details
         ui_enabled resources compression && ui_compression_details
@@ -6549,7 +6687,7 @@ motd_view_capture() {
 
 ui_classic_defaults() {
     [[ $DESIGN == classic && $DENSITY == balanced && $DETAIL == normal && $PADDING == 1 &&
-       $SECTION_GAP == 0 && $COLOR_EMPHASIS == balanced && ${#SECTION_DETAIL[@]} == 0 &&
+       $SECTION_GAP == 0 && $COLOR_EMPHASIS == balanced && $BAR_LAYOUT == inline && ${#SECTION_DETAIL[@]} == 0 &&
        ${SECTION_PRIORITY[*]} == 'attention resources system services processes io sessions connections hints' ]]
 }
 
@@ -6702,6 +6840,7 @@ SITE_LABEL=''
 THEME=mono
 CHARSET=auto
 COLOR_MODE=auto
+BAR_LAYOUT=inline
 DESIGN=classic
 DENSITY=balanced
 DETAIL=normal
@@ -6753,6 +6892,8 @@ while [ "$#" -gt 0 ]; do
             shift; case "${1-}" in brief|normal|full) DETAIL=$1 ;; *) exit 2 ;; esac ;;
         --color-emphasis)
             shift; case "${1-}" in quiet|balanced|vivid) COLOR_EMPHASIS=$1 ;; *) exit 2 ;; esac ;;
+        --bar-layout)
+            shift; case "${1-}" in inline|wide) BAR_LAYOUT=$1 ;; *) exit 2 ;; esac ;;
         --padding)
             shift; case "${1-}" in 0|1|2|3) PADDING=$1 ;; *) exit 2 ;; esac ;;
         --section-gap)
@@ -6779,6 +6920,7 @@ while [ "$#" -gt 0 ]; do
                 '--design classic|cards|ledger|briefing|dashboard --detail brief|normal|full' \
                 '--density compact|balanced|comfortable --padding 0..3 --section-gap 0..2' \
                 '--color-emphasis quiet|balanced|vivid' \
+                '--bar-layout inline|wide' \
                 'Portable Unix: identity, memory, storage, services, processes, sessions, connections, notices and hints.' \
                 'Missing OS facilities and inaccessible observations say unavailable.'
             exit 0 ;;
@@ -6864,6 +7006,7 @@ motd_uptime=unavailable; motd_load=unavailable
 motd_total=unavailable; motd_available=unavailable; motd_free=unavailable
 motd_swap_total=unavailable; motd_swap_free=unavailable
 motd_disk='Storage: unavailable'; motd_pressure='Pressure: unavailable'
+motd_disk_percent=unavailable
 motd_compression='Compression: unavailable'
 motd_service_rows='unavailable: no supported service query'
 motd_service_summary='Service state: unavailable'
@@ -6881,6 +7024,7 @@ if [ "$MOTD_DEMO" -eq 1 ]; then
     motd_total=16777216; motd_available=12582912; motd_free=8388608
     motd_swap_total=4194304; motd_swap_free=4194304
     motd_disk='Root: 42% used; 286 GiB available'
+    motd_disk_percent=42
     motd_pressure='Pressure CPU/mem/I/O: 0.1/0.0/0.2%'
     motd_compression='zram: 640 MiB data / 218 MiB RAM'
     motd_service_summary='Services: 8 running; 0 failed'
@@ -6913,6 +7057,7 @@ sshd: running
 cron: running
 docker: running'
         motd_disk='Root: 94% used; 29 GiB available'; motd_swap_free=262144
+        motd_disk_percent=94
         motd_pressure='Pressure CPU/mem/I/O: 2.1/8.3/12.4%'
         motd_attention='DEMO WARNING: disk 94%; backup failed.'
     fi
@@ -6980,8 +7125,15 @@ else
                 fi ;;
         esac
         if motd_run df -Pk /; then
-            motd_disk=$(printf '%s\n' "$MOTD_CAPTURE" | awk 'NR==2&&$4~/^[0-9]+$/ {printf "Root: %s used; %.1f GiB available",$5,$4/1048576}')
-            motd_disk=${motd_disk:-Storage: unavailable}
+            # Retain the reported percent from the same observation for wide
+            # bars. df's usable-space percentage is not silently redefined as
+            # used/total capacity or as a sum of mounted filesystems.
+            motd_disk_sample=$(printf '%s\n' "$MOTD_CAPTURE" | awk 'NR==2&&$4~/^[0-9]+$/ {printf "Root: %s used; %.1f GiB available\n",$5,$4/1048576; p=$5;sub(/%$/,"",p);if(p~/^[0-9]+$/&&p<=100)print p;else print "unavailable"}')
+            if [ -n "$motd_disk_sample" ]; then
+                motd_disk=${motd_disk_sample%%'
+'*}; motd_disk_percent=${motd_disk_sample#*'
+'}
+            fi
         fi
         if [ -r /proc/pressure/cpu ] && [ -r /proc/pressure/memory ] && [ -r /proc/pressure/io ]; then
             motd_pressure=$(awk '/^some /{for(i=2;i<=NF;i++)if($i~/^avg10=/){sub(/^avg10=/,"",$i);v[++n]=$i;break}} END{if(n==3)printf "Pressure CPU/mem/I/O: %s/%s/%s%%",v[1],v[2],v[3]}' /proc/pressure/cpu /proc/pressure/memory /proc/pressure/io 2>/dev/null)
@@ -7061,9 +7213,10 @@ fi
 # Exclusions are literal glob patterns compiled by the configurator, never eval.
 # Required patterns are checked against the available inventory. Missing data
 # is not called a failure and an enabled rc script is not called running.
+# Names may contain colons, so split only at the formatted ': ' row delimiter.
 motd_filtered_services=''
 while read -r motd_service_row; do
-    motd_service_name=${motd_service_row%%:*}
+    motd_service_name=${motd_service_row%%': '*}
     if motd_service_allowed "$motd_service_name"; then
         motd_filtered_services="$motd_filtered_services$motd_service_row
 "
@@ -7081,7 +7234,7 @@ while read -r motd_required_pattern; do
     if [ -z "$motd_required_pattern" ]; then continue; fi
     motd_required_seen=0
     while read -r motd_service_row; do
-        motd_service_name=${motd_service_row%%:*}
+        motd_service_name=${motd_service_row%%': '*}
         case "$motd_service_name" in $motd_required_pattern|$motd_required_pattern.service)
             motd_required_seen=1
             motd_required_rows="$motd_required_rows$motd_service_row
@@ -7099,6 +7252,26 @@ done <<MOTD_REQUIRED_PATTERNS_END
 $motd_required_patterns
 MOTD_REQUIRED_PATTERNS_END
 motd_service_rows="$motd_required_rows$motd_service_rows"
+# Required entries are promoted ahead of the remaining inventory. A service can
+# match several required patterns, so retain its first row exactly once. Newline
+# delimiters and quoted pattern components keep names literal (including glob
+# metacharacters); no eval, external sorter or extra provider query is involved.
+motd_unique_services=''; motd_seen_services='
+'
+while read -r motd_service_row; do
+    [ -n "$motd_service_row" ] || continue
+    motd_service_name=${motd_service_row%%': '*}
+    case "$motd_seen_services" in *"
+$motd_service_name
+"*) continue ;; esac
+    motd_seen_services="$motd_seen_services$motd_service_name
+"
+    motd_unique_services="$motd_unique_services$motd_service_row
+"
+done <<MOTD_UNIQUE_SERVICES_END
+$motd_service_rows
+MOTD_UNIQUE_SERVICES_END
+motd_service_rows=$motd_unique_services
 
 # Allocate rows before rendering so the last sections retain representation.
 # A section has a heading + minimum one row. Extra rows first enable all three
@@ -7184,6 +7357,30 @@ MOTD_ROWS_END
 motd_first() { motd_first_row=${1%%'
 '*}; }
 
+motd_wide_resource_pair() {
+    [ "$motd_section_budget" -gt 0 ] || return 0
+    motd_line "$1"
+    [ "$motd_section_budget" -gt 0 ] || return 0
+    motd_view_fraction_bar "$2" "$3" "$motd_inner"
+    [ "$MV_BAR_VALID" -ne 1 ] || motd_line "$MV_BAR"
+}
+motd_resources_wide() {
+    # Fill the quantity named in each numeric row. Available and free are
+    # distinct observations; do not relabel either as physical memory used.
+    if [ "$motd_available" != unavailable ]; then
+        motd_wide_resource_pair "RAM available $motd_available/$motd_total KiB" "$motd_total" "$motd_available"
+    elif [ "$motd_free" != unavailable ]; then
+        motd_wide_resource_pair "RAM free $motd_free/$motd_total KiB" "$motd_total" "$motd_free"
+    else motd_line 'RAM unavailable'; fi
+    motd_wide_resource_pair "$motd_disk" 100 "$motd_disk_percent"
+    if [ "$SHOW_SWAP" -eq 1 ]; then
+        if [ "$motd_swap_total" = 0 ]; then motd_line 'Swap not configured'
+        else motd_wide_resource_pair "Swap free $motd_swap_free/$motd_swap_total KiB" "$motd_swap_total" "$motd_swap_free"; fi
+    fi
+    if [ "$SHOW_PRESSURE" -eq 1 ]; then motd_line "$motd_pressure"; fi
+    if [ "$SHOW_COMPRESSION" -eq 1 ]; then motd_line "$motd_compression"; fi
+}
+
 # One set of section callbacks serves every design. The shared POSIX engine
 # captures these data rows in a subshell and owns all layout; no collector or
 # measurement formula is duplicated for a different presentation.
@@ -7196,6 +7393,7 @@ motd_render_section() {
         resources)
             motd_section_budget=$((motd_section_budget + motd_resource_extra))
             motd_border "$motd_ml" "$motd_mr" 'RESOURCES'
+            if [ "$BAR_LAYOUT" = wide ]; then motd_resources_wide; return; fi
             if [ "$motd_available" != unavailable ]; then motd_line "Memory available: $motd_available KiB"
             elif [ "$motd_free" != unavailable ]; then motd_line "Memory free: $motd_free KiB (not available)"
             else motd_line 'Memory: unavailable'; fi
@@ -7208,7 +7406,7 @@ motd_render_section() {
             motd_border "$motd_ml" "$motd_mr" 'SERVICES'; motd_line "$motd_service_summary"
             while read -r motd_service_row; do
                 if [ "$motd_section_budget" -le 0 ]; then break; fi
-                motd_service_name=${motd_service_row%%:*}
+                motd_service_name=${motd_service_row%%': '*}
                 if motd_service_allowed "$motd_service_name"; then motd_line "$motd_service_row"; fi
             done <<MOTD_SERVICES_END
 $motd_service_rows
@@ -7263,7 +7461,7 @@ motd_view_capture() {
 
 motd_classic_defaults() {
     [ "$DESIGN" = classic ] && [ "$DENSITY" = balanced ] && [ "$DETAIL" = normal ] &&
-    [ "$PADDING" = 1 ] && [ "$SECTION_GAP" = 0 ] && [ "$COLOR_EMPHASIS" = balanced ] &&
+    [ "$PADDING" = 1 ] && [ "$SECTION_GAP" = 0 ] && [ "$COLOR_EMPHASIS" = balanced ] && [ "$BAR_LAYOUT" = inline ] &&
     [ "$SECTION_PRIORITY" = 'attention resources system services processes io sessions connections hints' ] || return 1
     for motd_default_id in $SECTIONS; do
         [ "$(motd_section_detail "$motd_default_id")" = normal ] || return 1
@@ -7323,6 +7521,7 @@ param(
     [switch] $NoHooks,
     [int] $Width = 0,
     [int] $Rows = 0,
+    [string] $BarLayout = '',
     [switch] $Version,
     [switch] $Help
 )
@@ -7332,12 +7531,17 @@ param(
 if ($Version) { Write-Output ('MOTD ' + $MotdVersion + ' (native PowerShell 1+ syntax)'); return }
 if ($Help) {
     Write-Output 'MOTD PowerShell: -Demo -DemoAlerts -Plain -Color -Ascii -Unicode -NoHooks -Width 40..240 -Rows 8..200'
+    Write-Output 'Resource bars: -BarLayout inline|wide (numeric labels remain when space is limited).'
     Write-Output 'Demonstrations use synthetic data and never run before/after calls.'
     Write-Output 'Local capability checks select CIM, WMI, .NET or Unix sources. Unavailable is not zero.'
     return
 }
 if ($Width -ne 0 -and ($Width -lt 40 -or $Width -gt 240)) { throw 'Width must be 40..240, or 0 for the recipe.' }
 if ($Rows -ne 0 -and ($Rows -lt 8 -or $Rows -gt 200)) { throw 'Rows must be 8..200, or 0 for the recipe.' }
+$MotdBarLayout = 'inline'
+if ($MotdConfig['display'].ContainsKey('bar_layout')) { $MotdBarLayout = [string]$MotdConfig['display']['bar_layout'] }
+if ($BarLayout -ne '') { $MotdBarLayout = $BarLayout }
+if ($MotdBarLayout -ne 'inline' -and $MotdBarLayout -ne 'wide') { throw 'BarLayout must be inline or wide.' }
 if ($DemoAlerts) { $Demo = $true }
 
 # The mutable result object is shared with trap's child scope. A failed read
@@ -7428,10 +7632,11 @@ function Format-MotdShortBytes([double] $Bytes) {
     return ('{0:N0}B' -f $Bytes)
 }
 
-function Format-MotdBar([double] $Used, [double] $Total) {
-    if ($Total -le 0 -or $Used -lt 0) { return '[unavailable]' }
+function Format-MotdBar([double] $Used, [double] $Total, [int] $OuterWidth = 0) {
+    if ($Total -le 0 -or $Used -lt 0 -or $Used -gt $Total) { return '[unavailable]' }
     $length = 12
     if ((Get-MotdResourceWidth) -lt 60) { $length = 8 }
+    if ($OuterWidth -gt 2) { $length = $OuterWidth - 2 }
     $filled = [int][Math]::Round($length * [Math]::Max(0.0, [Math]::Min(1.0, $Used / $Total)))
     $full = '#'; $empty = '-'
     if ($Unicode -and -not $Ascii) { $full = [string][char]0x2588; $empty = [string][char]0x2591 }
@@ -7443,6 +7648,36 @@ function Get-MotdResourceWidth {
         return [int][Math]::Floor(($MotdWidth - 2) / 2)
     }
     return $MotdWidth
+}
+
+function Get-MotdWideResourceWidth {
+    # Format to the final panel width, including its padding/labels. This
+    # happens after geometry selection and never queries a provider again.
+    $design = [string]$MotdConfig['display']['design']
+    $width = (Get-MotdResourceWidth) - 2 * [int]$MotdConfig['display']['padding']
+    if ($design -eq 'classic' -or $design -eq 'cards' -or $design -eq 'dashboard') { $width -= 2 }
+    if ($design -eq 'ledger') {
+        if ($MotdWidth -ge 60) { $width -= 12 } else { $width -= 2 }
+    }
+    if ($design -eq 'briefing') { $width -= 2 }
+    return [Math]::Max(3, $width)
+}
+
+function Add-MotdWideResource([string] $Label, [double] $Used, [double] $Total, [bool] $AllowEmpty = $false) {
+    if ($AllowEmpty -and $Total -eq 0 -and $Used -eq 0) {
+        Add-MotdLine ($Label + ': not configured') 'muted'
+    } elseif ($Total -le 0 -or $Used -lt 0 -or $Used -gt $Total) {
+        Add-MotdLine ($Label + ': unavailable') 'warning'
+    } else {
+        Add-MotdLine ($Label + ' ' + (Format-MotdShortBytes $Used) + '/' + (Format-MotdShortBytes $Total) + ' used') 'accent'
+        Add-MotdLine (Format-MotdBar $Used $Total (Get-MotdWideResourceWidth)) 'accent'
+        # Keep the fraction alongside its formatted row. An unpaired dashboard
+        # card can expand after planning; the renderer then refits this same
+        # observation to its actual width without querying anything again.
+        $lines = $MotdSections[$MotdCurrentSection].Lines
+        $lines[$lines.Count - 1]['BarUsed'] = $Used
+        $lines[$lines.Count - 1]['BarTotal'] = $Total
+    }
 }
 
 function ConvertTo-MotdWindowsArgument([string] $Argument) {
@@ -7652,14 +7887,18 @@ function Add-MotdResources {
             if ($size.Ok -and $size.Value.Count -eq 2) { $diskTotal = [double]$size.Value[0]; $diskUsed = $diskTotal - [double]$size.Value[1] }
         }
     }
-    if ((Get-MotdResourceWidth) -lt 60) {
+    if ($MotdBarLayout -eq 'wide') {
+        Add-MotdWideResource 'MEMORY' $used $total
+        Add-MotdWideResource ('STORAGE ' + $rootPath) $diskUsed $diskTotal
+        if ($MotdConfig['display']['show_swap']) { Add-MotdWideResource 'Swap/pagefile' $swapUsed $swapTotal $true }
+    } elseif ((Get-MotdResourceWidth) -lt 60) {
         Add-MotdLine ('MEM ' + (Format-MotdShortBytes $used) + '/' + (Format-MotdShortBytes $total) + ' ' + (Format-MotdBar $used $total)) 'accent'
         Add-MotdLine ('DISK ' + (Format-MotdShortBytes $diskUsed) + '/' + (Format-MotdShortBytes $diskTotal) + ' ' + (Format-MotdBar $diskUsed $diskTotal))
     } else {
         Add-MotdLine ('MEMORY ' + (Format-MotdBytes $used) + ' / ' + (Format-MotdBytes $total) + ' ' + (Format-MotdBar $used $total)) 'accent'
         Add-MotdLine ('STORAGE ' + $rootPath + ' ' + (Format-MotdBytes $diskUsed) + ' / ' + (Format-MotdBytes $diskTotal) + ' ' + (Format-MotdBar $diskUsed $diskTotal))
     }
-    if ($MotdConfig['display']['show_swap']) { Add-MotdLine ('Swap/pagefile ' + (Format-MotdShortBytes $swapUsed) + '/' + (Format-MotdShortBytes $swapTotal)) }
+    if ($MotdBarLayout -ne 'wide' -and $MotdConfig['display']['show_swap']) { Add-MotdLine ('Swap/pagefile ' + (Format-MotdShortBytes $swapUsed) + '/' + (Format-MotdShortBytes $swapTotal)) }
     if ($MotdConfig['display']['show_compression']) {
         if ($Demo) { Add-MotdLine 'Compressed memory: 256 MiB (demo)' 'muted' }
         else { Add-MotdLine 'Compression amount: unavailable' 'muted' }
@@ -8121,7 +8360,12 @@ function Get-MotdCardRows([string] $Id, $Rows, [int] $Count, [int] $Width, [int]
     [void]$output.Add((Format-MotdDesignTone $top 'accent'))
     for ($i = 0; $i -lt $BandHeight; $i++) {
         $text = ''; $tone = 'normal'
-        if ($i -lt $Count) { $text = $Rows[$i].Text; $tone = $Rows[$i].Tone }
+        if ($i -lt $Count) {
+            $text = $Rows[$i].Text; $tone = $Rows[$i].Tone
+            if ($Rows[$i].ContainsKey('BarTotal')) {
+                $text = Format-MotdBar $Rows[$i].BarUsed $Rows[$i].BarTotal ($Width - 2 - 2 * $Padding)
+            }
+        }
         [void]$output.Add((Format-MotdDesignTone (Format-MotdDesignCell $text $Width $Padding $true) $tone))
     }
     [void]$output.Add((Format-MotdDesignTone ($characters.BL + ($characters.H * ($Width - 2)) + $characters.BR) 'accent'))
@@ -8153,7 +8397,7 @@ function Write-MotdPresentation {
     $configuredPriority = Join-MotdText @(Get-MotdDisplaySetting 'priority' @('attention', 'resources', 'system', 'services', 'processes', 'io', 'sessions', 'connections', 'hints')) ','
     $classicMinimum = 0
     foreach ($id in $MotdSectionOrder) { $classicMinimum += Get-MotdPresentationMinimum $id $MotdSections[$id].Lines.Count 'classic' }
-    if ($design -eq 'classic' -and $classicMinimum -le $MotdHeight - 4 -and $padding -eq 1 -and (Get-MotdDisplaySetting 'density' 'balanced') -eq 'balanced' -and (Get-MotdDisplaySetting 'detail' 'normal') -eq 'normal' -and (Get-MotdDisplaySetting 'section_gap' 0) -eq 0 -and (Get-MotdDisplaySetting 'section_detail' @{}).Count -eq 0 -and $defaultPriority -eq $configuredPriority) {
+    if ($design -eq 'classic' -and $MotdBarLayout -eq 'inline' -and $classicMinimum -le $MotdHeight - 4 -and $padding -eq 1 -and (Get-MotdDisplaySetting 'density' 'balanced') -eq 'balanced' -and (Get-MotdDisplaySetting 'detail' 'normal') -eq 'normal' -and (Get-MotdDisplaySetting 'section_gap' 0) -eq 0 -and (Get-MotdDisplaySetting 'section_detail' @{}).Count -eq 0 -and $defaultPriority -eq $configuredPriority) {
         Write-MotdFrame
         return
     }

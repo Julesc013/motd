@@ -1,0 +1,108 @@
+{
+  "recorded_at_utc": "2026-11-17T07:28:33.855208+00:00",
+  "final_source_sha256": {
+    "motd.py": "eda912a538325d00f798dc969f8da4389f5c34ad5d4d13f2caba99087622a130",
+    "runtime/motd.bash": "12cfb6fa5f1a4ad97334bc92767e0af85a31c77f74d6f16b8b281fba081c6046",
+    "runtime/motd.sh": "36bdcf6dad14d80fd73894bd4c16790ca4b8019ae2217ce9099b3dbff5cc1a48",
+    "runtime/designs.sh": "6faaea0c5521f143faa58294f5a60ba3966b0d933543d80535183a3908ebd3b3",
+    "runtime/motd.ps1": "d34364f4a29c6adc287f793232611ec06a6046817b02e92a23bcaf59d97f9c46",
+    "tools/test_legacy_powershell.ps1": "f67642f425b4f06f40511803c00e6ac165c58aaacccdfa3fc979e8f2a8ecc710",
+    "tests/test_legacy_powershell.py": "8d708293ff592e252861934a780622625d492bd86a052cc51747909c87acc896",
+    "tests/test_output_lifecycle.py": "2d8d359d4c5682547008f25e5f5eee844acb1d351b99f2065199a280bd86486e"
+  },
+  "records": {
+    "python38": {
+      "path": "/workspace/scratch/e6a94ceb1ad8/work/python38-lifecycle-frozen.json",
+      "sha256": "a6dc781fbc5d6a13a425e7ebfb1f4f8c0fb2341e9fe590c1b0d1706658de26bd"
+    },
+    "unix": {
+      "path": "/workspace/scratch/e6a94ceb1ad8/work/unix-compatibility-frozen.json",
+      "sha256": "5c0b5f81e0723cbbaeebbf49a5c1946e598febf56d029c64fdaaaa0641d43f09"
+    },
+    "bash32_startup": {
+      "path": "/workspace/scratch/e6a94ceb1ad8/work/bash32-startup-frozen.json",
+      "sha256": "76121954381ad177e159f830cb1c5b9d7a006db9012781d7f2bc31780f9b5fff"
+    },
+    "powershell_harness": {
+      "path": "/workspace/scratch/e6a94ceb1ad8/work/legacy-version-final-evidence.json",
+      "sha256": "957bb3efb50ca9481cbfa165308dffbc911a440126417cc9f72f9599f29cfbdf"
+    },
+    "powershell6_provenance": {
+      "path": "/workspace/scratch/e6a94ceb1ad8/work/powershell/provenance-6.2.7.json",
+      "sha256": "581e9f3b9d9c51efcb5d6f0d251b71860cbc199290f3bda6bc4ac7ca64799dac"
+    },
+    "powershell7_provenance": {
+      "path": "/workspace/scratch/e6a94ceb1ad8/work/powershell/provenance.json",
+      "sha256": "97fdce24580994abb7711da3fe5bf9974ef54dab646f4b46e47c05cf3919a6c3"
+    },
+    "bash32_provenance": {
+      "path": "/workspace/scratch/e6a94ceb1ad8/work/bash-3.2-build/provenance.json",
+      "sha256": "0a153febf760c2983baf0b205bf0bfd51d6f0c513441c20ef54c032389c71ceb"
+    },
+    "oxipng_provenance": {
+      "path": "/workspace/scratch/e6a94ceb1ad8/work/oxipng/provenance.json",
+      "sha256": "3da1ec9dc0d3ad30ee62769f62b1917720153e6af5d62e2d8df75ee10cd40607"
+    }
+  },
+  "unit_log_summaries": {
+    "powershell6-designs-frozen.log": {
+      "tests_run": 14,
+      "seconds": 94.105,
+      "skipped": 0,
+      "passed": true,
+      "sha256": "d71cfa848a9ffd77539150caacf89a6bf43463d3070f1b3256e1f50fcaff976a",
+      "path": "/workspace/scratch/e6a94ceb1ad8/work/powershell6-designs-frozen.log"
+    },
+    "powershell6-runtime-frozen.log": {
+      "tests_run": 7,
+      "seconds": 13.094,
+      "skipped": 0,
+      "passed": true,
+      "sha256": "b9d82339b287c2fd0093753aa2209ccb23962cf210c963be1f76ff525d294a3b",
+      "path": "/workspace/scratch/e6a94ceb1ad8/work/powershell6-runtime-frozen.log"
+    },
+    "powershell6-harness-frozen.log": {
+      "tests_run": 2,
+      "seconds": 5.438,
+      "skipped": 0,
+      "passed": true,
+      "sha256": "bec3bf9b3ba9cc704bd7dcfa5e4f03b90a0eaa01b46a1859a443625fe85c607e",
+      "path": "/workspace/scratch/e6a94ceb1ad8/work/powershell6-harness-frozen.log"
+    },
+    "unix-shell-guards-frozen.log": {
+      "tests_run": 26,
+      "seconds": 2.196,
+      "skipped": 2,
+      "passed": true,
+      "sha256": "2645d7ea8cf2c79f553e400bef56f3ee9eada6c6097eddca45792eb5e67fa978",
+      "path": "/workspace/scratch/e6a94ceb1ad8/work/unix-shell-guards-frozen.log"
+    },
+    "unix-fish-startup-frozen.log": {
+      "tests_run": 1,
+      "seconds": 0.326,
+      "skipped": 0,
+      "passed": true,
+      "sha256": "eca8f5d42996278f646e687baeda15b0b86872559257580264f921aa3aaea320",
+      "path": "/workspace/scratch/e6a94ceb1ad8/work/unix-fish-startup-frozen.log"
+    }
+  },
+  "scope_notes": [
+    "All local checks are current Linux execution, not original historical operating-system verification.",
+    "PowerShell6 requires process-scoped invariant globalization and preserved official Debian libssl1.1; initial missing-library failure is preserved separately.",
+    "PowerShell harnesses ran 81 cases per6.2.7 and7.6.10; their generated artifact hashes were matched against final generator1639ce74 after Unix-only embedding changed.",
+    "PowerShell1,3,4,5.0 remain unexecuted targets. NativePS2/5.1/7Windows/macOS follow-up belongs to the root-owned workflow record.",
+    "Historical Bash1,2,4 and Zsh2,3,4 binaries were absent; this follow-up does not relabel retained earlier results as fresh passes."
+  ],
+  "latest_rerun": {
+    "motd_sha256": "eda912a538325d00f798dc969f8da4389f5c34ad5d4d13f2caba99087622a130",
+    "phases": [
+      "unix360",
+      "python38_lifecycle59",
+      "powershell_artifact_hash_revalidation"
+    ],
+    "previous_record_directory": "/workspace/scratch/e6a94ceb1ad8/work/compatibility-1639-lineage",
+    "script": "/workspace/scratch/e6a94ceb1ad8/work/rerun_compatibility_review.py",
+    "script_sha256": "6884635414cc45a3c409becdd48b5253a405f79f7129daee9841ffec7d74fa2c",
+    "startup_and_ps_execution_lineage": "Startup guards and actual PowerShell execution were not rerun for the Unix service-name parser correction. Their earlier source lineage remains in their original records; all PowerShell artifact bytes match the final generator."
+  }
+}

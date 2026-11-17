@@ -2,7 +2,10 @@
 
 Updated 17 November 2026. This is a delivery sequence with evidence gates, not a
 promise of support for every historical or future OS. The detailed assessment is
-[the portability and architecture audit](docs/audit-2026-11-17.md).
+[the portability and architecture audit](docs/audit-2026-11-17.md). The
+[discussion and design review](docs/discussion-and-design-review-2026-11-17.md)
+traces the complete supplied history, superseded proposals, the interrupted
+v0.4 delivery and the newer bar/field/localization requests.
 
 ## Product boundary
 
@@ -34,10 +37,51 @@ Completion evidence:
   backends/presets, plus density/detail contrasts; all transcripts and PNG hashes.
 - Wizard frames at the four sizes, including safe before/after sample mode.
 
+The local implementation and retained verification gates above are complete for
+0.4.0: 524 classic cases, 140 sampler cases, five wizard frames, native Python
+3.8/current-Python suites, and the recorded shell/native-host matrices. See
+`build/verification-gallery-v04.json` and the audit for exact hashes, counts,
+skips and the example-builder qualification on the current-Python run. Native
+interactive Windows console resizing remains an explicit coverage gap below.
+Those records describe their own source hashes. Follow-up runtime/generator
+changes require relevant new checks and refreshed artifact provenance; an old
+checked gate does not certify a changed tree. Reconcile remote refs, local
+sources and retained galleries before calling the interrupted delivery published.
+
+### Readability follow-up
+
+The shared suffix-registry correction and required-service deduplication are
+implemented. The current review verifies complete build/export/install paths for each generated output
+suffix, including Fish and CMD, and preserve distinct missing/inactive/unavailable
+service findings. A generation-only test does not exercise archival validation.
+
+Inline/wide bars now use existing numeric observations through the recipe, CLI,
+wizard and renderer routes. Current-source checks cover bounds, row budgets,
+accounting meanings and unavailable states. A dashboard gauge fills its own
+panel. Defer a common
+field/heading override contract to the text-policy work below; the existing
+Bash item registry does not establish cross-backend field support.
+Inspect 40/80-column short/tall output and wide paired panels, not only line counts.
+
+The [beginner walkthrough](docs/quickstart.md) now covers destination choices,
+visible keys and the save/build/reopen path. Screen choice hints explain preview
+then acceptance; line-mode previews include opted-in call samples. Shared batch
+validation preserves the prior draft on invalid Unicode edits, static previews
+display terminal controls visibly, and interactive reconfiguration always runs
+UI cleanup. The [current review evidence](build/verification-review-20261117.json)
+records the combined-source local suite and regenerated visual evidence;
+native workflow results and publication status remain separately identifiable.
+
+Record cold preview, cached choice and resize latency separately. Preserve the historical live-runtime aspiration
+of less than 100 ms (ideally nearer 10 ms) and the controlled-stall 400 ms target
+as measured goals on named hosts, with coverage and fallback counts disclosed.
+No historic Workshop1.2 benchmark establishes current-release performance.
+
 ## 2. Close the highest-value native coverage gaps
 
-Run the legacy PowerShell harness on actual 1.0, 2.0, 3.0, 4.0 and 5.0 engines
-when those environments are available. A prepared harness is not a test pass.
+Run the legacy PowerShell harness on actual 1.0, 3.0, 4.0 and 5.0 engines
+when those environments are available. Retain and repeat the actual PS2/Server
+2022 check obtained during this review for the final source. A prepared harness is not a test pass.
 Record host OS, engine, encoding, terminal capability, source hashes and skipped
 collectors. Investigate actual failures before widening a support claim.
 
@@ -49,7 +93,33 @@ and permissions; do not infer all distributions from it.
 Keep contributor setup optional: normal generation must not acquire gallery,
 historical-engine or test dependencies.
 
-## 3. Harden remaining bounded correctness risks
+Drive the wizard in a real Windows console, resizing with a partially typed
+answer, and check its old-console line-mode fallback. Pure frame rendering and
+native cmd/PowerShell/export jobs do not establish that interactive behavior.
+
+## 3. Add only explicit, tested integration adapters
+
+Native macOS profile installation is separate from running the existing Unix
+output there. It needs startup-file selection, existing customization preservation
+and tested upgrade/uninstall behavior. Windows profiles, CMD AutoRun and sign-in
+or RDP policy routes are separate mechanisms, each requiring an explicit scope
+and native safety contract. A text export must never imply that a service or
+policy was configured.
+
+Persistent shell prompts and per-command hints are also separate from an arrival
+MOTD. First specify which shell event and information the user wants, how an
+existing prompt/completion system is preserved, and whether any command runs.
+Keep prompt work lightweight and avoid collecting the whole dashboard per
+command. Implement one demonstrably useful native adapter with reversible
+ownership before expanding to another shell.
+
+Treat csh/tcsh and older non-POSIX Bourne shells as separate grammar/startup
+targets. Invoking a compatible exported sh script manually can already be useful,
+but is not proof of native generation or installation support. A future native
+adapter needs an actual engine and startup test; do not duplicate the collector
+merely to add an entry point.
+
+## 4. Harden remaining bounded correctness risks
 
 Retain the implemented 16 MiB POSIX snapshot limit and bounded import reads, with
 their negative tests. Document exactly which file metadata is restored. Add ACL/xattr preservation
@@ -66,7 +136,7 @@ handle-based path checks, reparse-point policy, ACL/ownership behavior, crash
 recovery and profile ownership. The create-only exporter is not a starting
 transaction engine and must not silently grow into one.
 
-## 4. Keep maintenance proportional to the product
+## 5. Keep maintenance proportional to the product
 
 Check canonical runtime/TOML embedding in CI and build examples mechanically.
 Keep one current release evidence index; retain older logs with historical scope.
@@ -81,3 +151,37 @@ new use case justifies that independent product.
 
 The repository owner must choose project licensing terms before the project is
 described as openly licensed. Vendored component licenses remain intact.
+
+## 6. Localize presentation without changing observations
+
+Implement a small reviewed message catalog and stable field IDs before claiming
+localized UI or data formatting. Bounded literal heading overrides are a proposed
+extension at that stage, not part of the immediate wide-bar correction.
+Raw numbers, units, identities, timestamps and
+availability stay separate from translated labels. Parse a supported invariant
+provider format before human formatting; never translate rendered output with
+regular-expression substitutions or localize command/path data.
+
+Resolve catalogs at generation time where practical and embed only needed data.
+Publish requested/effective locale and an explicit exact-locale, declared
+language-fallback, English-fallback policy. Missing translations must be visible
+in inspection; invalid placeholders must fail generation. No runtime download or
+mandatory destination-side locale package should be introduced.
+
+Use terminal-cell widths and supported grapheme boundaries for any general
+Unicode claim. Retain an explicit ASCII/legacy policy; combining text, CJK,
+ambiguous widths, emoji sequences and right-to-left layout need their own cases.
+A Unicode border setting or custom heading is not full localization. The
+[discussion review](docs/discussion-and-design-review-2026-11-17.md#6-internationalization-and-localization-policy)
+defines the detailed policy and minimum acceptance cases.
+
+## 7. Keep earlier Python as a recorded feasibility request
+
+Python3.8 is the implemented lower boundary, with actual execution evidence.
+The request to explore Python3.0 and intervening versions remains deferred;
+it has not been rejected by the user or demonstrated feasible. A lower floor
+requires an inventory of syntax/library/OS dependencies, a measured deployment
+benefit and real-engine tests of generation and any claimed filesystem behavior.
+Do not weaken the transaction engine merely to lower a version guard. Generating
+on a supported machine and copying standalone outputs remains the preferred
+route for destinations that cannot run the configurator.

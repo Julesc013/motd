@@ -1,0 +1,13 @@
+test_colon_service_names_remain_distinct_with_requirements_and_exclusions (test_runtime_review.PortableServiceReviewTests.test_colon_service_names_remain_distinct_with_requirements_and_exclusions) ... ok
+test_required_services_are_promoted_once_when_patterns_overlap (test_runtime_review.PortableServiceReviewTests.test_required_services_are_promoted_once_when_patterns_overlap) ... ok
+test_fraction_formatter_does_not_invent_bars_for_missing_or_invalid_values (test_runtime_review.WideResourceTests.test_fraction_formatter_does_not_invent_bars_for_missing_or_invalid_values) ... ok
+test_invalid_bar_layout_is_rejected_before_before_hook (test_runtime_review.WideResourceTests.test_invalid_bar_layout_is_rejected_before_before_hook) ... ok
+test_power_shell_wide_bars_fit_layouts_and_use_existing_totals (test_runtime_review.WideResourceTests.test_power_shell_wide_bars_fit_layouts_and_use_existing_totals) ... ok
+test_wide_unix_bars_fit_all_designs_and_small_viewports (test_runtime_review.WideResourceTests.test_wide_unix_bars_fit_all_designs_and_small_viewports) ... ok
+test_wide_unix_bars_honor_swap_visibility_and_cli_override (test_runtime_review.WideResourceTests.test_wide_unix_bars_honor_swap_visibility_and_cli_override) ... ok
+test_wide_unix_bars_use_full_panel_width_and_numeric_observations (test_runtime_review.WideResourceTests.test_wide_unix_bars_use_full_panel_width_and_numeric_observations) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 10.410s
+
+OK

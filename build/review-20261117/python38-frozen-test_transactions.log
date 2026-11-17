@@ -1,0 +1,32 @@
+test_apply_rechecks_after_separate_stage (test_transactions.TransactionTests) ... ok
+test_corrupted_backup_is_rejected_before_apply (test_transactions.TransactionTests) ... ok
+test_create_replace_remove_and_exact_binary_rollback (test_transactions.TransactionTests) ... ok
+test_existing_numeric_ownership_is_preserved_and_restored (test_transactions.TransactionTests) ... skipped 'numeric ownership restoration requires root'
+test_identical_writes_and_missing_deletes_are_noops (test_transactions.TransactionTests) ... ok
+test_interruption_after_rename_is_recoverable_from_durable_intent (test_transactions.TransactionTests) ... ok
+test_lock_rejects_concurrent_mutation (test_transactions.TransactionTests) ... ok
+test_normal_failure_compensates_prior_writes (test_transactions.TransactionTests) ... ok
+test_orphan_stage_abandonment_never_infers_target_paths (test_transactions.TransactionTests) ... ok
+test_partial_staging_can_be_cancelled_without_target_mutation (test_transactions.TransactionTests) ... ok
+test_plan_is_read_only_and_stage_does_not_touch_targets (test_transactions.TransactionTests) ... ok
+test_plan_rechecks_content_and_mode_drift (test_transactions.TransactionTests) ... ok
+test_private_state_and_complete_recovery_archives (test_transactions.TransactionTests) ... ok
+test_process_exit_after_replace_uses_persisted_recovery_intent (test_transactions.TransactionTests) ... ok
+test_public_owner_field_preserves_requested_current_identity_and_validates (test_transactions.TransactionTests) ... ok
+test_recovery_does_not_touch_unattempted_targets (test_transactions.TransactionTests) ... ok
+test_recovery_preserves_external_edit_and_blocks_new_apply (test_transactions.TransactionTests) ... ok
+test_rejects_symlinks_nonregular_hardlinks_and_symlink_parents (test_transactions.TransactionTests) ... ok
+test_rejects_traversal_duplicate_targets_state_overlap_and_root_state (test_transactions.TransactionTests) ... ok
+test_repair_does_not_resurrect_newer_intentional_deletion (test_transactions.TransactionTests) ... ok
+test_repair_restores_missing_only_and_preserves_modified (test_transactions.TransactionTests) ... ok
+test_repeated_rollback_after_redo_uses_effective_inverse (test_transactions.TransactionTests) ... ok
+test_rollback_original_after_repair_preserves_original_preimage (test_transactions.TransactionTests) ... ok
+test_rollback_refuses_drift_before_changing_any_file (test_transactions.TransactionTests) ... ok
+test_rollback_refuses_superseded_ownership (test_transactions.TransactionTests) ... ok
+test_undo_restores_previous_owner_for_missing_file_repair (test_transactions.TransactionTests) ... ok
+test_unmarked_or_unprotected_state_is_not_adopted (test_transactions.TransactionTests) ... ok
+
+----------------------------------------------------------------------
+Ran 27 tests in 0.206s
+
+OK (skipped=1)

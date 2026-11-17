@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "project_version": "0.4.0",
+  "recorded_at_utc": "2026-11-17T01:50:37Z",
+  "capture_environment": {
+    "POWERSHELL_TELEMETRY_OPTOUT": "1",
+    "DOTNET_CLI_TELEMETRY_OPTOUT": "1"
+  },
+  "galleries": {
+    "gallery": {
+      "manifest": "examples/gallery/manifest.json",
+      "manifest_sha256": "d1afb40537743d5e9f18cfc5d7b627389519ffe5b1a3dfeca28f8a7be8fb1573",
+      "verified_logical_cases": 524,
+      "verified_unique_pngs": 196,
+      "verified_comparisons": 8,
+      "all_decoded_pixels_verified": true,
+      "summary": {
+        "logical_cases": 524,
+        "shell_cases": 512,
+        "unique_pngs": 196,
+        "png_bytes": 21627308,
+        "png_bytes_before_optimization": 30811050,
+        "comparison_pngs": 8,
+        "comparison_png_bytes": 2787013,
+        "all_png_bytes": 24414321
+      },
+      "total_files": 766,
+      "total_bytes": 27383780
+    },
+    "designs": {
+      "manifest": "examples/designs/manifest.json",
+      "manifest_sha256": "50e0d163f227fa067ff39fea0c1870d3e9cc1e795f1f34ffee6d8a996e9b0dbc",
+      "verified_logical_cases": 140,
+      "verified_unique_pngs": 138,
+      "verified_comparisons": 4,
+      "all_decoded_pixels_verified": true,
+      "summary": {
+        "logical_cases": 140,
+        "shell_cases": 140,
+        "unique_pngs": 138,
+        "png_bytes": 13588410,
+        "png_bytes_before_optimization": 19369181,
+        "comparison_pngs": 4,
+        "comparison_png_bytes": 2074019,
+        "all_png_bytes": 15662429
+      },
+      "total_files": 335,
+      "total_bytes": 16591003
+    }
+  },
+  "wizard": {
+    "manifest": "examples/wizard-manifest.json",
+    "manifest_sha256": "784318302dccd29ae6c74104a7a2bf961723d712166e81d9904a553058732bb5",
+    "verified_frames": 5,
+    "verified_png_bytes": 795463,
+    "alias_verified": true,
+    "full_grid_and_decoded_pixels_verified": true,
+    "alias_png_bytes": 85710
+  },
+  "examples": {
+    "manifest": "examples/manifest.json",
+    "verified_artifacts": 16
+  },
+  "archives": [
+    {
+      "path": "/workspace/scratch/c65930e4593e/work/motd-gallery-v04.zip",
+      "bytes": 25073569,
+      "sha256": "9599bdc92c5eaa1e1147307e22bd19e3c09e015cd6388622b9c0f2a9abbcbbc6"
+    },
+    {
+      "path": "/workspace/scratch/c65930e4593e/work/motd-designs-v04.zip",
+      "bytes": 15936275,
+      "sha256": "b9fc3eb6fb6792094f2c1c7ce7be63705fb33c86066827d0fe4d680fb976c3ab"
+    }
+  ],
+  "source_sha256": {
+    "motd.py": "dd4c8e379796adce0b44b3809ac292c5ab848693c3cb9f69ead360034a35c6a4",
+    "tools/build_gallery.py": "476de4d5ed792c83f6706289318020f6bf85ec307e2defa1ef1c8255530ce07a",
+    "runtime/designs.sh": "8b3063487ad72aa43d51158f7ecc3a9121f1fa0b6d04a01fe95c89e7f309c64c",
+    "runtime/motd.bash": "138368aac5c27b3de7ab72e56c9a1a055577704d9bc2e47feef77fa265cc2368",
+    "runtime/motd.ps1": "ea883b1b33ccf5953a0a828e201a494d1f7cb20136a50a290b18eb8487004832",
+    "runtime/motd.sh": "4f95498151cb1ece7ad3c07897b77be93f4e7f5384998884f024d47296c76214"
+  },
+  "visual_qa": {
+    "status": "passed representative final-source image inspection",
+    "checked_at_utc": "2026-11-17T01:52:13Z",
+    "images": [
+      {
+        "path": "examples/designs/comparisons/five-designs-40x25.png",
+        "sha256": "d1c4ac81d9542212fcf4882e6c89a53251c190a5e0d8b988f89395594cf45359"
+      },
+      {
+        "path": "examples/designs/comparisons/five-designs-80x50.png",
+        "sha256": "4be920fcc02e782f7582da6c576a022a2539b1af126263396839c695889d7df6"
+      },
+      {
+        "path": "examples/designs/png/workshop-bash-cyan-unicode-colour-80x50-dashboard-comfortable-full.png",
+        "sha256": "09a4fd359321a7e02cae45418a1557d6a4bf0c0642ccf0b5bbd6eeab54a241a5"
+      },
+      {
+        "path": "examples/wizard-40x25.png",
+        "sha256": "4e3c6d60e7669b7c0e0dd4a571aa070787fb7bae1de64bfa37b9ec6f28cffecf"
+      },
+      {
+        "path": "examples/wizard-call-samples-80x50.png",
+        "sha256": "8de2f38dc82ca833a364bb9a92bcb66bb62e2a3941b9649a547fffb0cb113b80"
+      }
+    ],
+    "observations": [
+      "All five designs at 40x25 and 80x50 preserve host identity, uptime and demo context.",
+      "Complete frames, visible omission summaries and readable narrow/wide presentation inspected.",
+      "The wide comfortable/full dashboard shows additional details without terminal wrap or scroll.",
+      "Wizard 40x25 retains ten control rows and a fifteen-row adaptive preview.",
+      "The optional call-sample frame displays Fastfetch and printf samples without executing configured commands."
+    ],
+    "scope": "Representative visual inspection supplements automated checks of every retained transcript, cell grid and decoded image. It does not certify every configuration or native terminal font."
+  },
+  "combined_png_files_including_wizard_alias": 352,
+  "combined_png_bytes_including_wizard_alias": 40957923
+}

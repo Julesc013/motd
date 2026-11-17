@@ -91,7 +91,7 @@ the corresponding implementation in its single native core.
 
 | Field | Accepted values and meaning |
 |---|---|
-| `design` | `classic` preserves the traditional frame; `cards` frames individual sections; `ledger` aligns unboxed rows; `briefing` puts attention headlines first; `dashboard` pairs metric cards at wide widths and stacks them at 40 columns. |
+| `design` | `classic` preserves the traditional frame; `cards` frames individual sections; `ledger` aligns unboxed rows; `briefing` puts attention headlines first; `dashboard` pairs cards in the configured section order at wide widths and stacks them at 40 columns. |
 | `density` | `compact`, `balanced`, `comfortable`; alters spacing and ordinary detail allocation. |
 | `detail` | `brief`, `normal`, `full`; controls desired section-row allocation within the available viewport. |
 | `padding` / `section_gap` | Integer horizontal padding 0–3 and section gaps 0–2. |
@@ -102,10 +102,19 @@ the corresponding implementation in its single native core.
 Runtime dimensions are 40–240 columns and 8–200 rows. Account for borders,
 spacing, paired-card band heights, headings and omission notices before emitting
 rows. Keep a prompt row free. A small viewport may omit whole lower-priority
-sections; it must state that omission and retain complete frames. An empty
+sections; it must state that omission and retain complete frames. Wrap the full
+names of hidden sections and budget every footer row; do not shorten away names
+to pretend that more content fits. At 40×8 with many enabled sections, the context
+and full hidden list can leave no room for a complete card. An empty
 heading-only row cannot consume a briefing section's entire brief allocation:
-promote the first actual detail when one exists. The default classic recipe
-retains its established layout.
+promote the first actual detail when one exists. Preserve a visible DEMO label
+for long titles; new presentation paths lead with it and retain host/uptime
+context within the available geometry. Native PowerShell retains context even
+when System is disabled. Legacy Unix classic defaults preserve their original
+header placement; context can depend on an enabled System section and can be
+reduced by the emergency short layout.
+The classic frame retains its normal section allocation when every section's
+minimum fits; short viewports use the shared omission planner.
 
 ## 4. Visual wizard requirements
 

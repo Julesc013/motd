@@ -24,3 +24,8 @@ build/*
 !build/verification-python38-v04.json
 !build/verification-python38-v04.log
 !build/verification-native-v04.json
+!build/verification-powershell2-v04.xml
+!build/verification-powershell2-v04-probe.json
+!build/verification-gallery-v04.json
+!build/verification-review-20261117.json
+!build/review-20261117/

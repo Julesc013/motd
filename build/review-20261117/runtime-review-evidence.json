@@ -1,0 +1,65 @@
+{
+  "completed_at_utc": "2026-11-17T07:19:00.743272+00:00",
+  "scope": "Shared decimal fraction formatter under five installed Unix interpreters; valid 1\u201330 decimal digit totals, widths1\u2013240, unavailable/negative/over-total values and leading zeros. No host collectors invoked.",
+  "observations": [
+    {
+      "engine": [
+        "/bin/sh"
+      ],
+      "cases": 407,
+      "invalid_cases": 6,
+      "maximum_rounding_difference_cells": 0,
+      "status": "passed"
+    },
+    {
+      "engine": [
+        "bash"
+      ],
+      "cases": 407,
+      "invalid_cases": 6,
+      "maximum_rounding_difference_cells": 0,
+      "status": "passed"
+    },
+    {
+      "engine": [
+        "/workspace/scratch/c65930e4593e/work/unix-extra-engines/busybox/usr/bin/busybox",
+        "ash"
+      ],
+      "cases": 407,
+      "invalid_cases": 6,
+      "maximum_rounding_difference_cells": 0,
+      "status": "passed"
+    },
+    {
+      "engine": [
+        "/workspace/scratch/c65930e4593e/work/unix-extra-engines/mksh/usr/bin/mksh"
+      ],
+      "cases": 407,
+      "invalid_cases": 6,
+      "maximum_rounding_difference_cells": 0,
+      "status": "passed"
+    },
+    {
+      "engine": [
+        "/workspace/scratch/c65930e4593e/work/unix-extra-engines/ksh/usr/bin/ksh93"
+      ],
+      "cases": 407,
+      "invalid_cases": 6,
+      "maximum_rounding_difference_cells": 0,
+      "status": "passed"
+    }
+  ],
+  "formatter_sha256": "427baba1ad40ee6aa136e4df5407bd6fb957c57a83f576bb866fc5a1662fe5e5",
+  "reproduction": {
+    "random_seed": 9071,
+    "random_valid_cases": 400,
+    "fixed_cases": 7,
+    "maximum_total_digits": 30,
+    "cell_width_range": [
+      1,
+      240
+    ],
+    "allowed_error_cells": 1,
+    "comparison": "(part * width + total // 2) // total with arbitrary precision Python integers"
+  }
+}

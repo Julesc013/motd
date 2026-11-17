@@ -1,9 +1,11 @@
 # Execute trusted, generated MOTD files on an actual PowerShell 1+ host.
 # Copy this file and generated .ps1 outputs to the target; Python is not needed.
 # Example (PowerShell 2):
-# powershell.exe -Version 2 -NoProfile -Command "& '.\tools\test_legacy_powershell.ps1' -ArtifactsDirectory '.\build\legacy-powershell-inputs' -ExpectedMajor 2 -Output '.\build\powershell-2-evidence.xml' -IncludeLive"
+# powershell.exe -Version 2 -NoProfile -Command "& '.\tools\test_legacy_powershell.ps1' -ArtifactsDirectory '.\build\legacy-powershell-inputs' -ExpectedMajor 2 -ExpectedMinor 0 -Output '.\build\powershell-2-evidence.xml' -IncludeLive"
 # Invoke the corresponding installed engine for versions 1, 3, 4 or 5; -Version
 # is not a mechanism for installing those engines on a current Windows image.
+# Add -ExpectedMinor to distinguish versions such as 5.0 and 5.1. The default
+# -1 accepts any minor version while still requiring the expected major.
 # This harness executes its input scripts. Only supply generated files you trust.
 # It never installs a runtime, changes execution policy or modifies login files.
 # XML output works with .NET 2 and does not depend on PS3's ConvertTo-Json.
@@ -12,6 +14,7 @@ param(
     [string] $Artifact = '',
     [string] $ArtifactsDirectory = '',
     [int] $ExpectedMajor = 0,
+    [int] $ExpectedMinor = -1,
     [string] $Output = 'powershell-evidence.xml',
     [switch] $IncludeLive
 )
@@ -57,7 +60,9 @@ function Invoke-ObservedCase([string] $Path, [int] $Columns, [int] $Rows, [bool]
 $actualVersion = [string]$Host.Version
 if ($PSVersionTable -and $PSVersionTable.PSVersion) { $actualVersion = [string]$PSVersionTable.PSVersion }
 $actualMajor = [int]$actualVersion.Split('.')[0]
+$actualMinor = [int]$actualVersion.Split('.')[1]
 $EvidenceRoot.SetAttribute('expected-major', [string]$ExpectedMajor)
+$EvidenceRoot.SetAttribute('expected-minor', [string]$ExpectedMinor)
 $EvidenceRoot.SetAttribute('actual-version', $actualVersion)
 $EvidenceRoot.SetAttribute('clr-version', [string][Environment]::Version)
 $EvidenceRoot.SetAttribute('os-version', [Environment]::OSVersion.VersionString)
@@ -66,7 +71,12 @@ $EvidenceRoot.SetAttribute('automation-assembly', [Management.Automation.PSObjec
 $createMethods = @(([scriptblock]).GetMethods() | Where-Object { $_.Name -eq 'Create' -and $_.IsStatic })
 $EvidenceRoot.SetAttribute('scriptblock-create-available', [string]($createMethods.Count -gt 0))
 if ($ExpectedMajor -lt 1 -or $ExpectedMajor -gt 7) { throw 'Supply -ExpectedMajor 1..7 so the harness can reject a different engine.' }
+if ($ExpectedMinor -lt -1) { throw 'Supply -ExpectedMinor 0 or greater, or omit it to accept any minor version.' }
 if ($actualMajor -ne $ExpectedMajor) { throw ('Expected PowerShell ' + $ExpectedMajor + ', actually running ' + $actualVersion + '; no compatibility evidence collected.') }
+# A major-only assertion deliberately accepts 5.0 and 5.1. Require the minor
+# explicitly when collecting separate evidence for those historical engines.
+# Keep this assertion before enumerating, hashing or executing any artifact.
+if ($ExpectedMinor -ge 0 -and $actualMinor -ne $ExpectedMinor) { throw ('Expected PowerShell ' + $ExpectedMajor + '.' + $ExpectedMinor + ', actually running ' + $actualVersion + '; no compatibility evidence collected.') }
 
 $files = New-Object Collections.ArrayList
 if ($Artifact -ne '') { [void]$files.Add([IO.Path]::GetFullPath($Artifact)) }

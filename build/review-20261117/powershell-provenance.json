@@ -1,0 +1,116 @@
+{
+  "version": "7.6.10",
+  "official_release": "https://github.com/PowerShell/PowerShell/releases/tag/v7.6.10",
+  "asset_url": "https://github.com/PowerShell/PowerShell/releases/download/v7.6.10/powershell-7.6.10-linux-x64.tar.gz",
+  "asset_id": 732744029,
+  "bytes": 73423947,
+  "archive_sha256": "e261cabc91c78a9afe8d1e5f24731ab0d38204735ab2ec94b0af55102652e10d",
+  "expected_digest_source": "GitHub release asset digest",
+  "binary_sha256": "292d0d8573eaeaf44685c1b454a2d14d68f6c91d1eff42e484c73c72ba235695",
+  "recorded_at_utc": "2026-11-17T07:09:12.178427+00:00",
+  "executable": "/workspace/scratch/e6a94ceb1ad8/work/powershell/7.6.10/pwsh",
+  "probe_returncode": 0,
+  "probe": {
+    "Platform": "Unix",
+    "GitCommitId": "7.6.10",
+    "WSManStackVersion": {
+      "Major": 3,
+      "Minor": 0,
+      "Build": -1,
+      "Revision": -1,
+      "MajorRevision": -1,
+      "MinorRevision": -1
+    },
+    "PSRemotingProtocolVersion": {
+      "Major": 2,
+      "Minor": 4,
+      "Build": -1,
+      "Revision": -1,
+      "MajorRevision": -1,
+      "MinorRevision": -1
+    },
+    "OS": "Debian GNU/Linux 13 (trixie)",
+    "PSEdition": "Core",
+    "PSVersion": {
+      "Major": 7,
+      "Minor": 6,
+      "Patch": 10,
+      "PreReleaseLabel": null,
+      "BuildLabel": null
+    },
+    "SerializationVersion": {
+      "Major": 1,
+      "Minor": 1,
+      "Build": 0,
+      "Revision": 1,
+      "MajorRevision": 0,
+      "MinorRevision": 1
+    },
+    "PSCompatibleVersions": [
+      {
+        "Major": 1,
+        "Minor": 0,
+        "Build": -1,
+        "Revision": -1,
+        "MajorRevision": -1,
+        "MinorRevision": -1
+      },
+      {
+        "Major": 2,
+        "Minor": 0,
+        "Build": -1,
+        "Revision": -1,
+        "MajorRevision": -1,
+        "MinorRevision": -1
+      },
+      {
+        "Major": 3,
+        "Minor": 0,
+        "Build": -1,
+        "Revision": -1,
+        "MajorRevision": -1,
+        "MinorRevision": -1
+      },
+      {
+        "Major": 4,
+        "Minor": 0,
+        "Build": -1,
+        "Revision": -1,
+        "MajorRevision": -1,
+        "MinorRevision": -1
+      },
+      {
+        "Major": 5,
+        "Minor": 0,
+        "Build": -1,
+        "Revision": -1,
+        "MajorRevision": -1,
+        "MinorRevision": -1
+      },
+      {
+        "Major": 5,
+        "Minor": 1,
+        "Build": -1,
+        "Revision": -1,
+        "MajorRevision": -1,
+        "MinorRevision": -1
+      },
+      {
+        "Major": 6,
+        "Minor": 0,
+        "Build": -1,
+        "Revision": -1,
+        "MajorRevision": -1,
+        "MinorRevision": -1
+      },
+      {
+        "Major": 7,
+        "Minor": 0,
+        "Build": -1,
+        "Revision": -1,
+        "MajorRevision": -1,
+        "MinorRevision": -1
+      }
+    ]
+  }
+}

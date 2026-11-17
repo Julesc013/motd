@@ -1,0 +1,30 @@
+﻿{
+    "before":  {
+                   "stderr":  "",
+                   "version":  "2.0",
+                   "exit_code":  0
+               },
+    "component_installation":  "not needed",
+    "recorded_at_utc":  "2026-11-17T01:42:22.1657303Z",
+    "runner":  "windows-2022",
+    "os":  "Microsoft Windows NT 10.0.20348.0",
+    "after":  {
+                  "stderr":  "",
+                  "version":  "2.0",
+                  "exit_code":  0
+              },
+    "expected_major":  2,
+    "status":  "passed",
+    "optional_components_before":  [
+                                       {
+                                           "Name":  "NET-Framework-Core",
+                                           "InstallState":  1
+                                       },
+                                       {
+                                           "Name":  "PowerShell-V2",
+                                           "InstallState":  1
+                                       }
+                                   ],
+    "cases":  41,
+    "failed":  0
+}

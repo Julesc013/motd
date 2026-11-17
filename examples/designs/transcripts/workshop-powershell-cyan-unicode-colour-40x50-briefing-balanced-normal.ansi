@@ -1,0 +1,31 @@
+[?1h=[36m DEMO | WORKSHOP STATUS | BRIEFING      [0m
+[90m Host demo-host | Up 4d 06h             [0m
+[90m Attention: Scope: selected local ob... [0m
+[36m System: demo-host | 8 logical CPUs     [0m
+   Windows / Unix | User operator       
+   Up 4d 06h | PowerShell capability... 
+[36m Resources: MEM 6.0G/16.0G [███░░░░░]   [0m
+   DISK 120.0G/512.0G [██░░░░░░]        
+   Swap/pagefile 512M/8.0G              
+[90m   Compressed memory: 256 MiB (demo)    [0m
+[90m   Pressure: memory some avg10 0.00%    [0m
+[36m Services: 16 run / 21 loaded           [0m
+[32m   [RUN] sshd  [RUN] storage-worker     [0m
+   [RUN] backup  [STOP] optional-web    
+[36m Processes: CPU total (s) / memory      [0m
+   CPU   152.4s   812 storage-worker    
+   MEM     2.0G  1120 database          
+   CPU    38.6s  1120 database          
+   MEM     768M   812 storage-worker    
+   CPU    18.7s   946 disk-check        
+[36m Sessions: 4 registered logins          [0m
+   operator  tty1   console             
+   operator  pts/1  192.0.2.24 (SSH)    
+   operator  pts/2  192.0.2.31 (SSH)    
+[36m Connections: 8 TCP / 3 listeners       [0m
+   :22 -> 192.0.2.24:51042 Established  
+   :22 -> 192.0.2.31:49720 Established  
+   :443 -> 198.51.100.8:54016 Establ... 
+ Hints: Tasks: Get-Process - Local p... 
+   Services: Get-Service - Windows s... 
+   Storage: Get-PSDrive -PSProvider ... 

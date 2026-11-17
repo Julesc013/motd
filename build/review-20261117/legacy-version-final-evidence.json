@@ -1,0 +1,267 @@
+{
+  "recorded_at_utc": "2026-11-17T07:20:06.692959+00:00",
+  "motd_source_start_sha256": "531bb0af3b03f76066c0f84f82919afe6cc261c9d74924f799668a43d7816bd3",
+  "motd_source_end_sha256": "531bb0af3b03f76066c0f84f82919afe6cc261c9d74924f799668a43d7816bd3",
+  "harness_sha256": "f67642f425b4f06f40511803c00e6ac165c58aaacccdfa3fc979e8f2a8ecc710",
+  "results": [
+    {
+      "version": "6.2.7",
+      "command": [
+        "/workspace/scratch/e6a94ceb1ad8/work/powershell/6.2.7/pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "/workspace/scratch/e6a94ceb1ad8/motd/tools/test_legacy_powershell.ps1",
+        "-ArtifactsDirectory",
+        "/workspace/scratch/e6a94ceb1ad8/work/legacy-final-inputs",
+        "-ExpectedMajor",
+        "6",
+        "-ExpectedMinor",
+        "2",
+        "-Output",
+        "/workspace/scratch/e6a94ceb1ad8/work/powershell-6.2.7-final.xml",
+        "-IncludeLive"
+      ],
+      "exit_code": 0,
+      "stdout": "PowerShell 6.2.7: 81/81 cases passed. Evidence: /workspace/scratch/e6a94ceb1ad8/work/powershell-6.2.7-final.xml\n",
+      "stderr": "",
+      "evidence": "/workspace/scratch/e6a94ceb1ad8/work/powershell-6.2.7-final.xml",
+      "evidence_sha256": "169bac82098356e315695fb5965ef79d7d84b0283c075c3c71b87cd02d1897b2",
+      "summary": {
+        "schema-version": "1",
+        "started-at-utc": "2026-11-17T07:19:48.6494842Z",
+        "status": "passed",
+        "expected-major": "6",
+        "expected-minor": "2",
+        "actual-version": "6.2.7",
+        "clr-version": "4.0.30319.42000",
+        "os-version": "Unix 6.18.57.0",
+        "process-bitness": "64",
+        "automation-assembly": "System.Management.Automation, Version=6.2.7.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35",
+        "scriptblock-create-available": "True",
+        "cases": "81",
+        "failed": "0",
+        "completed-at-utc": "2026-11-17T07:19:59.7984624Z"
+      },
+      "marker_exists": false
+    },
+    {
+      "version": "7.6.10",
+      "command": [
+        "/workspace/scratch/e6a94ceb1ad8/work/powershell/7.6.10/pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "/workspace/scratch/e6a94ceb1ad8/motd/tools/test_legacy_powershell.ps1",
+        "-ArtifactsDirectory",
+        "/workspace/scratch/e6a94ceb1ad8/work/legacy-final-inputs",
+        "-ExpectedMajor",
+        "7",
+        "-ExpectedMinor",
+        "6",
+        "-Output",
+        "/workspace/scratch/e6a94ceb1ad8/work/powershell-7.6.10-final.xml",
+        "-IncludeLive"
+      ],
+      "exit_code": 0,
+      "stdout": "PowerShell 7.6.10: 81/81 cases passed. Evidence: /workspace/scratch/e6a94ceb1ad8/work/powershell-7.6.10-final.xml\n",
+      "stderr": "",
+      "evidence": "/workspace/scratch/e6a94ceb1ad8/work/powershell-7.6.10-final.xml",
+      "evidence_sha256": "d9096b4d17fd0fab46efc08b61fd32a6bfa5cb8c14b7139a0eb75a713096e039",
+      "summary": {
+        "schema-version": "1",
+        "started-at-utc": "2026-11-17T07:20:00.2375753Z",
+        "status": "passed",
+        "expected-major": "7",
+        "expected-minor": "6",
+        "actual-version": "7.6.10",
+        "clr-version": "10.0.15",
+        "os-version": "Unix 6.18.57.0",
+        "process-bitness": "64",
+        "automation-assembly": "System.Management.Automation, Version=7.6.0.500, Culture=neutral, PublicKeyToken=31bf3856ad364e35",
+        "scriptblock-create-available": "True",
+        "cases": "81",
+        "failed": "0",
+        "completed-at-utc": "2026-11-17T07:20:06.2094580Z"
+      },
+      "marker_exists": false
+    },
+    {
+      "requested_version": "7.5",
+      "actual_version": "7.6.10",
+      "command": [
+        "/workspace/scratch/e6a94ceb1ad8/work/powershell/7.6.10/pwsh",
+        "-NoLogo",
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "/workspace/scratch/e6a94ceb1ad8/motd/tools/test_legacy_powershell.ps1",
+        "-Artifact",
+        "/workspace/scratch/e6a94ceb1ad8/work/minor-refusal-canary.ps1",
+        "-ExpectedMajor",
+        "7",
+        "-ExpectedMinor",
+        "5",
+        "-Output",
+        "/workspace/scratch/e6a94ceb1ad8/work/powershell-7.5-refused.xml"
+      ],
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "Expected PowerShell 7.5, actually running 7.6.10; no compatibility evidence collected.\n",
+      "evidence": "/workspace/scratch/e6a94ceb1ad8/work/powershell-7.5-refused.xml",
+      "evidence_sha256": "436ec261e57b0022bfc5b8a7725d9b1363c9a6bf742337c0febb23038e71b543",
+      "summary": {
+        "schema-version": "1",
+        "started-at-utc": "2026-11-17T07:20:06.6035442Z",
+        "status": "failed",
+        "expected-major": "7",
+        "expected-minor": "5",
+        "actual-version": "7.6.10",
+        "clr-version": "10.0.15",
+        "os-version": "Unix 6.18.57.0",
+        "process-bitness": "64",
+        "automation-assembly": "System.Management.Automation, Version=7.6.0.500, Culture=neutral, PublicKeyToken=31bf3856ad364e35",
+        "scriptblock-create-available": "True",
+        "fatal-error": "Expected PowerShell 7.5, actually running 7.6.10; no compatibility evidence collected.",
+        "completed-at-utc": "2026-11-17T07:20:06.6689456Z"
+      },
+      "marker_exists": false
+    }
+  ],
+  "artifact_sha256": {
+    "briefing-inline.ps1": "a3e5b4df445dd8a637d2453b74b3f76b676aca8e9845982cc399cf8c7248539e",
+    "briefing-wide.ps1": "47eadb966ab9213efdec0516f331a0c15cb02602c5360e4487364ec3cb3389e3",
+    "cards-inline.ps1": "9e234b55c6c56d75fda13777aeb2d9d3938c549627071f61622d88a07b6a3022",
+    "cards-wide.ps1": "6a286a064ac54a8c092be957e40abdb6e3175da0e86d8f4caf53f4f84716c839",
+    "classic-inline.ps1": "7db329368c812b4f72e05587d874c0da135b62d274bf5cb2793ea2ba1dcbb7ad",
+    "classic-wide.ps1": "dcbca64a7cb5f83f755a0ffe8de008a442b46950c13503773d7a9bef373ea2d5",
+    "dashboard-inline.ps1": "0d5e32745c69d57e2f6ed5c2d09140e070f6fd3ff595faf1812dc2fe38468eb0",
+    "dashboard-wide.ps1": "f94cbd75d0f7deaccc5b3f3bbc32f94e7def6e8b62a390bbc2bc7f215cc569bf",
+    "ledger-inline.ps1": "26f9d90ec9497cd096d8093e5362914e677db2ffb46a45bae5dd89d7c4212f03",
+    "ledger-wide.ps1": "d23bdd17ff8f285be2a88fbecb6a1440246d13bacde7e14c45bbeb03a267b0ec"
+  },
+  "final_generator_revalidation": {
+    "recorded_at_utc": "2026-11-17T07:28:33.854257+00:00",
+    "motd_sha256": "eda912a538325d00f798dc969f8da4389f5c34ad5d4d13f2caba99087622a130",
+    "powershell_runtime_sha256": "d34364f4a29c6adc287f793232611ec06a6046817b02e92a23bcaf59d97f9c46",
+    "all_generated_artifacts_match": true,
+    "reason": "Subsequent changes were Unix-only embedding fixes. Every PowerShell input was regenerated from its own embedded recipe using this final generator and exactly matched the executed artifact bytes.",
+    "artifacts": {
+      "briefing-inline.ps1": {
+        "evidence_sha256": "a3e5b4df445dd8a637d2453b74b3f76b676aca8e9845982cc399cf8c7248539e",
+        "final_generator_sha256": "a3e5b4df445dd8a637d2453b74b3f76b676aca8e9845982cc399cf8c7248539e",
+        "matches": true
+      },
+      "briefing-wide.ps1": {
+        "evidence_sha256": "47eadb966ab9213efdec0516f331a0c15cb02602c5360e4487364ec3cb3389e3",
+        "final_generator_sha256": "47eadb966ab9213efdec0516f331a0c15cb02602c5360e4487364ec3cb3389e3",
+        "matches": true
+      },
+      "cards-inline.ps1": {
+        "evidence_sha256": "9e234b55c6c56d75fda13777aeb2d9d3938c549627071f61622d88a07b6a3022",
+        "final_generator_sha256": "9e234b55c6c56d75fda13777aeb2d9d3938c549627071f61622d88a07b6a3022",
+        "matches": true
+      },
+      "cards-wide.ps1": {
+        "evidence_sha256": "6a286a064ac54a8c092be957e40abdb6e3175da0e86d8f4caf53f4f84716c839",
+        "final_generator_sha256": "6a286a064ac54a8c092be957e40abdb6e3175da0e86d8f4caf53f4f84716c839",
+        "matches": true
+      },
+      "classic-inline.ps1": {
+        "evidence_sha256": "7db329368c812b4f72e05587d874c0da135b62d274bf5cb2793ea2ba1dcbb7ad",
+        "final_generator_sha256": "7db329368c812b4f72e05587d874c0da135b62d274bf5cb2793ea2ba1dcbb7ad",
+        "matches": true
+      },
+      "classic-wide.ps1": {
+        "evidence_sha256": "dcbca64a7cb5f83f755a0ffe8de008a442b46950c13503773d7a9bef373ea2d5",
+        "final_generator_sha256": "dcbca64a7cb5f83f755a0ffe8de008a442b46950c13503773d7a9bef373ea2d5",
+        "matches": true
+      },
+      "dashboard-inline.ps1": {
+        "evidence_sha256": "0d5e32745c69d57e2f6ed5c2d09140e070f6fd3ff595faf1812dc2fe38468eb0",
+        "final_generator_sha256": "0d5e32745c69d57e2f6ed5c2d09140e070f6fd3ff595faf1812dc2fe38468eb0",
+        "matches": true
+      },
+      "dashboard-wide.ps1": {
+        "evidence_sha256": "f94cbd75d0f7deaccc5b3f3bbc32f94e7def6e8b62a390bbc2bc7f215cc569bf",
+        "final_generator_sha256": "f94cbd75d0f7deaccc5b3f3bbc32f94e7def6e8b62a390bbc2bc7f215cc569bf",
+        "matches": true
+      },
+      "ledger-inline.ps1": {
+        "evidence_sha256": "26f9d90ec9497cd096d8093e5362914e677db2ffb46a45bae5dd89d7c4212f03",
+        "final_generator_sha256": "26f9d90ec9497cd096d8093e5362914e677db2ffb46a45bae5dd89d7c4212f03",
+        "matches": true
+      },
+      "ledger-wide.ps1": {
+        "evidence_sha256": "d23bdd17ff8f285be2a88fbecb6a1440246d13bacde7e14c45bbeb03a267b0ec",
+        "final_generator_sha256": "d23bdd17ff8f285be2a88fbecb6a1440246d13bacde7e14c45bbeb03a267b0ec",
+        "matches": true
+      }
+    },
+    "verification_script": "/workspace/scratch/e6a94ceb1ad8/work/rerun_compatibility_review.py",
+    "verification_script_sha256": "6884635414cc45a3c409becdd48b5253a405f79f7129daee9841ffec7d74fa2c"
+  },
+  "previous_generator_revalidations": [
+    {
+      "recorded_at_utc": "2026-11-17T07:23:35.769928+00:00",
+      "motd_sha256": "1639ce74b277363ecf71bdc1f9275abd39a43ac67f35fefcd1a019c3b9c2d8a4",
+      "powershell_runtime_sha256": "d34364f4a29c6adc287f793232611ec06a6046817b02e92a23bcaf59d97f9c46",
+      "all_generated_artifacts_match": true,
+      "reason": "The integrated generator subsequently embedded a Unix-only briefing width correction. Every PowerShell input was regenerated from its own embedded recipe using the final generator and exactly matched the executed artifact bytes.",
+      "artifacts": {
+        "briefing-inline.ps1": {
+          "evidence_sha256": "a3e5b4df445dd8a637d2453b74b3f76b676aca8e9845982cc399cf8c7248539e",
+          "final_generator_sha256": "a3e5b4df445dd8a637d2453b74b3f76b676aca8e9845982cc399cf8c7248539e",
+          "matches": true
+        },
+        "briefing-wide.ps1": {
+          "evidence_sha256": "47eadb966ab9213efdec0516f331a0c15cb02602c5360e4487364ec3cb3389e3",
+          "final_generator_sha256": "47eadb966ab9213efdec0516f331a0c15cb02602c5360e4487364ec3cb3389e3",
+          "matches": true
+        },
+        "cards-inline.ps1": {
+          "evidence_sha256": "9e234b55c6c56d75fda13777aeb2d9d3938c549627071f61622d88a07b6a3022",
+          "final_generator_sha256": "9e234b55c6c56d75fda13777aeb2d9d3938c549627071f61622d88a07b6a3022",
+          "matches": true
+        },
+        "cards-wide.ps1": {
+          "evidence_sha256": "6a286a064ac54a8c092be957e40abdb6e3175da0e86d8f4caf53f4f84716c839",
+          "final_generator_sha256": "6a286a064ac54a8c092be957e40abdb6e3175da0e86d8f4caf53f4f84716c839",
+          "matches": true
+        },
+        "classic-inline.ps1": {
+          "evidence_sha256": "7db329368c812b4f72e05587d874c0da135b62d274bf5cb2793ea2ba1dcbb7ad",
+          "final_generator_sha256": "7db329368c812b4f72e05587d874c0da135b62d274bf5cb2793ea2ba1dcbb7ad",
+          "matches": true
+        },
+        "classic-wide.ps1": {
+          "evidence_sha256": "dcbca64a7cb5f83f755a0ffe8de008a442b46950c13503773d7a9bef373ea2d5",
+          "final_generator_sha256": "dcbca64a7cb5f83f755a0ffe8de008a442b46950c13503773d7a9bef373ea2d5",
+          "matches": true
+        },
+        "dashboard-inline.ps1": {
+          "evidence_sha256": "0d5e32745c69d57e2f6ed5c2d09140e070f6fd3ff595faf1812dc2fe38468eb0",
+          "final_generator_sha256": "0d5e32745c69d57e2f6ed5c2d09140e070f6fd3ff595faf1812dc2fe38468eb0",
+          "matches": true
+        },
+        "dashboard-wide.ps1": {
+          "evidence_sha256": "f94cbd75d0f7deaccc5b3f3bbc32f94e7def6e8b62a390bbc2bc7f215cc569bf",
+          "final_generator_sha256": "f94cbd75d0f7deaccc5b3f3bbc32f94e7def6e8b62a390bbc2bc7f215cc569bf",
+          "matches": true
+        },
+        "ledger-inline.ps1": {
+          "evidence_sha256": "26f9d90ec9497cd096d8093e5362914e677db2ffb46a45bae5dd89d7c4212f03",
+          "final_generator_sha256": "26f9d90ec9497cd096d8093e5362914e677db2ffb46a45bae5dd89d7c4212f03",
+          "matches": true
+        },
+        "ledger-wide.ps1": {
+          "evidence_sha256": "d23bdd17ff8f285be2a88fbecb6a1440246d13bacde7e14c45bbeb03a267b0ec",
+          "final_generator_sha256": "d23bdd17ff8f285be2a88fbecb6a1440246d13bacde7e14c45bbeb03a267b0ec",
+          "matches": true
+        }
+      }
+    }
+  ]
+}

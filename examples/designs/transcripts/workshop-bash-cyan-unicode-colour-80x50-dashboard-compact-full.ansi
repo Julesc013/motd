@@ -1,0 +1,31 @@
+[1;36mDEMO | WORKSHOP STATUS / DASHBOARD[0m
+[90mws-bench-07 | up 4d 06h 12m | RAM 8.0Gi/32.0Gi | DISK 220Gi/600Gi | load 1.42[0m
+[36m┌ SYSTEM ─────────────────────────────┐[0m  [36m┌ RESOURCES ──────────────────────────┐[0m
+[36m│[0m Domain workshop.example            [0m [36m│[0m  [36m│[0m RAM  8.0Gi/32.0Gi    ####....      [0m [36m│[0m
+[36m│[0m IP eno1 192.0.2.17/24              [0m [36m│[0m  [36m│[0m DISK 220Gi/600Gi     ###.....      [0m [36m│[0m
+[36m│[0m Debian GNU/Linux 13 (trixie) | 6...[0m [36m│[0m  [36m│[0m Cache 8.3Gi  Z 640Mi  S 2.0Gi/8.0Gi[0m [36m│[0m
+[36m│[0m Stall: CPU 1.20% RAM 0.00% I/O 0...[0m [36m│[0m  [36m│[0m Fullest /srv/images 38% | inodes 7%[0m [36m│[0m
+[36m└─────────────────────────────────────┘[0m  [36m└─────────────────────────────────────┘[0m
+[36m┌ SERVICES ───────────────────────────┐[0m  [36m┌ PROCESSES ──────────────────────────┐[0m
+[36m│[0m SSH          RUN | RDP          RUN[0m [36m│[0m  [36m│[0m CPU avg 2418 badblocks        82.4%[0m [36m│[0m
+[36m│[0m SMB          RUN | FTP         STOP[0m [36m│[0m  [36m│[0m RAM RSS 1632 postgres         1.3Gi[0m [36m│[0m
+[36m│[0m TFTP         RUN | GUI         STOP[0m [36m│[0m  [36m│[0m I/O /s 2418 badblocks       181Mi/s[0m [36m│[0m
+[36m│[0m OOM          RUN | WEB          RUN[0m [36m│[0m  [36m│[0m I/O ~42ms | 184/184 readable PIDs  [0m [36m│[0m
+[36m│[0m DB           RUN | NET          RUN[0m [36m│[0m  [36m│[0m Devices 2 | in flight 4 | I/O st...[0m [36m│[0m
+[36m│[0m DNS          RUN | AUTH         RUN[0m [36m│[0m  [36m│[0m sdb  R181Mi/s  W0B/s  q1           [0m [36m│[0m
+[36m│[0m                                    [0m [36m│[0m  [36m│[0m sdc  R4.0Mi/s  W118Mi/s  q3        [0m [36m│[0m
+[36m└─────────────────────────────────────┘[0m  [36m└─────────────────────────────────────┘[0m
+[36m┌ SESSIONS ───────────────────────────┐[0m  [36m┌ CONNECTIONS ────────────────────────┐[0m
+[36m│[0m SSH #c11 pts/0 workshop            [0m [36m│[0m  [36m│[0m SSH  192.0.2.17:22  <->            [0m [36m│[0m
+[36m│[0m 192.0.2.24 [online]                [0m [36m│[0m  [36m│[0m 192.0.2.24:51422                   [0m [36m│[0m
+[36m│[0m SSH #c12 pts/1 workshop            [0m [36m│[0m  [36m│[0m SSH  192.0.2.17:22  <->            [0m [36m│[0m
+[36m│[0m 192.0.2.41 [online]                [0m [36m│[0m  [36m│[0m 192.0.2.41:60108                   [0m [36m│[0m
+[36m│[0m RDP #c13 :10 workshop              [0m [36m│[0m  [36m│[0m                                    [0m [36m│[0m
+[36m│[0m 192.0.2.58 [online]                [0m [36m│[0m  [36m│[0m                                    [0m [36m│[0m
+[36m└─────────────────────────────────────┘[0m  [36m└─────────────────────────────────────┘[0m
+[36m┌ ATTENTION ──────────────────────────┐[0m  [36m┌ HINTS ──────────────────────────────┐[0m
+[36m│[0m No configured alerts in collecte...[0m [36m│[0m  [36m│[0m Tasks                           top[0m [36m│[0m
+[36m│[0m                                    [0m [36m│[0m  [36m│[0m I/O                        iotop -o[0m [36m│[0m
+[36m│[0m                                    [0m [36m│[0m  [36m│[0m Services         systemctl --failed[0m [36m│[0m
+[36m│[0m                                    [0m [36m│[0m  [36m│[0m Sessions     loginctl list-sessions[0m [36m│[0m
+[36m└─────────────────────────────────────┘[0m  [36m└─────────────────────────────────────┘[0m

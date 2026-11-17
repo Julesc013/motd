@@ -1,0 +1,6 @@
+test_native_guards_filter_sessions_and_prevent_duplicate_display (test_fish_startup.FishStartupTests.test_native_guards_filter_sessions_and_prevent_duplicate_display) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.326s
+
+OK

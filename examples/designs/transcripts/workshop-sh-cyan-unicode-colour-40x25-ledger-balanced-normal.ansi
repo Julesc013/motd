@@ -1,0 +1,20 @@
+[1;36mDEMO | WORKSHOP STATUS / LEDGER[0m
+[90mdemo-host | up 86400 s | Workshop | Por~[0m
+ [1;36mSYSTEM    [0m | Host: demo-host | Linux d~[0m
+ [1;36m          [0m | Up: 86400 s | Load: 0.25 ~[0m
+ [1;36mRESOURCES [0m | Memory available: 1258291~[0m
+ [1;36m          [0m | Root: 42% used; 286 GiB a~[0m
+ [1;36m          [0m | Total RAM: 16777216 KiB   [0m
+ [1;36mSERVICES  [0m | Services: 8 running; 0 fa~[0m
+ [1;36m          [0m | sshd: running             [0m
+ [1;36mPROCESSES [0m | CPU: compiler 32.4% (pid ~[0m
+ [1;36m          [0m | RSS: database 842112 KiB ~[0m
+ [1;36m          [0m | I/O bytes: database 10905~[0m
+ [1;36m          [0m | CPU = ps%; I/O = cumulati~[0m
+ [1;36mSESSIONS  [0m | Sessions: 3 logged-in ter~[0m
+ [1;36m          [0m | jules  pts/0  10:21  (192~[0m
+ [1;36mCONNECTIO~[0m | TCP: 12 established; 5 li~[0m
+ [1;36m          [0m | ssh :22      2 established[0m
+ [1;36mATTENTION [0m | DEMO fixture; no live mac~[0m
+ [1;36mHINTS     [0m | Tasks: top - CPU and memo~[0m
+ [1;36m          [0m | I/O: iotop -o - If instal~[0m

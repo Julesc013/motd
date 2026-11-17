@@ -1,0 +1,20 @@
+[1;36mDEMO | WORKSHOP STATUS / LEDGER[0m
+[90mdemo-host | up 86400 s | Workshop | Portable Unix[0m
+ [1;36mSYSTEM      [0m | Host: demo-host | Linux demo-kernel                             [0m
+ [1;36m            [0m | Up: 86400 s | Load: 0.25 0.18 0.12                              [0m
+ [1;36mRESOURCES   [0m | Memory available: 12582912 KiB                                  [0m
+ [1;36m            [0m | Root: 42% used; 286 GiB available                               [0m
+ [1;36m            [0m | Total RAM: 16777216 KiB                                         [0m
+ [1;36mSERVICES    [0m | Services: 8 running; 0 failed                                   [0m
+ [1;36m            [0m | sshd: running                                                   [0m
+ [1;36mPROCESSES   [0m | CPU: compiler 32.4% (pid 2184)                                  [0m
+ [1;36m            [0m | RSS: database 842112 KiB (pid 1401)                             [0m
+ [1;36m            [0m | I/O bytes: database 1090519040 B (pid 1401)                     [0m
+ [1;36m            [0m | CPU = ps%; I/O = cumulative read+write                          [0m
+ [1;36mSESSIONS    [0m | Sessions: 3 logged-in terminals                                 [0m
+ [1;36m            [0m | jules  pts/0  10:21  (192.0.2.10)                               [0m
+ [1;36mCONNECTIONS [0m | TCP: 12 established; 5 listening                                [0m
+ [1;36m            [0m | ssh :22      2 established                                      [0m
+ [1;36mATTENTION   [0m | DEMO fixture; no live machine data.                             [0m
+ [1;36mHINTS       [0m | Tasks: top - CPU and memory                                     [0m
+ [1;36m            [0m | I/O: iotop -o - If installed and permitted                      [0m

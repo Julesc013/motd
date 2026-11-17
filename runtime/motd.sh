@@ -9,6 +9,7 @@ SITE_LABEL=''
 THEME=mono
 CHARSET=auto
 COLOR_MODE=auto
+BAR_LAYOUT=inline
 DESIGN=classic
 DENSITY=balanced
 DETAIL=normal
@@ -60,6 +61,8 @@ while [ "$#" -gt 0 ]; do
             shift; case "${1-}" in brief|normal|full) DETAIL=$1 ;; *) exit 2 ;; esac ;;
         --color-emphasis)
             shift; case "${1-}" in quiet|balanced|vivid) COLOR_EMPHASIS=$1 ;; *) exit 2 ;; esac ;;
+        --bar-layout)
+            shift; case "${1-}" in inline|wide) BAR_LAYOUT=$1 ;; *) exit 2 ;; esac ;;
         --padding)
             shift; case "${1-}" in 0|1|2|3) PADDING=$1 ;; *) exit 2 ;; esac ;;
         --section-gap)
@@ -86,6 +89,7 @@ while [ "$#" -gt 0 ]; do
                 '--design classic|cards|ledger|briefing|dashboard --detail brief|normal|full' \
                 '--density compact|balanced|comfortable --padding 0..3 --section-gap 0..2' \
                 '--color-emphasis quiet|balanced|vivid' \
+                '--bar-layout inline|wide' \
                 'Portable Unix: identity, memory, storage, services, processes, sessions, connections, notices and hints.' \
                 'Missing OS facilities and inaccessible observations say unavailable.'
             exit 0 ;;
@@ -171,6 +175,7 @@ motd_uptime=unavailable; motd_load=unavailable
 motd_total=unavailable; motd_available=unavailable; motd_free=unavailable
 motd_swap_total=unavailable; motd_swap_free=unavailable
 motd_disk='Storage: unavailable'; motd_pressure='Pressure: unavailable'
+motd_disk_percent=unavailable
 motd_compression='Compression: unavailable'
 motd_service_rows='unavailable: no supported service query'
 motd_service_summary='Service state: unavailable'
@@ -188,6 +193,7 @@ if [ "$MOTD_DEMO" -eq 1 ]; then
     motd_total=16777216; motd_available=12582912; motd_free=8388608
     motd_swap_total=4194304; motd_swap_free=4194304
     motd_disk='Root: 42% used; 286 GiB available'
+    motd_disk_percent=42
     motd_pressure='Pressure CPU/mem/I/O: 0.1/0.0/0.2%'
     motd_compression='zram: 640 MiB data / 218 MiB RAM'
     motd_service_summary='Services: 8 running; 0 failed'
@@ -220,6 +226,7 @@ sshd: running
 cron: running
 docker: running'
         motd_disk='Root: 94% used; 29 GiB available'; motd_swap_free=262144
+        motd_disk_percent=94
         motd_pressure='Pressure CPU/mem/I/O: 2.1/8.3/12.4%'
         motd_attention='DEMO WARNING: disk 94%; backup failed.'
     fi
@@ -287,8 +294,15 @@ else
                 fi ;;
         esac
         if motd_run df -Pk /; then
-            motd_disk=$(printf '%s\n' "$MOTD_CAPTURE" | awk 'NR==2&&$4~/^[0-9]+$/ {printf "Root: %s used; %.1f GiB available",$5,$4/1048576}')
-            motd_disk=${motd_disk:-Storage: unavailable}
+            # Retain the reported percent from the same observation for wide
+            # bars. df's usable-space percentage is not silently redefined as
+            # used/total capacity or as a sum of mounted filesystems.
+            motd_disk_sample=$(printf '%s\n' "$MOTD_CAPTURE" | awk 'NR==2&&$4~/^[0-9]+$/ {printf "Root: %s used; %.1f GiB available\n",$5,$4/1048576; p=$5;sub(/%$/,"",p);if(p~/^[0-9]+$/&&p<=100)print p;else print "unavailable"}')
+            if [ -n "$motd_disk_sample" ]; then
+                motd_disk=${motd_disk_sample%%'
+'*}; motd_disk_percent=${motd_disk_sample#*'
+'}
+            fi
         fi
         if [ -r /proc/pressure/cpu ] && [ -r /proc/pressure/memory ] && [ -r /proc/pressure/io ]; then
             motd_pressure=$(awk '/^some /{for(i=2;i<=NF;i++)if($i~/^avg10=/){sub(/^avg10=/,"",$i);v[++n]=$i;break}} END{if(n==3)printf "Pressure CPU/mem/I/O: %s/%s/%s%%",v[1],v[2],v[3]}' /proc/pressure/cpu /proc/pressure/memory /proc/pressure/io 2>/dev/null)
@@ -368,9 +382,10 @@ fi
 # Exclusions are literal glob patterns compiled by the configurator, never eval.
 # Required patterns are checked against the available inventory. Missing data
 # is not called a failure and an enabled rc script is not called running.
+# Names may contain colons, so split only at the formatted ': ' row delimiter.
 motd_filtered_services=''
 while read -r motd_service_row; do
-    motd_service_name=${motd_service_row%%:*}
+    motd_service_name=${motd_service_row%%': '*}
     if motd_service_allowed "$motd_service_name"; then
         motd_filtered_services="$motd_filtered_services$motd_service_row
 "
@@ -388,7 +403,7 @@ while read -r motd_required_pattern; do
     if [ -z "$motd_required_pattern" ]; then continue; fi
     motd_required_seen=0
     while read -r motd_service_row; do
-        motd_service_name=${motd_service_row%%:*}
+        motd_service_name=${motd_service_row%%': '*}
         case "$motd_service_name" in $motd_required_pattern|$motd_required_pattern.service)
             motd_required_seen=1
             motd_required_rows="$motd_required_rows$motd_service_row
@@ -406,6 +421,26 @@ done <<MOTD_REQUIRED_PATTERNS_END
 $motd_required_patterns
 MOTD_REQUIRED_PATTERNS_END
 motd_service_rows="$motd_required_rows$motd_service_rows"
+# Required entries are promoted ahead of the remaining inventory. A service can
+# match several required patterns, so retain its first row exactly once. Newline
+# delimiters and quoted pattern components keep names literal (including glob
+# metacharacters); no eval, external sorter or extra provider query is involved.
+motd_unique_services=''; motd_seen_services='
+'
+while read -r motd_service_row; do
+    [ -n "$motd_service_row" ] || continue
+    motd_service_name=${motd_service_row%%': '*}
+    case "$motd_seen_services" in *"
+$motd_service_name
+"*) continue ;; esac
+    motd_seen_services="$motd_seen_services$motd_service_name
+"
+    motd_unique_services="$motd_unique_services$motd_service_row
+"
+done <<MOTD_UNIQUE_SERVICES_END
+$motd_service_rows
+MOTD_UNIQUE_SERVICES_END
+motd_service_rows=$motd_unique_services
 
 # Allocate rows before rendering so the last sections retain representation.
 # A section has a heading + minimum one row. Extra rows first enable all three
@@ -491,6 +526,30 @@ MOTD_ROWS_END
 motd_first() { motd_first_row=${1%%'
 '*}; }
 
+motd_wide_resource_pair() {
+    [ "$motd_section_budget" -gt 0 ] || return 0
+    motd_line "$1"
+    [ "$motd_section_budget" -gt 0 ] || return 0
+    motd_view_fraction_bar "$2" "$3" "$motd_inner"
+    [ "$MV_BAR_VALID" -ne 1 ] || motd_line "$MV_BAR"
+}
+motd_resources_wide() {
+    # Fill the quantity named in each numeric row. Available and free are
+    # distinct observations; do not relabel either as physical memory used.
+    if [ "$motd_available" != unavailable ]; then
+        motd_wide_resource_pair "RAM available $motd_available/$motd_total KiB" "$motd_total" "$motd_available"
+    elif [ "$motd_free" != unavailable ]; then
+        motd_wide_resource_pair "RAM free $motd_free/$motd_total KiB" "$motd_total" "$motd_free"
+    else motd_line 'RAM unavailable'; fi
+    motd_wide_resource_pair "$motd_disk" 100 "$motd_disk_percent"
+    if [ "$SHOW_SWAP" -eq 1 ]; then
+        if [ "$motd_swap_total" = 0 ]; then motd_line 'Swap not configured'
+        else motd_wide_resource_pair "Swap free $motd_swap_free/$motd_swap_total KiB" "$motd_swap_total" "$motd_swap_free"; fi
+    fi
+    if [ "$SHOW_PRESSURE" -eq 1 ]; then motd_line "$motd_pressure"; fi
+    if [ "$SHOW_COMPRESSION" -eq 1 ]; then motd_line "$motd_compression"; fi
+}
+
 # One set of section callbacks serves every design. The shared POSIX engine
 # captures these data rows in a subshell and owns all layout; no collector or
 # measurement formula is duplicated for a different presentation.
@@ -503,6 +562,7 @@ motd_render_section() {
         resources)
             motd_section_budget=$((motd_section_budget + motd_resource_extra))
             motd_border "$motd_ml" "$motd_mr" 'RESOURCES'
+            if [ "$BAR_LAYOUT" = wide ]; then motd_resources_wide; return; fi
             if [ "$motd_available" != unavailable ]; then motd_line "Memory available: $motd_available KiB"
             elif [ "$motd_free" != unavailable ]; then motd_line "Memory free: $motd_free KiB (not available)"
             else motd_line 'Memory: unavailable'; fi
@@ -515,7 +575,7 @@ motd_render_section() {
             motd_border "$motd_ml" "$motd_mr" 'SERVICES'; motd_line "$motd_service_summary"
             while read -r motd_service_row; do
                 if [ "$motd_section_budget" -le 0 ]; then break; fi
-                motd_service_name=${motd_service_row%%:*}
+                motd_service_name=${motd_service_row%%': '*}
                 if motd_service_allowed "$motd_service_name"; then motd_line "$motd_service_row"; fi
             done <<MOTD_SERVICES_END
 $motd_service_rows
@@ -570,7 +630,7 @@ motd_view_capture() {
 
 motd_classic_defaults() {
     [ "$DESIGN" = classic ] && [ "$DENSITY" = balanced ] && [ "$DETAIL" = normal ] &&
-    [ "$PADDING" = 1 ] && [ "$SECTION_GAP" = 0 ] && [ "$COLOR_EMPHASIS" = balanced ] &&
+    [ "$PADDING" = 1 ] && [ "$SECTION_GAP" = 0 ] && [ "$COLOR_EMPHASIS" = balanced ] && [ "$BAR_LAYOUT" = inline ] &&
     [ "$SECTION_PRIORITY" = 'attention resources system services processes io sessions connections hints' ] || return 1
     for motd_default_id in $SECTIONS; do
         [ "$(motd_section_detail "$motd_default_id")" = normal ] || return 1

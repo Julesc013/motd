@@ -1,0 +1,198 @@
+{
+  "schema_version": 1,
+  "recorded_at_utc": "2026-11-17T07:33:07.848265+00:00",
+  "status": "local-verification-passed-native-ci-pending",
+  "source_sha256": {
+    "motd.py": "eda912a538325d00f798dc969f8da4389f5c34ad5d4d13f2caba99087622a130",
+    "runtime/designs.sh": "6faaea0c5521f143faa58294f5a60ba3966b0d933543d80535183a3908ebd3b3",
+    "runtime/motd.bash": "12cfb6fa5f1a4ad97334bc92767e0af85a31c77f74d6f16b8b281fba081c6046",
+    "runtime/motd.ps1": "d34364f4a29c6adc287f793232611ec06a6046817b02e92a23bcaf59d97f9c46",
+    "runtime/motd.sh": "36bdcf6dad14d80fd73894bd4c16790ca4b8019ae2217ce9099b3dbff5cc1a48",
+    "tools/build_gallery.py": "17a1416a0fb0d29ddbccd28960a57b58a3bc7668d15d6bf3bd1106aeec60073a",
+    "tools/build_examples.py": "45761ac261cf476c24779ba29041c52be4119362d38d8e5409d397b535d2b4d3",
+    "tools/test_legacy_powershell.ps1": "f67642f425b4f06f40511803c00e6ac165c58aaacccdfa3fc979e8f2a8ecc710"
+  },
+  "test_sha256": {
+    "tests/test_cli.py": "dead87d1d9d86b3c6a7b48a57a117f6fa92e06fd7bf8736e2855000e715a172e",
+    "tests/test_design_configuration.py": "1400bd08d80538a42b05e006239fabb040cf199259484c645900d56bd980552d",
+    "tests/test_designs_powershell.py": "1bbb52120543f2ef06195e266ab58ef1afac3d5962ac2c26d3c5ddb16d6172e4",
+    "tests/test_designs_unix.py": "f9b369db16b168ebee50f98dd9a3c37701e027c330f656b09a7eb4be8747f6dd",
+    "tests/test_fish_startup.py": "1ef0e0ef90580c85e16a407a28a2cff5dd080555bf1c434a7735e6b76e4c830a",
+    "tests/test_gallery.py": "f7d6b4e2e0d25db0a47e29a53194e74b8bfc4a5aa212bc1d3286ee5617f2fadd",
+    "tests/test_generation.py": "7e483d3738fe8efcee565025426f2e0dc80cb4e282d3b87f9e34bd7e57ee76a7",
+    "tests/test_installation.py": "0c207ca08c72d4d52b67a5e7924151fac58af6f366af97fb8762ac504a98b482",
+    "tests/test_legacy_powershell.py": "8d708293ff592e252861934a780622625d492bd86a052cc51747909c87acc896",
+    "tests/test_native_platforms.py": "1050855c1433289fecad96848066a1062ff33ea56faa5baaac77d2d1ef5a4431",
+    "tests/test_output_lifecycle.py": "2d8d359d4c5682547008f25e5f5eee844acb1d351b99f2065199a280bd86486e",
+    "tests/test_path_safety.py": "f9be78dcb78925a5590eaf6976a2aff71d8e1b103eb1490c74f744b5d4796bfc",
+    "tests/test_portable_export.py": "00a353d61433dffe1995bc6f525cad2c4bda3867a866c00055c53e513759a066",
+    "tests/test_powershell.py": "a8f847b00ec0a15195bb8c028a4c78d79e39ef9171f082ecd1778c88107f5fee",
+    "tests/test_python_compatibility.py": "de47a3d867776d2c2212ddffa0fdf267be5a2126f69df36d785bdeded2bbf4d6",
+    "tests/test_runtime.py": "7208f2af79659adac1f97df65b3d37be9b84d2ecdd516f270fe6a505b07423e3",
+    "tests/test_runtime_review.py": "28957b3c249a90f48d8b5d4e8830886d87c2a1eb466beea0a4172ac52c43315e",
+    "tests/test_shell_compatibility.py": "232875f8d3ed134ed3778efff64d884942cf67ae788750fe8fd7eaf5ebd60f24",
+    "tests/test_transactions.py": "f260a911d50972c3de1d59d85e4c2d15c6a27d3b3af86e082c3b149716ef6871",
+    "tests/test_unix_collectors.py": "1ec27a1c2c813e6cc28b617bab2c3ea975d5fb207089b8611a9b076689c2c21d",
+    "tests/test_windows_adapters.py": "f31f271c0b600138ac282dcf560f1f45350d911de3169d8f25c14b28abf2a49f",
+    "tests/test_wizard.py": "994fafb32ba500e4c57879ebffcf971a5ab15306ebf6aa81430280e1a8ce5906",
+    "tests/test_wizard_resize_review.py": "7d69a388ddffa0f765b66cbcb03eca6a4e16315009828c3d5e2a3c0d65864e4a"
+  },
+  "host": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "input": {
+    "historical_transcript_name": "CONTEXT_CONVO_HISTORY_README.txt",
+    "bytes": 181298,
+    "lines": 3349,
+    "sha256": "bab7e68c59611c6ef9c2ad5cf5f79ae4111ec38a9a2a9f0e0e5720ec2028bdce",
+    "remote_main_at_start": "8951c44e1a28a05b2368b406191590d5fba9de66",
+    "recovered_feature_head": "4cc32280509d02e1d12475060e30f830265f62d0",
+    "local_preservation_commit": "a9876bd"
+  },
+  "checks": {
+    "embedded_runtime": "passed",
+    "embedded_licensed_toml": "passed",
+    "canonical_shell_syntax": "passed",
+    "full_local_suite": {
+      "tests_run": 258,
+      "passed": 247,
+      "skipped": 11,
+      "failures": 0,
+      "seconds": 130.432,
+      "python": "3.12.14",
+      "log": "build/review-20261117/final-unittest.log",
+      "log_sha256": "5bcd6347b77bb04210c65b6e25c792e875e794b974a45923564d0cebbc552afc",
+      "skip_lines": [
+        "test_native_guards_filter_sessions_and_prevent_duplicate_display (test_fish_startup.FishStartupTests.test_native_guards_filter_sessions_and_prevent_duplicate_display) ... skipped 'Install Fish or set MOTD_TEST_FISH2/3/4'",
+        "test_bash32_automatically_renders_with_portable_backend (test_shell_compatibility.ShellCompatibilityTests.test_bash32_automatically_renders_with_portable_backend) ... skipped 'Set MOTD_TEST_BASH32 to an actual Bash 3.2 binary for the historical boundary test'",
+        "test_optional_historical_bash_binaries_render_instead_of_rejecting (test_shell_compatibility.ShellCompatibilityTests.test_optional_historical_bash_binaries_render_instead_of_rejecting) ... skipped 'Set MOTD_TEST_BASH1/2/32/43 to real historical Bash executables'",
+        "Check the actual old shell, not a modern shell with a fake version. ... skipped 'Set MOTD_TEST_BASH1/2 or MOTD_TEST_ZSH2 for real historical startup tests'",
+        "test_optional_historical_zsh_launchers_and_no_bash_fallback (test_shell_compatibility.ShellCompatibilityTests.test_optional_historical_zsh_launchers_and_no_bash_fallback) ... skipped 'Set MOTD_TEST_ZSH2/3/4 to actual historical Zsh executables'",
+        "test_existing_numeric_ownership_is_preserved_and_restored (test_transactions.TransactionTests.test_existing_numeric_ownership_is_preserved_and_restored) ... skipped 'numeric ownership restoration requires root'",
+        "test_batch_text_prints_metacharacters_literally_without_powershell (test_windows_adapters.NativeWindowsAdapterTests.test_batch_text_prints_metacharacters_literally_without_powershell) ... skipped 'Requires native Windows cmd.exe'",
+        "test_cmd_demo_suppresses_configured_hooks (test_windows_adapters.NativeWindowsAdapterTests.test_cmd_demo_suppresses_configured_hooks) ... skipped 'Requires native Windows cmd.exe'",
+        "test_cmd_filename_metacharacters_are_data (test_windows_adapters.NativeWindowsAdapterTests.test_cmd_filename_metacharacters_are_data) ... skipped 'Requires native Windows cmd.exe'",
+        "test_cmd_launcher_runs_embedded_renderer_at_requested_geometry (test_windows_adapters.NativeWindowsAdapterTests.test_cmd_launcher_runs_embedded_renderer_at_requested_geometry) ... skipped 'Requires native Windows cmd.exe'",
+        "test_default_windows_export_uses_create_only_manifest (test_windows_adapters.NativeWindowsAdapterTests.test_default_windows_export_uses_create_only_manifest) ... skipped 'Requires native Windows cmd.exe'"
+      ]
+    },
+    "python38_lifecycle": {
+      "record": "build/review-20261117/python38-lifecycle-frozen.json",
+      "run": 59,
+      "passed": 58,
+      "skipped": 1
+    },
+    "additional_unix_matrix": {
+      "record": "build/review-20261117/unix-compatibility-frozen.json",
+      "passed": 360,
+      "failed": 0,
+      "engines": 8,
+      "routes": 9
+    },
+    "powershell_harness": {
+      "record": "build/review-20261117/legacy-version-final-evidence.json",
+      "versions": [
+        "6.2.7",
+        "7.6.10"
+      ],
+      "cases_per_engine": 81,
+      "passed_per_engine": 81,
+      "scope": "Executed artifacts exactly regenerated from final source; original execution and intervening Unix-only generator changes remain recorded."
+    },
+    "galleries": {
+      "gallery": {
+        "manifest": "examples/gallery/manifest.json",
+        "manifest_sha256": "2af0884052e88f12bb54dda5e7b2dd1225f1c71a2527c6b1ec9115c3a453709d",
+        "verification": {
+          "verified_logical_cases": 524,
+          "verified_unique_pngs": 196,
+          "verified_comparisons": 8,
+          "all_decoded_pixels_verified": true
+        },
+        "summary": {
+          "logical_cases": 524,
+          "shell_cases": 512,
+          "unique_pngs": 196,
+          "png_bytes": 21627308,
+          "png_bytes_before_optimization": 30811050,
+          "comparison_pngs": 8,
+          "comparison_png_bytes": 2787013,
+          "all_png_bytes": 24414321
+        }
+      },
+      "designs": {
+        "manifest": "examples/designs/manifest.json",
+        "manifest_sha256": "ac103c8b194b5bfccc5db929b454eeb818f4d51249d95067389dda1bfb060c0f",
+        "verification": {
+          "verified_logical_cases": 140,
+          "verified_unique_pngs": 138,
+          "verified_comparisons": 4,
+          "all_decoded_pixels_verified": true
+        },
+        "summary": {
+          "logical_cases": 140,
+          "shell_cases": 140,
+          "unique_pngs": 138,
+          "png_bytes": 13588410,
+          "png_bytes_before_optimization": 19369181,
+          "comparison_pngs": 4,
+          "comparison_png_bytes": 2074019,
+          "all_png_bytes": 15662429
+        }
+      },
+      "bars": {
+        "manifest": "examples/bars/manifest.json",
+        "manifest_sha256": "ae851e9d2edf78e397c0332d45840915378ea47247d9b1ab3a1947673ee97753",
+        "verification": {
+          "verified_logical_cases": 48,
+          "verified_unique_pngs": 48,
+          "verified_comparisons": 0,
+          "all_decoded_pixels_verified": true
+        },
+        "summary": {
+          "logical_cases": 48,
+          "shell_cases": 48,
+          "unique_pngs": 48,
+          "png_bytes": 3402134,
+          "png_bytes_before_optimization": 4810942,
+          "comparison_pngs": 0,
+          "comparison_png_bytes": 0,
+          "all_png_bytes": 3402134
+        }
+      }
+    },
+    "wizard": {
+      "manifest": "examples/wizard-manifest.json",
+      "manifest_sha256": "7298329c339da35af8f3193c8550b0ccbb22ae2ef1010cdd3727fdcf034ac2b8",
+      "verified_frames": 5,
+      "source_transcript_cells_and_decoded_pixels_verified": true,
+      "choice_acceptance_hint_verified": true
+    }
+  },
+  "native_ci": {
+    "status": "pending",
+    "branch": "feat/readability-and-portability-review"
+  },
+  "boundaries": [
+    "PowerShell1.0/3.0/4.0/5.0 not execution-verified",
+    "Historical Bash1/2/4 and Zsh2/3/4 retained prior evidence is not a fresh final-source run",
+    "Native Windows console resize/input needs interactive host evidence",
+    "Managed installation is Linux-only; cross-platform export is create-only",
+    "No full localization, arbitrary-field schema, ACL/xattr restoration or hard universal latency guarantee",
+    "No project license has yet been chosen"
+  ],
+  "retained_evidence_index": "build/review-20261117/file-map.json",
+  "visually_reviewed": [
+    "examples/designs/comparisons/five-designs-40x25.png",
+    "examples/designs/comparisons/five-designs-80x50.png",
+    "examples/wizard-40x25.png",
+    "examples/bars/png/home-lab-bash-cyan-unicode-colour-80x50-cards-balanced-normal-bars-wide.png",
+    "examples/bars/png/home-lab-sh-cyan-unicode-colour-40x25-cards-balanced-normal-bars-wide.png",
+    "examples/bars/png/home-lab-powershell-cyan-unicode-colour-80x50-dashboard-balanced-normal-bars-wide.png"
+  ],
+  "local_implementation_checkpoint": "9d79cc2e9c389bed55be552388a586e968a2dec4",
+  "publication": {
+    "method": "GitHub Git Data API",
+    "remote_parent": "4cc32280509d02e1d12475060e30f830265f62d0",
+    "local_publication_checkpoint": "78d58b7ebb061c840eac35adf66c5c4212e47a79",
+    "note": "Local checkpoint commit IDs preserve reconstruction lineage. The connector creates a GitHub commit from the exact verified tree; native workflow head SHA identifies that published revision."
+  }
+}

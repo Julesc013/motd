@@ -76,6 +76,28 @@ class WizardTests(unittest.TestCase):
         self.assertIn('> 2. Green', output)
         self.assertNotIn('Preview unavailable', output)
 
+    def test_preview_choice_explains_two_steps_at_40_columns(self):
+        config = motd.preset_config()
+        for count, hint in ((2, 'Number previews; Enter accepts.'),
+                            (6, 'Num previews; Enter accepts | ? help Q')):
+            with self.subTest(count=count):
+                self.output.seek(0); self.output.truncate()
+                ui = motd.WizardUI('screen')
+                with patch('shutil.get_terminal_size', return_value=os.terminal_size((40,25))), \
+                        patch.object(ui, 'sample', return_value=['Synthetic sample']), \
+                        patch('builtins.input', side_effect=[str(count), '']) as answer:
+                    choice = ui.select('Choose a design', [(str(i), i) for i in range(count)],
+                                       preview_factory=lambda value: config)
+                self.assertEqual(choice, count - 1)
+                self.assertEqual(answer.call_count, 2, 'Number previews, second Enter accepts')
+                self.assertIn(hint, self.output.getvalue(), 'Acceptance hint was clipped or hidden')
+
+    def test_line_menu_does_not_advertise_unavailable_arrow_input(self):
+        with patch('builtins.input', return_value='1'):
+            motd.WizardUI('line').select('Choose', [('First', 1), ('Second', 2)])
+        self.assertIn('Choose a number, then Enter.', self.output.getvalue())
+        self.assertNotIn('Up/Down', self.output.getvalue())
+
     def test_navigation_back_retains_edits_and_invalid_value_does_not_replace_draft(self):
         # Reach Appearance, reject an invalid width, retain a valid edit through Back.
         pages = motd._configuration_pages(motd.preset_config())
@@ -84,7 +106,7 @@ class WizardTests(unittest.TestCase):
         with patch('builtins.input', side_effect=answers):
             c = motd._configure(motd.preset_config(), motd.WizardUI('line'))
         self.assertEqual(c['display']['width'], 80)
-        self.assertIn('invalid literal', self.output.getvalue())
+        self.assertIn('Enter a whole number', self.output.getvalue())
         self.assertNotIn('\x1b', self.output.getvalue())
 
     def test_cancel_and_demo_do_not_execute_configured_calls(self):
@@ -99,6 +121,39 @@ class WizardTests(unittest.TestCase):
                 motd._configure(config, motd.WizardUI('screen'))
             self.assertFalse(sentinel.exists())
             self.assertEqual(list(Path(folder).iterdir()), [])
+
+    def test_line_preview_includes_only_opted_in_call_samples(self):
+        with tempfile.TemporaryDirectory() as folder:
+            sentinel = Path(folder) / 'must-not-run'
+            config = motd.preset_config()
+            config['hooks']['before'] = [{'argv': ['touch', str(sentinel)],
+                                          'preview_text': 'BEFORE SAMPLE'}]
+            config['hooks']['after'] = [{'argv': ['motd:print', 'AFTER SAMPLE']}]
+            ui = motd.WizardUI('line')
+            ui.full_preview(config)
+            self.assertNotIn('BEFORE SAMPLE', self.output.getvalue())
+            self.assertNotIn('AFTER SAMPLE', self.output.getvalue())
+            self.output.seek(0); self.output.truncate()
+            ui.show_calls = True
+            ui.full_preview(config)
+            output = self.output.getvalue()
+            self.assertLess(output.index('BEFORE SAMPLE'), output.index('WORKSHOP STATUS'))
+            self.assertLess(output.index('WORKSHOP STATUS'), output.index('AFTER SAMPLE'))
+            self.assertFalse(sentinel.exists())
+
+    def test_batch_notice_rejects_unicode_edit_without_losing_draft(self):
+        config = motd.preset_config('public-console')
+        config['target'] = 'batch-text'
+        config['display']['title'] = 'KEEP THIS HEADING'
+        config['public_text'] = 'Keep this existing notice.'
+        pages = motd._configuration_pages(config)
+        public = next(i for i, (title, _) in enumerate(pages) if title == 'Public notice')
+        answers = ['n'] * public + ['1', 'Caf\u00e9', 'n']
+        with patch('builtins.input', side_effect=answers):
+            retained = motd._configure(config, motd.WizardUI('line'))
+        self.assertEqual(retained, motd.validate_config(config))
+        self.assertIn('Native batch text requires ASCII', self.output.getvalue())
+        self.assertIn('KEEP THIS HEADING', motd.generate_artifact(retained))
 
     def test_missing_interpreter_is_labelled_instead_of_substituted(self):
         config = motd.preset_config(); config['shell'] = 'powershell'
