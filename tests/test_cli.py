@@ -308,7 +308,7 @@ class CliTests(unittest.TestCase):
             text = transcript.decode("utf-8", errors="replace")
             self.assertEqual(process.returncode, 0, text[-4000:])
             if mode == 'screen':
-                self.assertIn('PREVIEW 100x28 | demo | calls off', text)
+                self.assertIn('PREVIEW 100x28 | demo | H calls off', text)
                 self.assertIn('\x1b[2J', text)
             else:
                 self.assertIn("Synthetic demonstration", text)

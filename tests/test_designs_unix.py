@@ -207,6 +207,30 @@ class UnixDesignTests(unittest.TestCase):
         self.assertIn('sshd: running', portable)
         self.assertIn('demo-kernel', portable)
 
+    def test_headers_retain_machine_context_and_visible_demo_label(self):
+        for shell in ('bash', 'sh'):
+            for design in DESIGNS:
+                config = self.config(shell, design=design, detail='full', density='comfortable')
+                # Context must remain useful when the System panel is disabled.
+                config['display']['sections'] = ['resources', 'attention']
+                config['display']['title'] = 'A' * 100
+                for width, rows in ((40, 25), (80, 50)):
+                    with self.subTest(shell=shell, design=design, width=width, rows=rows):
+                        output = self.execute(shell, config=config, width=width, rows=rows,
+                                              flags=('--plain', '--ascii'))
+                        self.assert_geometry(output, width, rows)
+                        self.assertIn('DEMO', output.splitlines()[0])
+                        self.assertIn('ws-bench-07' if shell == 'bash' else 'demo-host', output)
+                        self.assertIn('up 4d 06h 12m' if shell == 'bash' else 'up 86400 s', output)
+
+        # Portable classic defaults bypass the shared renderer; they must still
+        # identify synthetic output even with Attention and System omitted.
+        config = self.config('sh', title='A' * 100)
+        config['display']['sections'] = ['resources', 'hints']
+        output = self.execute('sh', config=config, width=40, rows=50,
+                              flags=('--plain', '--ascii'))
+        self.assertIn('DEMO', output.splitlines()[0])
+
     def test_saved_controls_and_runtime_overrides_use_the_same_layout(self):
         for shell in ('bash', 'sh'):
             for design in DESIGNS:

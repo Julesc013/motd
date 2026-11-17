@@ -75,7 +75,7 @@ class NativePowerShellDesignTests(unittest.TestCase):
     def test_designs_have_distinct_structures_and_dashboard_reflows(self):
         outputs = {design: self.render(design) for design in DESIGNS}
         self.assertEqual(len(set(outputs.values())), len(DESIGNS))
-        self.assertEqual(outputs["classic"].count("+------------------------------------------------------------------------------+"), 2)
+        self.assertEqual(outputs["classic"].count("+------------------------------------------------------------------------------+"), 1)
         self.assertIn("+ RESOURCES ", outputs["cards"])
         self.assertIn("+ SYSTEM ", outputs["cards"])
         self.assertFalse(outputs["ledger"].splitlines()[2].lstrip().startswith("|"))
@@ -84,7 +84,7 @@ class NativePowerShellDesignTests(unittest.TestCase):
         self.assertLess(outputs["briefing"].index("Attention:"), outputs["briefing"].index("System:"))
         self.assertIn("Attention: WARN demo disk usage 91%", outputs["briefing"])
         self.assertIn("+  +", outputs["dashboard"])
-        self.assertLess(outputs["dashboard"].index("RESOURCES"), outputs["dashboard"].index("SYSTEM"))
+        self.assertLess(outputs["dashboard"].index("SYSTEM"), outputs["dashboard"].index("RESOURCES"))
         self.assertIn("6.0G/16.0G", outputs["dashboard"])
         narrow = self.render("dashboard", width=40)
         self.assertNotIn("+  +", narrow)
@@ -97,17 +97,49 @@ class NativePowerShellDesignTests(unittest.TestCase):
                     self.config["display"].update(padding=padding, section_gap=gap, density="comfortable")
                     text = self.render(design, width=width, rows=rows)
                     if rows <= 15:
-                        self.assertRegex(text, "sections omitted|more sections")
+                        self.assertIn("Hidden:", text)
                     if design in ("classic", "cards", "dashboard"):
                         visible = [line for line in text.splitlines() if line.strip()]
-                        self.assertTrue(any(line.startswith("+") and line.endswith("+") for line in visible))
+                        borders = [line for line in visible if line.startswith("+")]
+                        self.assertTrue(all(line.endswith("+") for line in borders))
 
     def test_priority_selects_complete_sections_when_space_is_limited(self):
         self.config["display"]["priority"] = ["hints", *[x for x in motd.SECTION_IDS if x != "hints"]]
-        text = self.render("cards", width=40, rows=8)
+        text = self.render("cards", width=40, rows=10)
         self.assertIn("+ HINTS ", text)
         self.assertNotIn("+ ATTENTION ", text)
-        self.assertIn("sections omitted", text)
+        self.assertIn("Hidden:", text)
+
+    def test_dashboard_preserves_configured_section_order_at_both_widths(self):
+        order = ["hints", "services", "resources", "system", "attention"]
+        self.config["display"]["sections"] = order
+        for width in (40, 80):
+            with self.subTest(width=width):
+                text = self.render("dashboard", width=width, rows=80)
+                positions = [text.index("+ " + section.upper() + " ") for section in order]
+                self.assertEqual(positions, sorted(positions))
+
+    def test_long_titles_cannot_hide_demo_or_identity_without_system_section(self):
+        self.config["display"]["title"] = "A long title " * 6
+        self.config["display"]["sections"] = ["resources", "services", "processes", "sessions", "connections", "hints", "io"]
+        self.config["display"]["priority"] = ["hints", *[x for x in motd.SECTION_IDS if x != "hints"]]
+        for design in DESIGNS:
+            with self.subTest(design=design):
+                text = self.render(design, width=40, rows=8)
+                self.assertIn("DEMO", text.splitlines()[0])
+                self.assertIn("Host demo-host", text.splitlines()[1])
+                self.assertIn("Up 4d 06h", text.splitlines()[1])
+                self.assertNotIn("SYSTEM", text)
+                self.assertNotIn("ATTENTION", text)
+
+    def test_tiny_viewports_name_every_selected_or_hidden_section(self):
+        for design in DESIGNS:
+            with self.subTest(design=design):
+                text = self.render(design, width=40, rows=8)
+                self.assertIn("Hidden:", text)
+                for section in motd.SECTION_IDS:
+                    label = "I/O" if section == "io" else section.upper()
+                    self.assertIn(label.lower(), text.lower(), section + " vanished without a named omission")
 
     def test_detail_and_section_override_change_real_fixture_content(self):
         self.config["display"]["detail"] = "brief"

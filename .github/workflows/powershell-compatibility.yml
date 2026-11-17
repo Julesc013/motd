@@ -27,7 +27,7 @@ jobs:
       - name: Execute presentation contracts in the named native engine
         shell: pwsh
         run: |
-          $env:MOTD_TEST_POWERSHELL = (Get-Command '${{ matrix.engine }}' -CommandType Application).Source
+          $env:MOTD_TEST_POWERSHELL = @(Get-Command '${{ matrix.engine }}' -CommandType Application)[0].Source
           & $env:MOTD_TEST_POWERSHELL -NoProfile -Command '$PSVersionTable | Format-List'
           foreach ($pattern in @('test_designs_powershell.py', 'test_windows_adapters.py', 'test_portable_export.py', 'test_python_compatibility.py')) {
             python -m unittest discover -s tests -p $pattern -v
@@ -114,6 +114,12 @@ jobs:
           $command = "& '$harness' -ArtifactsDirectory '$inputs' -ExpectedMajor 2 -Output '$output' -IncludeLive"
           & (Join-Path $PSHOME 'powershell.exe') -Version 2 -NoLogo -NoProfile -NonInteractive -Command $command
           if ($LASTEXITCODE -ne 0) { throw 'The actual PowerShell2 evidence harness failed.' }
+          $probe = Get-Content -Raw build/powershell-2-probe.json | ConvertFrom-Json
+          $proof = [xml](Get-Content -Raw build/powershell-2-evidence.xml)
+          $probe.status = $proof.'motd-powershell-evidence'.status
+          $probe | Add-Member -NotePropertyName cases -NotePropertyValue ([int]$proof.'motd-powershell-evidence'.cases) -Force
+          $probe | Add-Member -NotePropertyName failed -NotePropertyValue ([int]$proof.'motd-powershell-evidence'.failed) -Force
+          $probe | ConvertTo-Json -Depth 6 | Set-Content -Encoding UTF8 build/powershell-2-probe.json
           '### Actual PowerShell2 executed successfully' >> $env:GITHUB_STEP_SUMMARY
           'Exact engine, CLR, OS, artifact hashes and individual case results are in powershell-2-evidence.xml.' >> $env:GITHUB_STEP_SUMMARY
       - name: Preserve exact engine evidence or explicit blocking reason

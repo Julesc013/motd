@@ -52,7 +52,7 @@ class WizardTests(unittest.TestCase):
              ' 4. Columns: 132', ' 5. Rows: 25'], config=config,
             footer='Num edit | N next B back P view H calls Q', prompt='Page choice: ')
         output = '\n'.join(frame)
-        self.assertIn('PREVIEW 80x14 | demo | calls off', output)
+        self.assertIn('PREVIEW 80x14 | demo | H calls off', output)
         self.assertIn('WORKSHOP STATUS', output)
         lines = [motd._SGR.sub('', line) for line in frame]
         self.assertEqual(len(lines), 24, output)
@@ -73,7 +73,7 @@ class WizardTests(unittest.TestCase):
         output = self.output.getvalue()
         # Selection redraws changed rows without another whole-screen clear.
         self.assertEqual(output.count('\x1b[2J'), 1)
-        self.assertIn('Green [selected]', output)
+        self.assertIn('> 2. Green', output)
         self.assertNotIn('Preview unavailable', output)
 
     def test_navigation_back_retains_edits_and_invalid_value_does_not_replace_draft(self):

@@ -84,7 +84,7 @@ jobs:
       - name: Verify native output in the selected PowerShell
         shell: pwsh
         run: |
-          $env:MOTD_TEST_POWERSHELL = (Get-Command '${{ matrix.interpreter }}' -CommandType Application).Source
+          $env:MOTD_TEST_POWERSHELL = @(Get-Command '${{ matrix.interpreter }}' -CommandType Application)[0].Source
           & $env:MOTD_TEST_POWERSHELL -NoProfile -Command '$PSVersionTable | Format-List'
           python -m unittest discover -s tests -p test_powershell.py -v
           exit $LASTEXITCODE

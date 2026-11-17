@@ -71,8 +71,8 @@ SETTING_HELP = {
     'display.density': 'Compact favours information per screen. Comfortable favours separation and breathing room. Detail is a separate choice.',
     'display.detail': 'Brief shows essential observations. Full requests more rows and explanations when space permits. Nothing forces content beyond the available screen.',
     'display.padding': 'Horizontal blank cells inside each panel, from zero to three. Padding consumes available width.',
-    'display.section_gap': 'Preferred blank rows between sections, from zero to two. The layout may reduce spacing before dropping essential information.',
-    'display.priority': 'The first sections are protected and expanded first when space is scarce. This preference does not silently change the chosen display order.',
+    'display.section_gap': 'Blank rows between section bands, from zero to two, adjusted by the spacing bias. Larger gaps leave fewer rows for content.',
+    'display.priority': 'The first sections are protected and expanded first when space is scarce. Display order stays separate; Briefing deliberately presents warnings first. A custom priority can hide warnings in a short window.',
     'display.width': 'Maximum output width in character cells. The live wizard preview temporarily uses the actual terminal width.',
     'display.rows': 'Maximum output height, including space for the next shell prompt. The wizard preview uses the rows left below its ten control rows.',
     'display.color_emphasis': 'Quiet reduces visual noise; balanced separates headings and facts; vivid uses stronger emphasis. Plain and NO_COLOR still take precedence.',
@@ -2539,7 +2539,7 @@ class WizardUI:
             self._preview_length = len(content)
             self.preview_offset = min(self.preview_offset, max(0, len(content) - available))
             shown = content[self.preview_offset:self.preview_offset + available]
-            label = f'PREVIEW {render_width}x{render_rows} | demo | calls ' + ('sample' if self.show_calls else 'off')
+            label = f'PREVIEW {render_width}x{render_rows} | demo | H calls ' + ('sample' if self.show_calls else 'off')
             if len(content) > available:
                 label = f'PREVIEW {self.preview_offset + 1}-{self.preview_offset + len(shown)}/{len(content)} | J/K scroll'
             elif width > 240 or available > 200:
@@ -2693,6 +2693,7 @@ class WizardUI:
         """Read native console keys while checking size; no POSIX-only imports."""
         import msvcrt
         geometry = terminal_size()
+        high_surrogate = ''
         while True:
             current = terminal_size()
             if current != geometry:
@@ -2701,6 +2702,15 @@ class WizardUI:
                 time.sleep(0.05)
                 continue
             char = msvcrt.getwch()
+            # The Windows wide-character API can deliver a non-BMP character
+            # as two UTF-16 units. Join them before editing/rendering; incomplete
+            # pairs remain ignored rather than leaking invalid Unicode.
+            if 0xD800 <= ord(char) <= 0xDBFF:
+                high_surrogate = char
+                continue
+            if high_surrogate and 0xDC00 <= ord(char) <= 0xDFFF:
+                char = chr(0x10000 + ((ord(high_surrogate) - 0xD800) << 10) + ord(char) - 0xDC00)
+            high_surrogate = ''
             if char in ('\x00', '\xe0'):
                 key = msvcrt.getwch()
                 if key == 'K': self._cursor = max(0, self._cursor - 1)
@@ -2763,10 +2773,10 @@ class WizardUI:
             end = min(len(choices), offset + self.QUESTION_ROWS) if paginate else len(choices)
             first = offset if paginate else 0
             notice = f'Choices {first + 1}-{end}/{len(choices)} | [ / ] more' if end - first < len(choices) else ''
-            self.page(title, [f' {i + 1}. {label}' + (' [selected]' if i == selected and preview_factory else '')
+            self.page(title, [('> ' if i == selected else '  ') + f'{i + 1}. {label}'
                               for i, (label, _) in enumerate(choices) if first <= i < end], config=current,
                       notice=notice or 'Choose a number, then Enter. ? explains the keys.',
-                      footer='Enter accepts | P preview | ? help | Q quit')
+                      footer='Up/Down | Enter accepts | ? help Q quit')
             raw = self.read(f'Choice [{selected + 1}]: ', navigation=True, selection=True).strip().lower()
             if raw == 'q': raise WizardCancelled()
             if raw == 'p' and current is not None: self.full_preview(current); continue
@@ -3630,7 +3640,7 @@ motd_design_render() {
             [ "$MV_SHORT_HEADER" -eq 1 ] || motd_view_plain_row "$MV_METRICS" "$MV_MUTED" ;;
         ledger)
             motd_view_plain_row "$MV_TITLE / LEDGER" "$MV_TITLE_COLOR"
-            [ "$MV_SHORT_HEADER" -eq 1 ] || motd_view_plain_row 'SECTION       OBSERVATIONS' "$MV_MUTED" ;;
+            [ "$MV_SHORT_HEADER" -eq 1 ] || motd_view_plain_row "$MV_SUBTITLE" "$MV_MUTED" ;;
         cards)
             motd_view_plain_row "$MV_TITLE / CARDS" "$MV_TITLE_COLOR"
             [ "$MV_SHORT_HEADER" -eq 1 ] || motd_view_plain_row "$MV_SUBTITLE" "$MV_MUTED" ;;
@@ -6555,14 +6565,19 @@ render_adaptive() {
     MV_PRIORITY=${SECTION_PRIORITY[*]}; MV_COLOR=${MODEL[color]}; MV_UNICODE=${MODEL[unicode]}
     MV_TITLE=''; MV_SUBTITLE=''; MV_METRICS=''
     ui_enabled header title && MV_TITLE=$TITLE
-    if ui_enabled header host && ui_enabled system identity; then MV_SUBTITLE=${MODEL[host]:-?}; fi
+    # Keep machine identity and uptime visible in every design's context row.
+    # The demo marker leads the title so a long configured title cannot hide it.
+    ((DEMO==0)) || MV_TITLE="DEMO${MV_TITLE:+ | }$MV_TITLE"
+    if ui_enabled header host && ui_enabled system identity; then
+        MV_SUBTITLE="${MODEL[host]:-?} | up ${MODEL[uptime]:-?}"
+        MV_METRICS=$MV_SUBTITLE
+    fi
     if ui_enabled header site && [[ -n $SITE_LABEL ]]; then MV_SUBTITLE+="${MV_SUBTITLE:+ | }$SITE_LABEL"; fi
     MV_SUBTITLE+="${MV_SUBTITLE:+ | }local observations"
-    ((DEMO==0)) || MV_SUBTITLE="DEMO | $MV_SUBTITLE"
     ((${MODEL[mem_valid]:-0}==0)) || memory="RAM ${VIEW[mem_used]:-?}/${VIEW[mem_total]:-?}"
     [[ ${MODEL[storage_state]-} != ok ]] || storage="DISK ${VIEW[storage_used]:-?}/${VIEW[storage_total]:-?}"
     if [[ " $MV_SECTION_IDS " == *' resources '* ]]; then
-        ui_enabled resources memory && MV_METRICS=$memory
+        ui_enabled resources memory && MV_METRICS+="${MV_METRICS:+ | }$memory"
         ui_enabled resources storage && MV_METRICS+="${MV_METRICS:+ | }$storage"
     fi
     if [[ " $MV_SECTION_IDS " == *' system '* ]] && ui_enabled system load; then
@@ -7256,8 +7271,10 @@ motd_classic_defaults() {
     return 0
 }
 
+motd_header_title=$TITLE
+[ "$MOTD_DEMO" -eq 0 ] || motd_header_title="DEMO | $TITLE"
 if motd_classic_defaults && [ "$motd_omitted_sections" -eq 0 ]; then
-motd_border "$motd_tl" "$motd_tr" "$TITLE"
+motd_border "$motd_tl" "$motd_tr" "$motd_header_title"
 motd_section_budget=1
 if [ -n "$SITE_LABEL" ]; then motd_line "$SITE_LABEL | Portable Unix"
 else motd_line 'Portable Unix | local observations'; fi
@@ -7275,13 +7292,13 @@ else
     MV_COLUMNS=$MAX_WIDTH; MV_ROWS_LIMIT=$ROWS; MV_SECTION_IDS=$SECTIONS
     MV_PRIORITY=$SECTION_PRIORITY; MV_UNICODE=$((1 - MOTD_ASCII)); MV_COLOR=0
     [ -z "$motd_color" ] || MV_COLOR=1
-    MV_TITLE=$TITLE; MV_SUBTITLE="$motd_host | $SITE_LABEL | Portable Unix"
-    [ "$MOTD_DEMO" -eq 0 ] || MV_SUBTITLE="DEMO | $MV_SUBTITLE"
-    MV_METRICS='Selected local observations'
+    MV_TITLE=$motd_header_title; MV_SUBTITLE="$motd_host | up $motd_uptime s"
+    MV_METRICS=$MV_SUBTITLE
+    MV_SUBTITLE="$MV_SUBTITLE | $SITE_LABEL | Portable Unix"
     case " $MV_SECTION_IDS " in *' resources '*)
-        if [ "$motd_available" != unavailable ]; then MV_METRICS="RAM $motd_available KiB available | $motd_disk"
-        elif [ "$motd_free" != unavailable ]; then MV_METRICS="RAM $motd_free KiB free | $motd_disk"
-        else MV_METRICS="RAM unavailable | $motd_disk"; fi ;;
+        if [ "$motd_available" != unavailable ]; then MV_METRICS="$MV_METRICS | RAM $motd_available KiB available | $motd_disk"
+        elif [ "$motd_free" != unavailable ]; then MV_METRICS="$MV_METRICS | RAM $motd_free KiB free | $motd_disk"
+        else MV_METRICS="$MV_METRICS | RAM unavailable | $motd_disk"; fi ;;
     esac
     motd_design_render || exit "$?"
 fi
@@ -7521,6 +7538,42 @@ function Read-MotdClass([string] $Class) {
     # WMI and module startup are not covered by a hard total renderer deadline.
     $MotdQueryCache[$Class] = $read
     return $read
+}
+
+function Read-MotdIdentity {
+    if ($Demo) { return @{ Name = 'demo-host'; Uptime = '4d 06h' } }
+    $seconds = -1.0
+    if (-not $MotdWindows -and [IO.File]::Exists('/proc/uptime')) {
+        $read = Read-MotdObservation { [IO.File]::ReadAllText('/proc/uptime') }
+        if ($read.Ok -and $read.Value.Count -gt 0 -and $read.Value[0] -match '^\s*(\d+)') { $seconds = [double]$matches[1] }
+    } elseif ($MotdWindows) {
+        $read = Read-MotdClass 'Win32_OperatingSystem'
+        if ($read.Ok -and $read.Value.Count -gt 0) {
+            $boot = $read.Value[0].LastBootUpTime
+            $elapsed = Read-MotdObservation {
+                if ($boot -is [DateTime]) { $started = $boot }
+                elseif ($boot) { $started = [Management.ManagementDateTimeConverter]::ToDateTime([string]$boot) }
+                else { throw 'Boot time unavailable.' }
+                ([DateTime]::Now - $started).TotalSeconds
+            }
+            if ($elapsed.Ok -and $elapsed.Value.Count -gt 0) { $seconds = [double]$elapsed.Value[0] }
+        }
+    }
+    if ($seconds -lt 0) {
+        # TickCount64 is a capability fallback, not a PS1/.NET2 requirement.
+        $read = Read-MotdObservation { [Environment]::TickCount64 }
+        if ($read.Ok -and $read.Value.Count -gt 0 -and $null -ne $read.Value[0] -and $read.Value[0] -ge 0) { $seconds = [double]$read.Value[0] / 1000.0 }
+    }
+    $uptime = 'unavailable'
+    if ($seconds -ge 0) {
+        $days = [int][Math]::Floor($seconds / 86400.0)
+        $hours = [int][Math]::Floor(($seconds % 86400.0) / 3600.0)
+        $minutes = [int][Math]::Floor(($seconds % 3600.0) / 60.0)
+        if ($days -gt 0) { $uptime = [string]$days + 'd ' + [string]$hours + 'h' }
+        elseif ($hours -gt 0) { $uptime = [string]$hours + 'h ' + [string]$minutes + 'm' }
+        else { $uptime = [string]$minutes + 'm' }
+    }
+    return @{ Name = (ConvertTo-MotdText ([Environment]::MachineName)); Uptime = $uptime }
 }
 
 function Add-MotdSystem {
@@ -7887,7 +7940,6 @@ function Get-MotdPresentationOrder([string] $Design) {
     $order = New-MotdList
     $leading = @()
     if ($Design -eq 'briefing') { $leading = @('attention') }
-    if ($Design -eq 'dashboard') { $leading = @('resources', 'system', 'attention') }
     foreach ($id in $leading) { if ($MotdSectionOrder -contains $id) { [void]$order.Add($id) } }
     foreach ($id in $MotdSectionOrder) { if (-not $order.Contains($id)) { [void]$order.Add($id) } }
     return ,$order
@@ -7963,6 +8015,22 @@ function Measure-MotdPresentation($Selected, $Allocated, [string] $Design, [int]
     return $height
 }
 
+function Get-MotdOmissionRows($Selected, [int] $Length) {
+    $output = New-MotdList
+    $line = 'Hidden: '
+    foreach ($id in $MotdSectionOrder) {
+        if ($Selected.Contains($id)) { continue }
+        $label = Get-MotdSectionCaption $id
+        $separator = ', '; if ($line -eq 'Hidden: ' -or $line -eq '  ') { $separator = '' }
+        if ($line.Length + $separator.Length + $label.Length -gt $Length) {
+            [void]$output.Add($line)
+            $line = '  ' + $label
+        } else { $line += $separator + $label }
+    }
+    if ($line -ne 'Hidden: ') { [void]$output.Add($line) }
+    return ,$output
+}
+
 function Get-MotdPresentationPlan([string] $Design) {
     $order = Get-MotdPresentationOrder $Design
     $selected = New-MotdList
@@ -7997,9 +8065,11 @@ function Get-MotdPresentationPlan([string] $Design) {
     }
     $capacity = $MotdHeight - 3
     if ($Design -eq 'classic') { $capacity = $MotdHeight - 4 }
+    $footerWidth = $MotdWidth - 2 * [int](Get-MotdDisplaySetting 'padding' 1)
+    if ($Design -eq 'classic') { $footerWidth -= 2 }
     $omitted = 0
     for ($i = $priority.Count - 1; $i -ge 0; $i--) {
-        $reserved = 0; if ($omitted -gt 0) { $reserved = 1 }
+        $reserved = (Get-MotdOmissionRows $selected $footerWidth).Count
         if ((Measure-MotdPresentation $selected $allocated $Design $gap) + $reserved -le $capacity) { break }
         $id = $priority[$i]
         if ($selected.Contains($id)) { [void]$selected.Remove($id); $allocated[$id] = 0; $omitted++ }
@@ -8010,12 +8080,12 @@ function Get-MotdPresentationPlan([string] $Design) {
         foreach ($id in $priority) {
             if (-not $selected.Contains($id) -or $allocated[$id] -ge $maximum[$id]) { continue }
             $allocated[$id]++
-            $reserved = 0; if ($omitted -gt 0) { $reserved = 1 }
+            $reserved = (Get-MotdOmissionRows $selected $footerWidth).Count
             if ((Measure-MotdPresentation $selected $allocated $Design $gap) + $reserved -le $capacity) { $changed = $true }
             else { $allocated[$id]-- }
         }
     }
-    return @{ Selected = $selected; Rows = $rows; Allocated = $allocated; Gap = $gap; Omitted = $omitted }
+    return @{ Selected = $selected; Rows = $rows; Allocated = $allocated; Gap = $gap; Omitted = $omitted; Footer = (Get-MotdOmissionRows $selected $footerWidth) }
 }
 
 function Format-MotdDesignTone([string] $Text, [string] $Tone) {
@@ -8058,26 +8128,45 @@ function Get-MotdCardRows([string] $Id, $Rows, [int] $Count, [int] $Width, [int]
     return ,$output
 }
 
+function Get-MotdHeaderTitle {
+    $title = [string]$MotdConfig['display']['title']
+    if ($Demo) {
+        if ($MotdWidth -lt 60) { $title = 'DEMO | ' + $title }
+        else { $title = 'DEMO - synthetic | ' + $title }
+    }
+    return $title
+}
+
+function Get-MotdHeaderContext { return 'Host ' + $MotdIdentity.Name + ' | Up ' + $MotdIdentity.Uptime }
+
+function Get-MotdFrameHeading {
+    $characters = Get-MotdBoxCharacters
+    $padded = Format-MotdCell (Get-MotdHeaderTitle) ($MotdWidth - 4)
+    $label = [regex]::Replace($padded, ' +$', '')
+    return $characters.TL + ' ' + $label + ' ' + ($characters.H * ($padded.Length - $label.Length)) + $characters.TR
+}
+
 function Write-MotdPresentation {
     $design = Get-MotdDisplaySetting 'design' 'classic'
     $padding = [int](Get-MotdDisplaySetting 'padding' 1)
     $defaultPriority = Join-MotdText @('attention', 'resources', 'system', 'services', 'processes', 'io', 'sessions', 'connections', 'hints') ','
     $configuredPriority = Join-MotdText @(Get-MotdDisplaySetting 'priority' @('attention', 'resources', 'system', 'services', 'processes', 'io', 'sessions', 'connections', 'hints')) ','
-    if ($design -eq 'classic' -and $padding -eq 1 -and (Get-MotdDisplaySetting 'density' 'balanced') -eq 'balanced' -and (Get-MotdDisplaySetting 'detail' 'normal') -eq 'normal' -and (Get-MotdDisplaySetting 'section_gap' 0) -eq 0 -and (Get-MotdDisplaySetting 'section_detail' @{}).Count -eq 0 -and $defaultPriority -eq $configuredPriority) {
+    $classicMinimum = 0
+    foreach ($id in $MotdSectionOrder) { $classicMinimum += Get-MotdPresentationMinimum $id $MotdSections[$id].Lines.Count 'classic' }
+    if ($design -eq 'classic' -and $classicMinimum -le $MotdHeight - 4 -and $padding -eq 1 -and (Get-MotdDisplaySetting 'density' 'balanced') -eq 'balanced' -and (Get-MotdDisplaySetting 'detail' 'normal') -eq 'normal' -and (Get-MotdDisplaySetting 'section_gap' 0) -eq 0 -and (Get-MotdDisplaySetting 'section_detail' @{}).Count -eq 0 -and $defaultPriority -eq $configuredPriority) {
         Write-MotdFrame
         return
     }
     $plan = Get-MotdPresentationPlan $design
     $output = New-MotdList
     $characters = Get-MotdBoxCharacters
-    $title = [string]$MotdConfig['display']['title']
-    if ($Demo) { $title += ' | DEMO' }
+    $title = Get-MotdHeaderTitle
     if ($design -eq 'classic') {
-        [void]$output.Add($characters.TL + ($characters.H * ($MotdWidth - 2)) + $characters.TR)
-        [void]$output.Add((Format-MotdDesignTone (Format-MotdDesignCell $title $MotdWidth $padding $true) 'accent'))
+        [void]$output.Add((Format-MotdDesignTone (Get-MotdFrameHeading) 'accent'))
+        [void]$output.Add((Format-MotdDesignTone (Format-MotdDesignCell (Get-MotdHeaderContext) $MotdWidth $padding $true) 'muted'))
     } else {
         [void]$output.Add((Format-MotdDesignTone (Format-MotdDesignCell ($title + ' | ' + $design.ToUpper()) $MotdWidth $padding $false) 'accent'))
-        [void]$output.Add((Format-MotdDesignTone ($characters.H * $MotdWidth) 'muted'))
+        [void]$output.Add((Format-MotdDesignTone (Format-MotdDesignCell (Get-MotdHeaderContext) $MotdWidth $padding $false) 'muted'))
     }
     $groups = Get-MotdPresentationGroups $plan.Selected $design
     $groupNumber = 0
@@ -8124,7 +8213,7 @@ function Write-MotdPresentation {
             }
         }
     }
-    if ($plan.Omitted -gt 0) { [void]$output.Add((Format-MotdDesignTone (Format-MotdDesignCell ('... ' + $plan.Omitted + ' sections omitted; enlarge terminal') $MotdWidth $padding ($design -eq 'classic')) 'muted')) }
+    foreach ($footer in $plan.Footer) { [void]$output.Add((Format-MotdDesignTone (Format-MotdDesignCell $footer $MotdWidth $padding ($design -eq 'classic')) 'muted')) }
     if ($design -eq 'classic') { [void]$output.Add($characters.BL + ($characters.H * ($MotdWidth - 2)) + $characters.BR) }
     if ($output.Count -gt $MotdHeight - 1) { throw 'Internal presentation plan exceeds the terminal row budget.' }
     foreach ($line in $output) { Write-Output $line }
@@ -8136,17 +8225,12 @@ function Write-MotdFrame {
         $horizontal = [string][char]0x2500; $script:MotdVertical = [string][char]0x2502
         $topLeft = [string][char]0x250C; $topRight = [string][char]0x2510; $bottomLeft = [string][char]0x2514; $bottomRight = [string][char]0x2518
     }
-    Write-Output ($topLeft + ($horizontal * ($MotdWidth - 2)) + $topRight)
-    $title = [string]$MotdConfig['display']['title']
-    if ($Demo) {
-        if ($MotdWidth -lt 60) { $title += ' | DEMO' }
-        else { $title += ' | DEMO - synthetic observations' }
-    }
-    Write-MotdRow $title 'accent'
+    Write-Output (Format-MotdDesignTone (Get-MotdFrameHeading) 'accent')
+    Write-MotdRow (Get-MotdHeaderContext) 'muted'
     $capacity = $MotdHeight - 4; $allocated = @{}; $used = 0
     foreach ($id in $MotdSectionOrder) {
         $minimum = 1
-        if ($id -eq 'resources' -or $id -eq 'system') { $minimum = 2 }
+        if ($id -eq 'resources' -or $id -eq 'system' -or $id -eq 'attention') { $minimum = 2 }
         if ($id -eq 'processes') { $minimum = 3 }
         $allocated[$id] = [Math]::Min($minimum, $MotdSections[$id].Lines.Count); $used += $allocated[$id]
     }
@@ -8174,7 +8258,7 @@ function Write-MotdFrame {
         }
     }
     foreach ($id in $MotdSectionOrder) {
-        $lines = $MotdSections[$id].Lines
+        $lines = Get-MotdPresentationRows $id 'classic'
         for ($i = 0; $i -lt $allocated[$id]; $i++) { Write-MotdRow $lines[$i].Text $lines[$i].Tone }
     }
     if ($omitted -gt 0) { Write-MotdRow ('... ' + $omitted + ' more sections; enlarge terminal') 'muted' }
@@ -8184,6 +8268,7 @@ function Write-MotdFrame {
 # Read only selected local observations. Ordinary layouts keep every selected
 # section; compact previews explicitly omit lower-priority sections if needed.
 Invoke-MotdHooks 'before'
+$MotdIdentity = Read-MotdIdentity
 foreach ($section in $MotdSectionOrder) {
     $MotdSections[$section] = @{ Lines = (New-MotdList) }
     $MotdCurrentSection = $section

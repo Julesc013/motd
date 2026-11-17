@@ -303,23 +303,30 @@ class PowerShellExecutionTests(unittest.TestCase):
 
     def test_small_preview_budgets_fit_without_overdrawing_controls(self):
         self.config["display"]["sections"] = list(motd.SECTION_IDS)
-        for rows in (8, 10, 15, 19, 200):
+        for rows in (8, 10, 15, 19, 25, 200):
             with self.subTest(rows=rows):
-                result = self.render("-Demo", "-Plain", "-Ascii", "-Width", "40", "-Rows", str(rows))
+                result = self.render("-DemoAlerts", "-Plain", "-Ascii", "-Width", "40", "-Rows", str(rows))
                 self.assertEqual(result.returncode, 0, result.stderr)
                 lines = result.stdout.splitlines()
                 self.assertLessEqual(len(lines), rows - 1, result.stdout)
                 self.assertTrue(all(len(line) == 40 for line in lines), result.stdout)
                 self.assertTrue(lines[0].startswith("+"))
                 self.assertTrue(lines[-1].startswith("+"))
-                self.assertIn("ATTENTION", result.stdout)
-                self.assertIn("MEM ", result.stdout)
-                self.assertIn("DISK ", result.stdout)
-                if rows < 19:
-                    self.assertIn("more sections", result.stdout)
-                else:
-                    for title in ("SYSTEM", "SERVICES", "PROCESSES", "SESSIONS", "CONNECTIONS", "ATTENTION", "HINTS", "I/O"):
-                        self.assertIn(title, result.stdout)
+                footer_start = next((i for i, line in enumerate(lines) if "Hidden:" in line), len(lines))
+                hidden = "\n".join(lines[footer_start:])
+                if "ATTENTION" not in hidden:
+                    self.assertIn("ATTENTION", result.stdout)
+                    self.assertIn("91%", result.stdout)
+                if "RESOURCES" not in hidden:
+                    self.assertIn("MEM ", result.stdout)
+                    self.assertIn("DISK ", result.stdout)
+                    self.assertIn("6.0G/16.0G", result.stdout)
+                for title in ("SYSTEM", "SERVICES", "PROCESSES", "SESSIONS", "CONNECTIONS", "ATTENTION", "HINTS", "I/O"):
+                    self.assertIn(title, result.stdout)
+                if rows >= 25:
+                    self.assertNotIn("ATTENTION", hidden)
+                    self.assertNotIn("RESOURCES", hidden)
+                    self.assertIn("91%", result.stdout)
 
     def test_unix_service_providers_share_required_and_excluded_filters(self):
         fixtures = {

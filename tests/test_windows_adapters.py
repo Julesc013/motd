@@ -8,13 +8,23 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import motd
 
 
 class AdapterGenerationTests(unittest.TestCase):
+    def test_windows_key_reader_joins_utf16_pairs_before_cursor_editing(self):
+        keys = iter(['A', '\ud83d', '\ude00', '\xe0', 'K', 'B', '\r'])
+        console = SimpleNamespace(kbhit=lambda: True, getwch=lambda: next(keys))
+        ui = motd.WizardUI('line')
+        with patch.dict(sys.modules, {'msvcrt': console}), patch.object(ui, '_draw_answer'):
+            self.assertEqual(ui._read_windows(), 'AB😀')
+        self.assertEqual(ui._cursor, 2)
+
     def test_fish_and_cmd_recover_the_exact_recipe(self):
         for shell in ('fish', 'cmd'):
             with self.subTest(shell=shell):

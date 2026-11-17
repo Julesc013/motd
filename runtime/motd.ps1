@@ -231,6 +231,42 @@ function Read-MotdClass([string] $Class) {
     return $read
 }
 
+function Read-MotdIdentity {
+    if ($Demo) { return @{ Name = 'demo-host'; Uptime = '4d 06h' } }
+    $seconds = -1.0
+    if (-not $MotdWindows -and [IO.File]::Exists('/proc/uptime')) {
+        $read = Read-MotdObservation { [IO.File]::ReadAllText('/proc/uptime') }
+        if ($read.Ok -and $read.Value.Count -gt 0 -and $read.Value[0] -match '^\s*(\d+)') { $seconds = [double]$matches[1] }
+    } elseif ($MotdWindows) {
+        $read = Read-MotdClass 'Win32_OperatingSystem'
+        if ($read.Ok -and $read.Value.Count -gt 0) {
+            $boot = $read.Value[0].LastBootUpTime
+            $elapsed = Read-MotdObservation {
+                if ($boot -is [DateTime]) { $started = $boot }
+                elseif ($boot) { $started = [Management.ManagementDateTimeConverter]::ToDateTime([string]$boot) }
+                else { throw 'Boot time unavailable.' }
+                ([DateTime]::Now - $started).TotalSeconds
+            }
+            if ($elapsed.Ok -and $elapsed.Value.Count -gt 0) { $seconds = [double]$elapsed.Value[0] }
+        }
+    }
+    if ($seconds -lt 0) {
+        # TickCount64 is a capability fallback, not a PS1/.NET2 requirement.
+        $read = Read-MotdObservation { [Environment]::TickCount64 }
+        if ($read.Ok -and $read.Value.Count -gt 0 -and $null -ne $read.Value[0] -and $read.Value[0] -ge 0) { $seconds = [double]$read.Value[0] / 1000.0 }
+    }
+    $uptime = 'unavailable'
+    if ($seconds -ge 0) {
+        $days = [int][Math]::Floor($seconds / 86400.0)
+        $hours = [int][Math]::Floor(($seconds % 86400.0) / 3600.0)
+        $minutes = [int][Math]::Floor(($seconds % 3600.0) / 60.0)
+        if ($days -gt 0) { $uptime = [string]$days + 'd ' + [string]$hours + 'h' }
+        elseif ($hours -gt 0) { $uptime = [string]$hours + 'h ' + [string]$minutes + 'm' }
+        else { $uptime = [string]$minutes + 'm' }
+    }
+    return @{ Name = (ConvertTo-MotdText ([Environment]::MachineName)); Uptime = $uptime }
+}
+
 function Add-MotdSystem {
     if ($Demo) {
         Add-MotdLine 'SYSTEM  demo-host | 8 logical CPUs' 'accent'
@@ -595,7 +631,6 @@ function Get-MotdPresentationOrder([string] $Design) {
     $order = New-MotdList
     $leading = @()
     if ($Design -eq 'briefing') { $leading = @('attention') }
-    if ($Design -eq 'dashboard') { $leading = @('resources', 'system', 'attention') }
     foreach ($id in $leading) { if ($MotdSectionOrder -contains $id) { [void]$order.Add($id) } }
     foreach ($id in $MotdSectionOrder) { if (-not $order.Contains($id)) { [void]$order.Add($id) } }
     return ,$order
@@ -671,6 +706,22 @@ function Measure-MotdPresentation($Selected, $Allocated, [string] $Design, [int]
     return $height
 }
 
+function Get-MotdOmissionRows($Selected, [int] $Length) {
+    $output = New-MotdList
+    $line = 'Hidden: '
+    foreach ($id in $MotdSectionOrder) {
+        if ($Selected.Contains($id)) { continue }
+        $label = Get-MotdSectionCaption $id
+        $separator = ', '; if ($line -eq 'Hidden: ' -or $line -eq '  ') { $separator = '' }
+        if ($line.Length + $separator.Length + $label.Length -gt $Length) {
+            [void]$output.Add($line)
+            $line = '  ' + $label
+        } else { $line += $separator + $label }
+    }
+    if ($line -ne 'Hidden: ') { [void]$output.Add($line) }
+    return ,$output
+}
+
 function Get-MotdPresentationPlan([string] $Design) {
     $order = Get-MotdPresentationOrder $Design
     $selected = New-MotdList
@@ -705,9 +756,11 @@ function Get-MotdPresentationPlan([string] $Design) {
     }
     $capacity = $MotdHeight - 3
     if ($Design -eq 'classic') { $capacity = $MotdHeight - 4 }
+    $footerWidth = $MotdWidth - 2 * [int](Get-MotdDisplaySetting 'padding' 1)
+    if ($Design -eq 'classic') { $footerWidth -= 2 }
     $omitted = 0
     for ($i = $priority.Count - 1; $i -ge 0; $i--) {
-        $reserved = 0; if ($omitted -gt 0) { $reserved = 1 }
+        $reserved = (Get-MotdOmissionRows $selected $footerWidth).Count
         if ((Measure-MotdPresentation $selected $allocated $Design $gap) + $reserved -le $capacity) { break }
         $id = $priority[$i]
         if ($selected.Contains($id)) { [void]$selected.Remove($id); $allocated[$id] = 0; $omitted++ }
@@ -718,12 +771,12 @@ function Get-MotdPresentationPlan([string] $Design) {
         foreach ($id in $priority) {
             if (-not $selected.Contains($id) -or $allocated[$id] -ge $maximum[$id]) { continue }
             $allocated[$id]++
-            $reserved = 0; if ($omitted -gt 0) { $reserved = 1 }
+            $reserved = (Get-MotdOmissionRows $selected $footerWidth).Count
             if ((Measure-MotdPresentation $selected $allocated $Design $gap) + $reserved -le $capacity) { $changed = $true }
             else { $allocated[$id]-- }
         }
     }
-    return @{ Selected = $selected; Rows = $rows; Allocated = $allocated; Gap = $gap; Omitted = $omitted }
+    return @{ Selected = $selected; Rows = $rows; Allocated = $allocated; Gap = $gap; Omitted = $omitted; Footer = (Get-MotdOmissionRows $selected $footerWidth) }
 }
 
 function Format-MotdDesignTone([string] $Text, [string] $Tone) {
@@ -766,26 +819,45 @@ function Get-MotdCardRows([string] $Id, $Rows, [int] $Count, [int] $Width, [int]
     return ,$output
 }
 
+function Get-MotdHeaderTitle {
+    $title = [string]$MotdConfig['display']['title']
+    if ($Demo) {
+        if ($MotdWidth -lt 60) { $title = 'DEMO | ' + $title }
+        else { $title = 'DEMO - synthetic | ' + $title }
+    }
+    return $title
+}
+
+function Get-MotdHeaderContext { return 'Host ' + $MotdIdentity.Name + ' | Up ' + $MotdIdentity.Uptime }
+
+function Get-MotdFrameHeading {
+    $characters = Get-MotdBoxCharacters
+    $padded = Format-MotdCell (Get-MotdHeaderTitle) ($MotdWidth - 4)
+    $label = [regex]::Replace($padded, ' +$', '')
+    return $characters.TL + ' ' + $label + ' ' + ($characters.H * ($padded.Length - $label.Length)) + $characters.TR
+}
+
 function Write-MotdPresentation {
     $design = Get-MotdDisplaySetting 'design' 'classic'
     $padding = [int](Get-MotdDisplaySetting 'padding' 1)
     $defaultPriority = Join-MotdText @('attention', 'resources', 'system', 'services', 'processes', 'io', 'sessions', 'connections', 'hints') ','
     $configuredPriority = Join-MotdText @(Get-MotdDisplaySetting 'priority' @('attention', 'resources', 'system', 'services', 'processes', 'io', 'sessions', 'connections', 'hints')) ','
-    if ($design -eq 'classic' -and $padding -eq 1 -and (Get-MotdDisplaySetting 'density' 'balanced') -eq 'balanced' -and (Get-MotdDisplaySetting 'detail' 'normal') -eq 'normal' -and (Get-MotdDisplaySetting 'section_gap' 0) -eq 0 -and (Get-MotdDisplaySetting 'section_detail' @{}).Count -eq 0 -and $defaultPriority -eq $configuredPriority) {
+    $classicMinimum = 0
+    foreach ($id in $MotdSectionOrder) { $classicMinimum += Get-MotdPresentationMinimum $id $MotdSections[$id].Lines.Count 'classic' }
+    if ($design -eq 'classic' -and $classicMinimum -le $MotdHeight - 4 -and $padding -eq 1 -and (Get-MotdDisplaySetting 'density' 'balanced') -eq 'balanced' -and (Get-MotdDisplaySetting 'detail' 'normal') -eq 'normal' -and (Get-MotdDisplaySetting 'section_gap' 0) -eq 0 -and (Get-MotdDisplaySetting 'section_detail' @{}).Count -eq 0 -and $defaultPriority -eq $configuredPriority) {
         Write-MotdFrame
         return
     }
     $plan = Get-MotdPresentationPlan $design
     $output = New-MotdList
     $characters = Get-MotdBoxCharacters
-    $title = [string]$MotdConfig['display']['title']
-    if ($Demo) { $title += ' | DEMO' }
+    $title = Get-MotdHeaderTitle
     if ($design -eq 'classic') {
-        [void]$output.Add($characters.TL + ($characters.H * ($MotdWidth - 2)) + $characters.TR)
-        [void]$output.Add((Format-MotdDesignTone (Format-MotdDesignCell $title $MotdWidth $padding $true) 'accent'))
+        [void]$output.Add((Format-MotdDesignTone (Get-MotdFrameHeading) 'accent'))
+        [void]$output.Add((Format-MotdDesignTone (Format-MotdDesignCell (Get-MotdHeaderContext) $MotdWidth $padding $true) 'muted'))
     } else {
         [void]$output.Add((Format-MotdDesignTone (Format-MotdDesignCell ($title + ' | ' + $design.ToUpper()) $MotdWidth $padding $false) 'accent'))
-        [void]$output.Add((Format-MotdDesignTone ($characters.H * $MotdWidth) 'muted'))
+        [void]$output.Add((Format-MotdDesignTone (Format-MotdDesignCell (Get-MotdHeaderContext) $MotdWidth $padding $false) 'muted'))
     }
     $groups = Get-MotdPresentationGroups $plan.Selected $design
     $groupNumber = 0
@@ -832,7 +904,7 @@ function Write-MotdPresentation {
             }
         }
     }
-    if ($plan.Omitted -gt 0) { [void]$output.Add((Format-MotdDesignTone (Format-MotdDesignCell ('... ' + $plan.Omitted + ' sections omitted; enlarge terminal') $MotdWidth $padding ($design -eq 'classic')) 'muted')) }
+    foreach ($footer in $plan.Footer) { [void]$output.Add((Format-MotdDesignTone (Format-MotdDesignCell $footer $MotdWidth $padding ($design -eq 'classic')) 'muted')) }
     if ($design -eq 'classic') { [void]$output.Add($characters.BL + ($characters.H * ($MotdWidth - 2)) + $characters.BR) }
     if ($output.Count -gt $MotdHeight - 1) { throw 'Internal presentation plan exceeds the terminal row budget.' }
     foreach ($line in $output) { Write-Output $line }
@@ -844,17 +916,12 @@ function Write-MotdFrame {
         $horizontal = [string][char]0x2500; $script:MotdVertical = [string][char]0x2502
         $topLeft = [string][char]0x250C; $topRight = [string][char]0x2510; $bottomLeft = [string][char]0x2514; $bottomRight = [string][char]0x2518
     }
-    Write-Output ($topLeft + ($horizontal * ($MotdWidth - 2)) + $topRight)
-    $title = [string]$MotdConfig['display']['title']
-    if ($Demo) {
-        if ($MotdWidth -lt 60) { $title += ' | DEMO' }
-        else { $title += ' | DEMO - synthetic observations' }
-    }
-    Write-MotdRow $title 'accent'
+    Write-Output (Format-MotdDesignTone (Get-MotdFrameHeading) 'accent')
+    Write-MotdRow (Get-MotdHeaderContext) 'muted'
     $capacity = $MotdHeight - 4; $allocated = @{}; $used = 0
     foreach ($id in $MotdSectionOrder) {
         $minimum = 1
-        if ($id -eq 'resources' -or $id -eq 'system') { $minimum = 2 }
+        if ($id -eq 'resources' -or $id -eq 'system' -or $id -eq 'attention') { $minimum = 2 }
         if ($id -eq 'processes') { $minimum = 3 }
         $allocated[$id] = [Math]::Min($minimum, $MotdSections[$id].Lines.Count); $used += $allocated[$id]
     }
@@ -882,7 +949,7 @@ function Write-MotdFrame {
         }
     }
     foreach ($id in $MotdSectionOrder) {
-        $lines = $MotdSections[$id].Lines
+        $lines = Get-MotdPresentationRows $id 'classic'
         for ($i = 0; $i -lt $allocated[$id]; $i++) { Write-MotdRow $lines[$i].Text $lines[$i].Tone }
     }
     if ($omitted -gt 0) { Write-MotdRow ('... ' + $omitted + ' more sections; enlarge terminal') 'muted' }
@@ -892,6 +959,7 @@ function Write-MotdFrame {
 # Read only selected local observations. Ordinary layouts keep every selected
 # section; compact previews explicitly omit lower-priority sections if needed.
 Invoke-MotdHooks 'before'
+$MotdIdentity = Read-MotdIdentity
 foreach ($section in $MotdSectionOrder) {
     $MotdSections[$section] = @{ Lines = (New-MotdList) }
     $MotdCurrentSection = $section

@@ -296,7 +296,7 @@ motd_design_render() {
             [ "$MV_SHORT_HEADER" -eq 1 ] || motd_view_plain_row "$MV_METRICS" "$MV_MUTED" ;;
         ledger)
             motd_view_plain_row "$MV_TITLE / LEDGER" "$MV_TITLE_COLOR"
-            [ "$MV_SHORT_HEADER" -eq 1 ] || motd_view_plain_row 'SECTION       OBSERVATIONS' "$MV_MUTED" ;;
+            [ "$MV_SHORT_HEADER" -eq 1 ] || motd_view_plain_row "$MV_SUBTITLE" "$MV_MUTED" ;;
         cards)
             motd_view_plain_row "$MV_TITLE / CARDS" "$MV_TITLE_COLOR"
             [ "$MV_SHORT_HEADER" -eq 1 ] || motd_view_plain_row "$MV_SUBTITLE" "$MV_MUTED" ;;

@@ -578,8 +578,10 @@ motd_classic_defaults() {
     return 0
 }
 
+motd_header_title=$TITLE
+[ "$MOTD_DEMO" -eq 0 ] || motd_header_title="DEMO | $TITLE"
 if motd_classic_defaults && [ "$motd_omitted_sections" -eq 0 ]; then
-motd_border "$motd_tl" "$motd_tr" "$TITLE"
+motd_border "$motd_tl" "$motd_tr" "$motd_header_title"
 motd_section_budget=1
 if [ -n "$SITE_LABEL" ]; then motd_line "$SITE_LABEL | Portable Unix"
 else motd_line 'Portable Unix | local observations'; fi
@@ -597,13 +599,13 @@ else
     MV_COLUMNS=$MAX_WIDTH; MV_ROWS_LIMIT=$ROWS; MV_SECTION_IDS=$SECTIONS
     MV_PRIORITY=$SECTION_PRIORITY; MV_UNICODE=$((1 - MOTD_ASCII)); MV_COLOR=0
     [ -z "$motd_color" ] || MV_COLOR=1
-    MV_TITLE=$TITLE; MV_SUBTITLE="$motd_host | $SITE_LABEL | Portable Unix"
-    [ "$MOTD_DEMO" -eq 0 ] || MV_SUBTITLE="DEMO | $MV_SUBTITLE"
-    MV_METRICS='Selected local observations'
+    MV_TITLE=$motd_header_title; MV_SUBTITLE="$motd_host | up $motd_uptime s"
+    MV_METRICS=$MV_SUBTITLE
+    MV_SUBTITLE="$MV_SUBTITLE | $SITE_LABEL | Portable Unix"
     case " $MV_SECTION_IDS " in *' resources '*)
-        if [ "$motd_available" != unavailable ]; then MV_METRICS="RAM $motd_available KiB available | $motd_disk"
-        elif [ "$motd_free" != unavailable ]; then MV_METRICS="RAM $motd_free KiB free | $motd_disk"
-        else MV_METRICS="RAM unavailable | $motd_disk"; fi ;;
+        if [ "$motd_available" != unavailable ]; then MV_METRICS="$MV_METRICS | RAM $motd_available KiB available | $motd_disk"
+        elif [ "$motd_free" != unavailable ]; then MV_METRICS="$MV_METRICS | RAM $motd_free KiB free | $motd_disk"
+        else MV_METRICS="$MV_METRICS | RAM unavailable | $motd_disk"; fi ;;
     esac
     motd_design_render || exit "$?"
 fi

@@ -2828,14 +2828,19 @@ render_adaptive() {
     MV_PRIORITY=${SECTION_PRIORITY[*]}; MV_COLOR=${MODEL[color]}; MV_UNICODE=${MODEL[unicode]}
     MV_TITLE=''; MV_SUBTITLE=''; MV_METRICS=''
     ui_enabled header title && MV_TITLE=$TITLE
-    if ui_enabled header host && ui_enabled system identity; then MV_SUBTITLE=${MODEL[host]:-?}; fi
+    # Keep machine identity and uptime visible in every design's context row.
+    # The demo marker leads the title so a long configured title cannot hide it.
+    ((DEMO==0)) || MV_TITLE="DEMO${MV_TITLE:+ | }$MV_TITLE"
+    if ui_enabled header host && ui_enabled system identity; then
+        MV_SUBTITLE="${MODEL[host]:-?} | up ${MODEL[uptime]:-?}"
+        MV_METRICS=$MV_SUBTITLE
+    fi
     if ui_enabled header site && [[ -n $SITE_LABEL ]]; then MV_SUBTITLE+="${MV_SUBTITLE:+ | }$SITE_LABEL"; fi
     MV_SUBTITLE+="${MV_SUBTITLE:+ | }local observations"
-    ((DEMO==0)) || MV_SUBTITLE="DEMO | $MV_SUBTITLE"
     ((${MODEL[mem_valid]:-0}==0)) || memory="RAM ${VIEW[mem_used]:-?}/${VIEW[mem_total]:-?}"
     [[ ${MODEL[storage_state]-} != ok ]] || storage="DISK ${VIEW[storage_used]:-?}/${VIEW[storage_total]:-?}"
     if [[ " $MV_SECTION_IDS " == *' resources '* ]]; then
-        ui_enabled resources memory && MV_METRICS=$memory
+        ui_enabled resources memory && MV_METRICS+="${MV_METRICS:+ | }$memory"
         ui_enabled resources storage && MV_METRICS+="${MV_METRICS:+ | }$storage"
     fi
     if [[ " $MV_SECTION_IDS " == *' system '* ]] && ui_enabled system load; then
