@@ -112,7 +112,7 @@ invalid fractions do not become zero-filled healthy bars.
 
 Generated Unix outputs accept `--bar-layout inline|wide`; native PowerShell
 accepts `-BarLayout inline|wide`. Omitting the setting keeps the existing inline
-appearance. See the [retained comparisons](../examples/bars/README.md).
+appearance. See the [retained comparisons](../gallery/bars/README.md).
 
 ## Choose a structure, then tune it
 

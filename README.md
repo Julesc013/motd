@@ -47,12 +47,12 @@ On a suitable terminal, the wizard uses successive screens with numbered choices
 | `briefing` | Attention first, then short headings with optional explanatory detail. |
 | `dashboard` | A metric summary with paired cards on wide terminals and stacked cards when narrow. |
 
-The [design sampler](examples/designs/README.md) shows actual generated output at
-the four requested terminal sizes. Its [local filterable index](examples/designs/index.html)
+The [design sampler](gallery/designs/README.md) shows actual generated output at
+the four requested terminal sizes. Its [local filterable index](gallery/designs/index.html)
 also includes density/detail contrasts. These choices reuse collection code.
 
 Resource bars can sit beside a reading (`inline`, the existing default) or use
-their own full panel row (`wide`). The [bar comparison](examples/bars/README.md)
+their own full panel row (`wide`). The [bar comparison](gallery/bars/README.md)
 shows both at the four terminal sizes on Bash, portable sh and PowerShell.
 Labels remain when a short viewport cannot fit a gauge; missing data stays
 unavailable. A dashboard bar fills its own card, including when cards are paired.
@@ -176,7 +176,7 @@ The following gallery is rendered from synthetic fixture data by the actual engi
 
 ![Home-lab synthetic preview](examples/home-lab.svg)
 
-The [PNG gallery](examples/gallery/README.md) covers **40×25, 40×50, 80×25 and 80×50** terminals across both dashboard presets, four output routes, four themes, ASCII/Unicode and colour/plain modes. Open `examples/gallery/index.html` locally for filters. Each capture retains its command, recipe, raw ANSI output, interpreter version and hashes. PNG optimization is lossless; a wider or taller screenshot comes from a newly executed layout, not resizing a smaller output. See [gallery reproduction](docs/gallery.md).
+The [PNG gallery](gallery/compatibility/README.md) covers **40×25, 40×50, 80×25 and 80×50** terminals across both dashboard presets, four output routes, four themes, ASCII/Unicode and colour/plain modes. Open `gallery/compatibility/index.html` locally for filters. Each capture retains its command, recipe, raw ANSI output, interpreter version and hashes. PNG optimization is lossless; a wider or taller screenshot comes from a newly executed layout, not resizing a smaller output. See [gallery reproduction](docs/gallery.md).
 
 Ordinary configuration is data. Optional commands are explicit argument arrays; shell expressions require an explicitly chosen shell invocation. Inspecting an existing script does not execute it.
 

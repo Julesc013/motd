@@ -32,9 +32,14 @@ jobs:
       - name: Verify complete retained terminal capture evidence
         run: python3 tools/build_gallery.py --verify --require-full
       - name: Verify complete design sampler evidence
-        run: python3 tools/build_gallery.py --verify --require-sampler --output examples/designs
+        run: python3 tools/build_gallery.py --verify --require-sampler --output gallery/designs
+      - name: Verify customization and composition evidence
+        run: |
+          python3 tools/build_gallery.py --verify --output gallery/axes
+          python3 tools/build_gallery.py --verify --output gallery/compositions
+          python3 tools/build_showcase.py --verify
       - name: Verify retained inline and wide bar evidence
-        run: python3 tools/build_gallery.py --verify --output examples/bars
+        run: python3 tools/build_gallery.py --verify --output gallery/bars
   python-38:
     runs-on: ubuntu-22.04
     steps:

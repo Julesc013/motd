@@ -1,0 +1,42 @@
+name: Publish verified alpha
+on:
+  workflow_run:
+    workflows: [Verify, Native PowerShell designs and legacy evidence]
+    types: [completed]
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: alpha-release
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.11'
+      - name: Require both verification workflows at current main
+        id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          python3 tools/release_gate.py >> "$GITHUB_OUTPUT"
+      - name: Build source and full gallery assets
+        if: steps.gate.outputs.ready == 'true'
+        run: python3 tools/build_release.py --output dist
+      - name: Verify draft assets before publishing the alpha
+        if: steps.gate.outputs.ready == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          version=$(python3 -c 'import motd; print(motd.VERSION)')
+          python3 tools/publish_alpha.py --assets dist --notes "docs/release-$version.md"

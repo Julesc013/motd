@@ -104,7 +104,7 @@ class WizardTests(unittest.TestCase):
         appearance = next(i for i, (title, _) in enumerate(pages) if title == 'Appearance')
         answers = ['n'] * appearance + ['4', 'bad', '4', '80', 'b', 'n'] + ['n'] * (len(pages) - appearance)
         with patch('builtins.input', side_effect=answers):
-            c = motd._configure(motd.preset_config(), motd.WizardUI('line'))
+            c = motd._configure_details(motd.preset_config(), motd.WizardUI('line'))
         self.assertEqual(c['display']['width'], 80)
         self.assertIn('Enter a whole number', self.output.getvalue())
         self.assertNotIn('\x1b', self.output.getvalue())

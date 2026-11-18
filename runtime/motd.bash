@@ -1,5 +1,5 @@
 #!/bin/bash
-# MOTD Bash runtime 0.4.0 | derived from Workshop MOTD 1.2.0, 2026-11-16.
+# MOTD Bash runtime 0.5.0-alpha.1 | derived from Workshop MOTD 1.2.0, 2026-11-16.
 # Bash 4.3+ and GNU timeout; optional GNU df, procps ps, iproute2, systemd.
 # Standalone output: generate settings with motd.py, then use --demo or --help.
 # No daemon, installation side effects, network requests, recursive disk scans,
@@ -46,6 +46,15 @@ DESIGN=classic                  # classic | cards | ledger | briefing | dashboar
 DENSITY=balanced                # compact | balanced | comfortable
 DETAIL=normal                   # brief | normal | full; independent of spacing
 PADDING=1 SECTION_GAP=0
+PANEL_LAYOUT=auto
+PANEL_FRAME=auto
+HEADING_STYLE=auto
+BORDER_STYLE=single
+BORDER_VISIBILITY=all
+HEADING_ALIGN=left
+SEPARATOR_TEXT=none
+LABEL_STYLE=full
+OVERFLOW=ellipsis
 COLOR_EMPHASIS=balanced          # quiet | balanced | vivid
 SECTION_PRIORITY=(attention resources system services processes io sessions connections hints)
 declare -A SECTION_DETAIL=()
@@ -274,11 +283,11 @@ FASTFETCH_TEXT='' OUTPUT='' REPLY=''
 DEMO=0 PLAIN=0 ASCII=0 FORCE_COLOR=0 WIDTH_OVERRIDE='' FETCH_OVERRIDE='' THEME_OVERRIDE=''
 [[ $CHARSET != ascii ]] || ASCII=1
 PROC_ROOT=/proc SYS_ROOT=/sys ETC_ROOT=/etc RUN_ROOT=/run
-VERSION=0.4.0
+VERSION=0.5.0-alpha.1
 
 usage() {
     printf '%s\n' \
-      'MOTD adaptive runtime 0.4.0 - standalone Linux status display.' \
+      'MOTD adaptive runtime 0.5.0-alpha.1 - standalone Linux status display.' \
       'Usage: motd.bash [--rows 8..200]' \
       '       [--width 24..240] [--theme cyan|amber|green|mono] [--plain|--color] [--ascii|--unicode]' \
       '       [--design classic|cards|ledger|briefing|dashboard] [--detail brief|normal|full]' \
@@ -328,6 +337,24 @@ parse_options() {
                 case ${2-} in brief|normal|full) DETAIL=$2 ;; *) return 2 ;; esac; shift 2 ;;
             --color-emphasis)
                 case ${2-} in quiet|balanced|vivid) COLOR_EMPHASIS=$2 ;; *) return 2 ;; esac; shift 2 ;;
+            --panel-layout)
+                case ${2-} in auto|stack|columns) PANEL_LAYOUT=$2 ;; *) return 2 ;; esac; shift 2 ;;
+            --panel-frame)
+                case ${2-} in auto|continuous|separate|none) PANEL_FRAME=$2 ;; *) return 2 ;; esac; shift 2 ;;
+            --heading-style)
+                case ${2-} in auto|rule|plain|inline|hidden) HEADING_STYLE=$2 ;; *) return 2 ;; esac; shift 2 ;;
+            --border-style)
+                case ${2-} in single|rounded|double|heavy|ascii) BORDER_STYLE=$2 ;; *) return 2 ;; esac; shift 2 ;;
+            --border-visibility)
+                case ${2-} in all|outer|sections|none) BORDER_VISIBILITY=$2 ;; *) return 2 ;; esac; shift 2 ;;
+            --heading-align)
+                case ${2-} in left|center|right) HEADING_ALIGN=$2 ;; *) return 2 ;; esac; shift 2 ;;
+            --separator-text)
+                case ${2-} in none|summary|custom) SEPARATOR_TEXT=$2 ;; *) return 2 ;; esac; shift 2 ;;
+            --label-style)
+                case ${2-} in full|short) LABEL_STYLE=$2 ;; *) return 2 ;; esac; shift 2 ;;
+            --overflow)
+                case ${2-} in ellipsis|clip) OVERFLOW=$2 ;; *) return 2 ;; esac; shift 2 ;;
             --bar-layout)
                 case ${2-} in inline|wide) BAR_LAYOUT=$2 ;; *) return 2 ;; esac; shift 2 ;;
             --padding)
@@ -718,7 +745,6 @@ main() {
         printf '%s\n' 'Invalid section registry or display configuration; inspect SETTINGS.' >&2
         return 2
     fi
-    ui_plan_layout || return $?
     ((VALIDATE_ONLY==0)) || return 0
     collect_all; prepare_view
     render_adaptive || return $?
@@ -1945,11 +1971,9 @@ ui_value_cell() {
 ui_emit() {
     ((UI_REMAIN>0)) || return 0
     if ((${UI_DESIGN_CAPTURE:-0})); then
-        strip_ansi "$1"
-        # Remove right-padding before a plain-language heading is added. The
-        # shared engine repads the final cell to its own measured width.
-        REPLY=${REPLY%"${REPLY##*[! ]}"}
-        UI_CAPTURE_LINES+=("$REPLY")
+        # Keep the collector formatter's semantic SGR spans. The common
+        # compositor measures visible cells and accepts only SGR escapes.
+        UI_CAPTURE_LINES+=("$1")
         ((UI_REMAIN-=1)); ((UI_EMITTED+=1)); return 0
     fi
     line "$BORDER$V$RST $1 $BORDER$V$RST"
@@ -2001,20 +2025,6 @@ ui_begin() {
     fi
     ui_heading "$title" "${3-}" "${4-${COLOR[muted]}}"
 }
-ui_top() {
-    local host=${MODEL[host]:-?} clock=${MODEL[sampled]-} title=''
-    ui_enabled header title && title=$TITLE
-    clock=${clock#* }; clock=${clock%% *}
-    [[ $clock != "${MODEL[sampled]-}" ]] || clock=''
-    if ui_enabled system identity && ui_enabled header host; then
-        if ((TEXT_WIDTH>=60)); then title+="${title:+ | }$host"; else title="$host${title:+ | $title}"; fi
-    fi
-    if ui_enabled header site && [[ -n $SITE_LABEL && $SITE_LABEL != Workshop ]]; then title+="${title:+ | }$SITE_LABEL"; fi
-    ui_enabled header time || clock=''
-    ((DEMO==0)) || clock="DEMO $clock"
-    ui_rule "$title" "$clock" "$TL" "$TR"
-}
-ui_bottom() { rule_full "$BL" "$BR"; }
 ui_columns() {
     local count=$1 i width available
     UI_COL_WIDTHS=(); UI_CELLS=()
@@ -2281,7 +2291,13 @@ ui_services() {
     shade=${COLOR[muted]}; ((${MODEL[svc_failed]:-0}==0)) || shade=${COLOR[error]}
     ui_enabled services summary || summary=''
     ui_begin services "$budget" "$summary" "$shade"
-    if ((${#roles[@]}==0)); then ui_row 'No observed configured service roles.' "${COLOR[muted]}"; return; fi
+    local -A required_seen=()
+    for unit in "${REQUIRED_UNITS[@]}"; do
+        [[ ! ${required_seen[$unit]+set} ]] || continue; required_seen[$unit]=1
+        svc_state "$unit"; state=$REPLY; shade=$SVC_COLOR
+        ui_value_cell "$TEXT_WIDTH" "Required $unit" "$state" "$shade"; ui_emit "$REPLY"
+    done
+    if ((${#roles[@]}==0)); then ui_row 'No observed configured service roles.'  "${COLOR[muted]}"; return; fi
     while ((shown<${#roles[@]} && UI_REMAIN>0)); do
         ui_columns "$columns"
         for ((i=0;i<columns;i++)); do
@@ -2722,79 +2738,46 @@ ui_section_rows() {
     else REPLY=10000; fi
 }
 
-ui_plan_layout() {
-    local id available total=0 changed=1 minimum rows reduction
-    UI_PLAN=(); UI_OMITTED_SECTIONS=0
-    ((UI_REGISTRY_READY)) || ui_registry_init || return 2
-    for id in "${SECTIONS[@]}"; do
-        ui_section_enabled "$id" || continue
-        rows=$REPLY
-        UI_PLAN[$id]=$((10#$rows)); ((total+=10#$rows))
-    done
-    [[ $MODE == concise ]] || return 0
-    available=$((COMPACT_ROWS-3)); ((available>=0)) || available=0
-    # Reduce content, never the named framing. Attention retains its first notice.
-    for id in "${COMPACT_TRIM_ORDER[@]}" "${SECTIONS[@]}"; do
-        ((total>available)) || break
-        [[ ${UI_PLAN[$id]+set} ]] || continue
-        minimum=${SECTION_MIN_ROWS[$id]:-1}
-        if [[ $id == processes ]] && ((${TEXT_WIDTH:-76}<60 && minimum<4)); then minimum=4; fi
-        reduction=$((UI_PLAN[$id]-minimum)); ((reduction>0)) || continue
-        ((reduction<=total-available)) || reduction=$((total-available))
-        ((UI_PLAN[$id]-=reduction,total-=reduction))
-    done
-    # A small terminal is a presentation constraint, not a configuration error.
-    # Keep complete sections and borders, reserve a visible omission notice,
-    # and prefer resources/identity/attention over secondary detail. Nothing is
-    # collected a second time, and no oversized screen is cropped after render.
-    if ((total>available)); then
-        ((available-=1))
-        for id in hints connections io sessions services processes resources system attention "${SECTIONS[@]}"; do
-            ((total>available)) || break
-            [[ ${UI_PLAN[$id]+set} ]] || continue
-            ((total-=UI_PLAN[$id],UI_OMITTED_SECTIONS+=1))
-            unset 'UI_PLAN[$id]'
-        done
-    fi
-    # Only an explicitly larger row budget expands the compact baseline.
-    if ((COMPACT_ROWS>25)); then
-        changed=1
-        while ((total<available && changed)); do
-            changed=0
-            for id in "${COMPACT_EXPAND_ORDER[@]}" "${SECTIONS[@]}"; do
-                [[ ${UI_PLAN[$id]+set} ]] || continue
-                [[ ! ${SECTION_ROWS[$id]+set} && ! ${SECTION_ROWS[$MODE.$id]+set} ]] || continue
-                if ((${UI_PLAN[$id]}<${SECTION_MAX_ROWS[$id]:-1})); then
-                    ((UI_PLAN[$id]+=1,total+=1)); changed=1
-                    ((total<available)) || break
-                fi
-            done
-        done
-    fi
-}
-
-ui_render_sections() {
-    local id
-    ui_plan_layout || return $?
-    OUTPUT=''
-    ui_top
-    for id in "${SECTIONS[@]}"; do
-        [[ ${UI_PLAN[$id]+set} ]] || continue
-        UI_SECTION_TITLE=${SECTION_TITLE[$id]}
-        "${SECTION_RENDERER[$id]}" "${UI_PLAN[$id]}"
-    done
-    if ((UI_OMITTED_SECTIONS)); then
-        UI_REMAIN=1
-        ui_row "+$UI_OMITTED_SECTIONS sections; resize for more." "${COLOR[muted]}"
-    fi
-    ui_bottom
-}
-
 # The design engine consumes the same section callbacks and validated model.
 # It changes presentation only: collection, ranking and metric formulas still
 # have exactly one owner. Capturing happens in the engine's command-substitution
 # subshell, so temporary widths and glyph choices cannot leak into other cards.
 motd_view_detail() { printf '%s\n' "${SECTION_DETAIL[$1]:-$DETAIL}"; }
+
+motd_view_summary() {
+    case $1 in
+        services) printf '%s\n' "${MODEL[svc_running]:-?} running / ${MODEL[svc_failed]:-?} failed" ;;
+        processes) printf '%s\n' "${MODEL[process_count]:-?} tasks; CPU / RAM / I/O" ;;
+        sessions) printf '%s\n' "${MODEL[session_count]:-?} sessions / ${MODEL[session_users]:-?} users" ;;
+        resources) printf '%s\n' 'RAM / storage / swap' ;;
+        connections) printf '%s\n' "${MODEL[tcp_established]:-?} TCP" ;;
+        *) printf '%s\n' '' ;;
+    esac
+}
+
+motd_view_limits() {
+    local id=$1 cap required=0 unit
+    local -A seen=()
+    if [[ $id == processes ]]; then
+        MV_MIN_ROWS=0
+        for unit in cpu rss io; do ui_enabled processes "$unit" && ((MV_MIN_ROWS+=1)); done
+        if (($2>=60)); then MV_MIN_ROWS=2; fi
+    fi
+    if [[ $id == services && $3 != brief ]]; then
+        for unit in "${REQUIRED_UNITS[@]}"; do
+            [[ ! ${seen[$unit]+set} ]] || continue; seen[$unit]=1; ((required+=1))
+        done
+        ((required<=MV_MIN_ROWS)) || MV_MIN_ROWS=$required
+    fi
+    ((MV_MAX_ROWS>=MV_MIN_ROWS)) || MV_MAX_ROWS=$MV_MIN_ROWS
+    # Explicit historical SECTION_ROWS caps include the section's decoration.
+    if [[ ${SECTION_ROWS[$id]+set} || ${SECTION_ROWS[$MODE.$id]+set} ]]; then
+        ui_section_rows "$id"; cap=$REPLY
+        motd_view_overhead "$id"; cap=$((cap-MV_OVERHEAD)); ((cap>=0)) || cap=0
+        ((MV_MAX_ROWS<=cap)) || MV_MAX_ROWS=$cap
+        ((MV_MIN_ROWS<=cap)) || MV_MIN_ROWS=$cap
+    fi
+}
 
 motd_view_capture() {
     local id=$1 rows=$3 flavour=$4 TEXT_WIDTH=$2 INNER=$(($2 + 2)) COLS=$(($2 + 4))
@@ -2821,6 +2804,10 @@ motd_view_capture() {
                 fi
                 if [[ -n $summary ]]; then printf '%s\n' "$summary"; return; fi ;;
             services)
+                if ((${#REQUIRED_UNITS[@]})); then
+                    kind=${REQUIRED_UNITS[0]}; svc_state "$kind"
+                    printf '%s\n' "Required $kind: $REPLY"; return
+                fi
                 if ui_enabled services summary; then
                     if [[ ${MODEL[svc_runtime_state]-} == ok ]]; then printf '%s\n' "${MODEL[svc_running]:-?} running; ${MODEL[svc_failed]:-?} failed"
                     else printf '%s\n' "Service state: ${MODEL[svc_runtime_state]:-unavailable}"; fi; return
@@ -2847,18 +2834,8 @@ motd_view_capture() {
     else printf '%s\n' 'No additional observations in this section.'; fi
 }
 
-ui_classic_defaults() {
-    [[ $DESIGN == classic && $DENSITY == balanced && $DETAIL == normal && $PADDING == 1 &&
-       $SECTION_GAP == 0 && $COLOR_EMPHASIS == balanced && $BAR_LAYOUT == inline && ${#SECTION_DETAIL[@]} == 0 &&
-       ${SECTION_PRIORITY[*]} == 'attention resources system services processes io sessions connections hints' ]]
-}
-
 render_adaptive() {
     local MODE=concise id memory='RAM unavailable' storage="Disk ${MODEL[storage_state]:-unavailable}"
-    if ui_classic_defaults; then
-        ui_plan_layout || return $?
-        if ((UI_OMITTED_SECTIONS==0)); then ui_render_sections; return $?; fi
-    fi
     MV_SECTION_IDS=''
     for id in "${SECTIONS[@]}"; do ui_section_enabled "$id" && MV_SECTION_IDS+=" $id"; done
     MV_COLUMNS=${MODEL[columns]}; MV_ROWS_LIMIT=$COMPACT_ROWS

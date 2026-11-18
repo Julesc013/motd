@@ -15,6 +15,15 @@ DENSITY=balanced
 DETAIL=normal
 PADDING=1
 SECTION_GAP=0
+PANEL_LAYOUT=auto
+PANEL_FRAME=auto
+HEADING_STYLE=auto
+BORDER_STYLE=single
+BORDER_VISIBILITY=all
+HEADING_ALIGN=left
+SEPARATOR_TEXT=none
+LABEL_STYLE=full
+OVERFLOW=ellipsis
 COLOR_EMPHASIS=balanced
 SECTION_PRIORITY='attention resources system services processes io sessions connections hints'
 MAX_WIDTH=80
@@ -61,6 +70,24 @@ while [ "$#" -gt 0 ]; do
             shift; case "${1-}" in brief|normal|full) DETAIL=$1 ;; *) exit 2 ;; esac ;;
         --color-emphasis)
             shift; case "${1-}" in quiet|balanced|vivid) COLOR_EMPHASIS=$1 ;; *) exit 2 ;; esac ;;
+        --panel-layout)
+            shift; case "${1-}" in auto|stack|columns) PANEL_LAYOUT=$1 ;; *) exit 2 ;; esac ;;
+        --panel-frame)
+            shift; case "${1-}" in auto|continuous|separate|none) PANEL_FRAME=$1 ;; *) exit 2 ;; esac ;;
+        --heading-style)
+            shift; case "${1-}" in auto|rule|plain|inline|hidden) HEADING_STYLE=$1 ;; *) exit 2 ;; esac ;;
+        --border-style)
+            shift; case "${1-}" in single|rounded|double|heavy|ascii) BORDER_STYLE=$1 ;; *) exit 2 ;; esac ;;
+        --border-visibility)
+            shift; case "${1-}" in all|outer|sections|none) BORDER_VISIBILITY=$1 ;; *) exit 2 ;; esac ;;
+        --heading-align)
+            shift; case "${1-}" in left|center|right) HEADING_ALIGN=$1 ;; *) exit 2 ;; esac ;;
+        --separator-text)
+            shift; case "${1-}" in none|summary|custom) SEPARATOR_TEXT=$1 ;; *) exit 2 ;; esac ;;
+        --label-style)
+            shift; case "${1-}" in full|short) LABEL_STYLE=$1 ;; *) exit 2 ;; esac ;;
+        --overflow)
+            shift; case "${1-}" in ellipsis|clip) OVERFLOW=$1 ;; *) exit 2 ;; esac ;;
         --bar-layout)
             shift; case "${1-}" in inline|wide) BAR_LAYOUT=$1 ;; *) exit 2 ;; esac ;;
         --padding)
@@ -442,36 +469,8 @@ $motd_service_rows
 MOTD_UNIQUE_SERVICES_END
 motd_service_rows=$motd_unique_services
 
-# Allocate rows before rendering so the last sections retain representation.
-# A section has a heading + minimum one row. Extra rows first enable all three
-# process metrics and storage, then expand the lists. One row stays for a prompt.
-motd_inner=$((MAX_WIDTH - 4)); motd_sections=0
-for motd_section in $SECTIONS; do motd_sections=$((motd_sections + 1)); done
-motd_visible_sections=$SECTIONS; motd_omitted_sections=0; motd_available_rows=$((ROWS - 4))
-# Keep the same complete framed sections at short terminal heights. A named
-# omission row replaces hidden sections; the preview is never a cropped larger
-# render. Attention remains visible after lower-priority detail is omitted.
-if [ "$((2 * motd_sections))" -gt "$motd_available_rows" ]; then
-    motd_available_rows=$((motd_available_rows - 1))
-    for motd_remove in hints connections io sessions services processes resources system attention; do
-        if [ "$((2 * motd_sections))" -le "$motd_available_rows" ]; then break; fi
-        motd_remaining=''
-        for motd_section in $motd_visible_sections; do
-            if [ "$motd_section" = "$motd_remove" ]; then
-                motd_sections=$((motd_sections - 1)); motd_omitted_sections=$((motd_omitted_sections + 1))
-            else motd_remaining="$motd_remaining $motd_section"; fi
-        done
-        motd_visible_sections=$motd_remaining
-    done
-fi
-motd_extra=$((motd_available_rows - 2 * motd_sections)); if [ "$motd_extra" -lt 0 ]; then motd_extra=0; fi
-motd_process_extra=0; motd_resource_extra=0
-case " $motd_visible_sections " in *' processes '*)
-    if [ "$motd_extra" -gt 1 ]; then motd_process_extra=2; motd_extra=$((motd_extra - 2))
-    elif [ "$motd_extra" -gt 0 ]; then motd_process_extra=1; motd_extra=$((motd_extra - 1)); fi ;; esac
-case " $motd_visible_sections " in *' resources '*) if [ "$motd_extra" -gt 0 ]; then motd_resource_extra=1; motd_extra=$((motd_extra - 1)); fi ;; esac
-motd_share=0
-if [ "$motd_sections" -gt 0 ]; then motd_share=$((motd_extra / motd_sections)); motd_extra=$((motd_extra % motd_sections)); fi
+# Geometry is owned by the shared composer; data formatters receive its budget.
+motd_inner=$((MAX_WIDTH - 4)); motd_process_extra=0; motd_resource_extra=0
 motd_budget=$((ROWS - 1)); motd_section_budget=0; motd_color=''; motd_reset=''
 if [ "$MOTD_PLAIN" -eq 0 ] && [ "$THEME" != mono ] && { [ -t 1 ] || [ "$MOTD_FORCE_COLOR" -eq 1 ]; } && [ -z "${NO_COLOR+x}" ] && [ "${TERM-dumb}" != dumb ]; then
     case "$THEME" in cyan) motd_color=$(printf '\033[1;36m') ;; green) motd_color=$(printf '\033[1;32m') ;; amber) motd_color=$(printf '\033[1;33m') ;; esac
@@ -611,6 +610,31 @@ MOTD_SERVICES_END
 
 motd_view_detail() { motd_section_detail "$1"; }
 
+motd_view_summary() {
+    case "$1" in
+        services) printf '%s\n' "$motd_service_summary" ;;
+        sessions) printf '%s\n' "$motd_session_summary" ;;
+        processes) printf '%s\n' 'CPU / RSS / cumulative I/O' ;;
+        resources) printf '%s\n' 'Memory / storage / swap' ;;
+        *) printf '%s\n' '' ;;
+    esac
+}
+
+motd_view_limits() {
+    if [ "$1" = processes ]; then MV_MIN_ROWS=3; fi
+    if [ "$1" = services ] && [ "$3" != brief ]; then
+        mv_required_count=1
+        mv_required_lines=$(motd_required_services)
+        while [ -n "$mv_required_lines" ]; do
+            mv_required_count=$((mv_required_count + 1))
+            case "$mv_required_lines" in *'
+'*) mv_required_lines=${mv_required_lines#*'
+'} ;; *) mv_required_lines='' ;; esac
+        done
+        [ "$mv_required_count" -le "$MV_MIN_ROWS" ] || MV_MIN_ROWS=$mv_required_count
+    fi
+}
+
 motd_view_capture() {
     motd_capture_mode=1; motd_section_budget=$3; motd_inner=$2; motd_budget=10000
     motd_process_extra=0; motd_resource_extra=0
@@ -628,34 +652,8 @@ motd_view_capture() {
     motd_render_section "$1"
 }
 
-motd_classic_defaults() {
-    [ "$DESIGN" = classic ] && [ "$DENSITY" = balanced ] && [ "$DETAIL" = normal ] &&
-    [ "$PADDING" = 1 ] && [ "$SECTION_GAP" = 0 ] && [ "$COLOR_EMPHASIS" = balanced ] && [ "$BAR_LAYOUT" = inline ] &&
-    [ "$SECTION_PRIORITY" = 'attention resources system services processes io sessions connections hints' ] || return 1
-    for motd_default_id in $SECTIONS; do
-        [ "$(motd_section_detail "$motd_default_id")" = normal ] || return 1
-    done
-    return 0
-}
-
 motd_header_title=$TITLE
 [ "$MOTD_DEMO" -eq 0 ] || motd_header_title="DEMO | $TITLE"
-if motd_classic_defaults && [ "$motd_omitted_sections" -eq 0 ]; then
-motd_border "$motd_tl" "$motd_tr" "$motd_header_title"
-motd_section_budget=1
-if [ -n "$SITE_LABEL" ]; then motd_line "$SITE_LABEL | Portable Unix"
-else motd_line 'Portable Unix | local observations'; fi
-for motd_section in $motd_visible_sections; do
-    motd_section_budget=$((1 + motd_share))
-    if [ "$motd_extra" -gt 0 ]; then motd_section_budget=$((motd_section_budget + 1)); motd_extra=$((motd_extra - 1)); fi
-    motd_render_section "$motd_section"
-done
-if [ "$motd_omitted_sections" -gt 0 ]; then
-    motd_section_budget=1
-    motd_line "+$motd_omitted_sections sections; resize for more."
-fi
-motd_border "$motd_bl" "$motd_br" ''
-else
     MV_COLUMNS=$MAX_WIDTH; MV_ROWS_LIMIT=$ROWS; MV_SECTION_IDS=$SECTIONS
     MV_PRIORITY=$SECTION_PRIORITY; MV_UNICODE=$((1 - MOTD_ASCII)); MV_COLOR=0
     [ -z "$motd_color" ] || MV_COLOR=1
@@ -668,5 +666,4 @@ else
         else MV_METRICS="$MV_METRICS | RAM unavailable | $motd_disk"; fi ;;
     esac
     motd_design_render || exit "$?"
-fi
 motd_after_hooks || exit "$?"

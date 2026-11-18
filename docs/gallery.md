@@ -30,7 +30,7 @@ and host are always recorded; a PNG is not proof that an old OS was tested.
 
 ## Design and readability sampler
 
-The separate `examples/designs/` gallery covers **140 actual PTY captures** without
+The separate `gallery/designs/` gallery covers **140 actual PTY captures** without
 multiplying the baseline matrix by every layout preference:
 
 | Group | Selection | Captures |
@@ -55,7 +55,7 @@ not an implied additional PNG certification.
 
 ## Inline and wide resource bars
 
-The separate `examples/bars/` comparison holds home-lab, balanced density, normal
+The separate `gallery/bars/` comparison holds home-lab, balanced density, normal
 detail and the cyan/Unicode/colour settings constant. It varies cards/dashboard,
 inline/wide bars, Bash/sh/PowerShell and the four terminal sizes: **48 captures**.
 Wide gauges use their actual panel width; when rows are scarce, numeric labels
@@ -68,7 +68,7 @@ used observations. This is a presentation comparison, not evidence that distinct
 OS providers measure identical quantities.
 
 ```sh
-python3 tools/build_gallery.py --output examples/bars \
+python3 tools/build_gallery.py --output gallery/bars \
   --presets home-lab --shells bash,sh,powershell --themes cyan \
   --charsets unicode --colours colour --designs cards,dashboard \
   --bar-layouts inline,wide --no-static --no-comparisons \
@@ -137,7 +137,7 @@ Build the bounded sampler separately:
 
 ```sh
 python3 tools/build_gallery.py --design-sampler \
-  --output examples/designs \
+  --output gallery/designs \
   --powershell /path/to/pwsh --optimizer /path/to/oxipng
 ```
 
@@ -146,9 +146,9 @@ accept comma-separated values. These options extend the selected matrix only;
 they do not change the default classic completeness contract. `--design-sampler`
 uses the fixed selections in the table above.
 
-Open `examples/gallery/index.html` locally for the filterable index, or follow the
-PNG/transcript links in `examples/gallery/README.md`. The archive extracts into
-`examples/gallery/` relative to a repository root. Each raw transcript remains
+Open `gallery/compatibility/index.html` locally for the filterable index, or follow the
+PNG/transcript links in `gallery/compatibility/README.md`. The archive extracts into
+`gallery/compatibility/` relative to a repository root. Each raw transcript remains
 available for independent inspection and re-rendering.
 
 ## Wizard resize examples
@@ -174,8 +174,8 @@ does not require Pillow, wcwidth or a particular installed raster font.
 
 ```sh
 python3 tools/build_gallery.py --verify --require-full
-python3 tools/build_gallery.py --output examples/designs --verify --require-sampler
-python3 tools/build_gallery.py --output examples/bars --verify
+python3 tools/build_gallery.py --output gallery/designs --verify --require-sampler
+python3 tools/build_gallery.py --output gallery/bars --verify
 ```
 
 This checks the complete 524-case matrix, repository source hashes, every recipe

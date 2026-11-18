@@ -17,6 +17,8 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
+import time
 from unittest.mock import patch
 from contextlib import redirect_stdout
 
@@ -137,11 +139,130 @@ def wizard_frame(columns, rows, *, show_calls=False):
             selected['display']['theme'] = theme
             return selected
         with patch.object(ui, 'read', return_value=''):
-            ui.select('Theme', [(value.title(), value) for value in ('cyan', 'green', 'amber', 'mono')],
-                      default=1, preview_factory=theme_sample)
+            steps = motd._guided_steps(sample)
+            step = next(i for i, (_, key, _) in enumerate(steps) if key == 'display.theme')
+            ui.select(f'Choose the colours | {step + 1}/{len(steps)}',
+                      [(value.title(), value) for value in ('cyan', 'green', 'amber', 'mono')],
+                      default=1, preview_factory=theme_sample, guided=True)
         title, lines, selected_config, notice, footer = ui._page
         return ui.frame(title, lines, config=selected_config, notice=notice,
                         footer=footer, prompt='Choice [2]: ')
+
+
+def capture_wizard_session(columns, rows, *, show_calls=False):
+    """Exercise immediate selection in a real terminal and retain its raw bytes."""
+    import errno
+    import fcntl
+    import pty
+    import select
+    import struct
+    import termios
+    master, slave = pty.openpty()
+    fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack('HHHH', rows, columns, 0, 0))
+    environment = dict(os.environ, TERM='xterm-256color')
+    environment.pop('NO_COLOR', None)
+    output = bytearray()
+    with tempfile.TemporaryDirectory(prefix='motd-wizard-capture-') as folder:
+        snapshot = Path(folder) / 'frame.json'
+        program = '''import json, sys
+from pathlib import Path
+sys.path.insert(0, ROOT)
+import motd
+c = motd.preset_config()
+ui = motd.WizardUI('screen')
+ui.show_calls = SHOW_CALLS
+if ui.show_calls:
+    c['hooks']['before'] = [{'argv': ['fastfetch'], 'timeout_seconds': 2, 'on_failure': 'continue'}]
+    c['hooks']['after'] = [{'argv': ['motd:print', 'Session ready'], 'timeout_seconds': 1, 'on_failure': 'continue'}]
+steps = motd._guided_steps(c)
+step = next(i for i, (_, key, _) in enumerate(steps) if key == 'display.theme')
+try:
+    result = ui.select('Choose the colours | %s/%s' % (step + 1, len(steps)),
+        [(value.title(), value) for value in ('cyan', 'green', 'amber', 'mono')],
+        preview_factory=lambda value: motd._wizard_variant(c, 'display.theme', value), guided=True)
+    Path(SNAPSHOT).write_text(json.dumps({'frame': ui._last_frame, 'choice': result}), encoding='utf-8')
+finally:
+    ui.finish()
+'''.replace('ROOT', repr(str(ROOT))).replace('SHOW_CALLS', repr(show_calls)).replace('SNAPSHOT', repr(str(snapshot)))
+        process = subprocess.Popen([sys.executable, '-c', program], stdin=slave,
+            stdout=slave, stderr=slave, env=environment, start_new_session=True)
+        os.close(slave)
+        deadline = time.monotonic() + 10
+
+        def read_available(wait=.05):
+            ready, _, _ = select.select([master], [], [], wait)
+            if ready:
+                try: output.extend(os.read(master, 65536))
+                except OSError as exc:
+                    if exc.errno != errno.EIO: raise
+
+        def await_bytes(marker, start=0):
+            while marker not in output[start:]:
+                if process.poll() is not None or time.monotonic() > deadline:
+                    raise RuntimeError('Wizard capture missed %r: %s' % (marker, output.decode(errors='replace')[-1500:]))
+                read_available()
+        try:
+            await_bytes(b'ws-bench-07')
+            start = len(output)
+            os.write(master, b'2')  # No Enter: this must update the visible choice.
+            await_bytes(b'> 2. Green', start)
+            await_bytes(b'| demo', start)
+            await_bytes(b'ws-bench-07', start)
+            os.write(master, b'\n')
+            while process.poll() is None and time.monotonic() < deadline:
+                read_available()
+            if process.poll() is None:
+                raise RuntimeError('Wizard capture did not exit')
+            read_available(0)
+            if process.returncode:
+                raise RuntimeError(output.decode(errors='replace')[-2000:])
+            result = json.loads(snapshot.read_text(encoding='utf-8'))
+            if result['choice'] != ['@next', 'green']:
+                raise RuntimeError('Wizard did not accept the previewed selection')
+            return result['frame'], bytes(output)
+        finally:
+            if process.poll() is None:
+                process.kill(); process.wait(timeout=3)
+            os.close(master)
+
+
+def replay_wizard_session(raw, columns, rows):
+    """Strictly replay the cursor controls emitted by WizardUI._redraw."""
+    from build_gallery import Cell, CSI, GalleryError, TerminalGrid
+    grid = TerminalGrid(columns, rows, reserve_prompt=False)
+    # Returning to a user's prompt legitimately leaves the last grid. The image
+    # represents the selection just before acceptance, with those bytes retained
+    # separately in the complete raw transcript.
+    finish = f'\x1b[?25h\x1b[0m\x1b[{rows};1H\r\n'
+    text = raw.decode('utf-8')
+    if not text.endswith(finish):
+        raise GalleryError('Missing expected clean wizard exit')
+    text = text[:-len(finish)]
+    i = 0
+    while i < len(text):
+        match = CSI.match(text, i)
+        if match:
+            params, final = match.groups(); i = match.end()
+            if final == 'm': grid.sgr(params)
+            elif final == 'H':
+                row, column = [int(value or 1) for value in (params or '1;1').split(';')]
+                if not 1 <= row <= rows or not 1 <= column <= columns:
+                    raise GalleryError('Wizard cursor outside terminal')
+                grid.y, grid.x = row - 1, column - 1
+            elif final == 'J' and params == '2':
+                grid.cells = [[Cell() for _ in range(columns)] for _ in range(rows)]
+            elif final == 'K' and params in ('', '0'):
+                for x in range(grid.x, columns): grid.cells[grid.y][x] = Cell()
+            elif final in ('h', 'l') and params == '?25':
+                grid.ignored_modes.append(match[0])
+            else: raise GalleryError('Unexpected wizard escape ' + repr(match[0]))
+        elif text[i] == '\r': grid.x = 0; i += 1
+        elif text[i] == '\n':
+            grid.y += 1; grid.x = 0; i += 1
+            if grid.y >= rows: raise GalleryError('Wizard scrolled before exit')
+        elif text[i] == '\x1b': raise GalleryError('Unknown wizard escape')
+        else: grid.put(text[i]); i += 1
+    return grid
 
 
 frame = '\n'.join(wizard_frame(100, 38)) + '\n'
@@ -150,19 +271,24 @@ frame = '\n'.join(wizard_frame(100, 38)) + '\n'
 if args.png:
     # Rasterize terminal cells, retaining each entire grid. No scaling, cropping,
     # editor mockup or execution of user-configured hooks is involved.
-    from build_gallery import Renderer, TerminalGrid, SIZES, digest, save_lossless, source_hashes, font_metadata
+    from build_gallery import Renderer, TerminalGrid, digest, save_lossless, source_hashes, font_metadata
     renderer = Renderer()
     images = []
-    views = [(columns, rows, False) for columns, rows in SIZES] + [(80, 50, True)]
+    views = [(columns, rows, False) for columns, rows in ((40,25), (40,50), (80,25), (80,50), (120,50), (160,50))] + [(80, 50, True)]
     for columns, rows, show_calls in views:
-        lines = wizard_frame(columns, rows, show_calls=show_calls)
+        lines, session = capture_wizard_session(columns, rows, show_calls=show_calls)
         if len(lines) != rows:
             raise RuntimeError(f'Wizard returned {len(lines)} rows for a {rows}-row terminal')
         ansi = '\r\n'.join(lines)
         grid = TerminalGrid(columns, rows, reserve_prompt=False).feed(ansi)
+        replayed = replay_wizard_session(session, columns, rows)
+        if replayed.fingerprint() != grid.fingerprint():
+            raise RuntimeError('Actual wizard session differs from its retained frame')
         stem = f'wizard-{"call-samples-" if show_calls else ""}{columns}x{rows}'
         transcript = ROOT/'examples'/(stem + '.ansi')
         transcript.write_bytes(ansi.encode('utf-8'))
+        raw_transcript = ROOT/'examples'/(stem + '.session.ansi')
+        raw_transcript.write_bytes(session)
         path = ROOT/'examples'/(stem + '.png')
         details = save_lossless(renderer.image(grid, title='MOTD | actual wizard frame'), path,
                                 optimizer=args.optimizer)
@@ -170,6 +296,9 @@ if args.png:
                        'preview_rows': rows - 10, 'calls_shown': show_calls,
                        'configured_commands_executed': False, 'png': path.name,
                        'transcript': transcript.name,
+                       'capture': 'real-pty-session',
+                       'raw_transcript': raw_transcript.name,
+                       'raw_transcript_sha256': digest(session),
                        'transcript_sha256': digest(transcript.read_bytes()),
                        'cell_grid_sha256': grid.fingerprint(), **details})
     shutil.copyfile(ROOT/'examples/wizard-80x25.png', ROOT/'examples/wizard-theme.png')
@@ -183,7 +312,7 @@ if args.png:
         'compression': {'pillow_level': 9, 'pillow_optimize': True,
                         'optimizer': subprocess.check_output([args.optimizer, '--version'], text=True).strip() if args.optimizer else None,
                         'decoded_rgba_verified': True},
-        'note': 'Same frame function as the live wizard; fixed terminal dimensions; synthetic data; hooks skipped.',
+        'note': 'Actual interactive PTY sessions. Pressing 2 without Enter previews green; Enter accepts. Retained frames match strict replay of raw terminal bytes. Synthetic data; hooks skipped.',
         'images': images}, indent=2) + '\n', encoding='utf-8')
 (ROOT/'examples/manifest.json').write_text(json.dumps({'generator':motd.VERSION,'examples':records},indent=2)+'\n')
 print('Generated examples from current recipes and embedded runtime')

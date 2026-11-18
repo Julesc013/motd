@@ -274,14 +274,14 @@ class CliTests(unittest.TestCase):
             self.assertLess(len(transcript), 1_000_000, "Wizard produced unexpectedly large output")
             return bool(chunk)
 
-        def respond(prompt, answer):
+        def respond(prompt, answer, newline=True):
             nonlocal cursor
             while time.monotonic() < deadline:
                 text = transcript.decode("utf-8", errors="replace")
                 found = text.find(prompt, cursor)
                 if found >= 0:
                     cursor = found + len(prompt)
-                    os.write(master, (answer + "\n").encode())
+                    os.write(master, (answer + ("\n" if newline else "")).encode())
                     return
                 if not read_available() and process.poll() is not None:
                     self.fail(f"Wizard exited before {prompt!r}: {text[-4000:]}")
@@ -290,39 +290,37 @@ class CliTests(unittest.TestCase):
         recipe = self.root / "wizard.toml"
         output = self.root / "wizard.bash"
         try:
+            respond("Choice [1]:", "1")  # Create.
+            respond("Choice [1]:", "1")  # User scope; isolated state.
+            respond("Start with a preset", "")  # Keep Workshop.
+            respond("Where should this message appear?", "a", newline=mode != 'screen')
+            respond("Page choice:", "1")
+            respond("Name:" if mode == 'screen' else "Name [", "wizard-test")
+            respond("Page choice:", "d")
+            respond("Where should this message appear?", "")
+            respond("Choose an arrangement", "a", newline=mode != 'screen')
+            respond("Page choice:", "1")
+            respond("Heading:" if mode == 'screen' else "Heading [", "Wizard smoke")
+            respond("Page choice:", "3")
+            respond("Maximum columns:" if mode == 'screen' else "Maximum columns [", "80")
+            respond("Page choice:", "d")
+            respond("Choose an arrangement", "")
+            respond("Choose the spacing", "")
+            respond("Choose the amount of detail", "")
+            respond("Choose the colours", "2", newline=mode != 'screen')
+            if mode == 'screen': respond("> 2. Green", "")
+            for title, path, _ in motd._guided_steps(motd.preset_config())[5:]:
+                respond(title, "")
             for prompt, answer in [
-                ("Choice [1]:", "1"),  # Create.
-                ("Choice [1]:", "1"),  # User scope, isolated state directory.
-                ("Choice [1]:", "1"),  # Workshop preset.
-                *([("Choice [1]:", "")] if mode == 'screen' else []),
-                ("Page choice:", "1"),  # Destination: edit name.
-                ("Name:" if mode == 'screen' else "Name [", "wizard-test"),
-                ("Page choice:", "n"),  # Design and readability.
-                ("Page choice:", "n"),  # Appearance.
-                ("Page choice:", "1"),
-                ("Heading:" if mode == 'screen' else "Heading [", "Wizard smoke"),
-                ("Page choice:", "3"),  # Theme.
-                ("Choice [1]:", "2"),  # Green.
-                *([("Choice [2]:", "")] if mode == 'screen' else []),
-                ("Page choice:", "4"),
-                ("Maximum columns:" if mode == 'screen' else "Maximum columns [", "80"),
-                ("Page choice:", "n"),  # Characters and colour.
-                ("Page choice:", "n"),  # Sections (1/2).
-                ("Page choice:", "n"),  # Sections (2/2).
-                ("Page choice:", "n"),  # Per-section detail (1/2).
-                ("Page choice:", "n"),  # Per-section detail (2/2).
-                ("Page choice:", "n"),  # Content.
-                ("Page choice:", "n"),  # Hooks.
-                ("Page choice:", "n"),  # Review.
-                ("Choice [1]:", "1"),  # Synthetic preview.
+                ("Review and finish", "1"),  # Synthetic preview.
                 *([("Preview:", "")] if mode == 'screen' else []),
-                ("Choice [1]:", "3"),  # Save recipe.
+                ("Review and finish", "3"),  # Save recipe.
                 ("Recipe path:" if mode == 'screen' else "Recipe path [", str(recipe)),
                 *([("Press Enter to return to the wizard:", "")] if mode == 'screen' else []),
-                ("Choice [1]:", "4"),  # Build portable output.
+                ("Review and finish", "4"),  # Build portable output.
                 ("Output path:" if mode == 'screen' else "Output path [", str(output)),
                 *([("Press Enter to return to the wizard:", "")] if mode == 'screen' else []),
-                ("Choice [1]:", "7"),  # Cancel; do not install.
+                ("Review and finish", "7"),  # Cancel, without installing.
             ]:
                 respond(prompt, answer)
             while process.poll() is None and time.monotonic() < deadline:
