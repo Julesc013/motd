@@ -2466,6 +2466,7 @@ class WizardUI:
     CONTROL_ROWS = 10
     QUESTION_ROWS = 5
     PROMPT_ROW = 9
+    PREVIEW_TIMEOUT = 3.0
 
     def __init__(self, mode='auto'):
         self.mode = mode
@@ -2486,6 +2487,92 @@ class WizardUI:
         self._windows_console_checked = False
         self._windows_output_mode = None
         self._context_help = ''
+        self._immediate_choices = 0
+        self._interactive_preview = False
+        self._preview_job = None
+        self._preview_pending = False
+
+    def _native_input(self):
+        try:
+            return os.isatty(sys.stdin.fileno())
+        except (AttributeError, OSError, ValueError):
+            return False
+
+    def _cancel_preview(self):
+        """Cancel only our preview process; obsolete work cannot replace a draft."""
+        job = self._preview_job
+        if job is None:
+            return
+        self._preview_job = None
+        process = job['process']
+        if process.poll() is None:
+            try:
+                if os.name == 'posix':
+                    import signal
+                    os.killpg(process.pid, signal.SIGKILL)
+                else:
+                    process.kill()
+            except ProcessLookupError:
+                pass
+        process.wait(timeout=2)
+        job['stdout'].close(); job['stderr'].close()
+        job['temporary'].cleanup()
+
+    def _remember_sample(self, key, lines):
+        self.cache[key] = lines
+        if len(self.cache) > 24:
+            self.cache.pop(next(iter(self.cache)))
+
+    def _poll_preview(self):
+        """Return True when a finished or timed-out render changes the screen."""
+        job = self._preview_job
+        if job is None:
+            return False
+        process = job['process']
+        expired = time.monotonic() - job['started'] >= self.PREVIEW_TIMEOUT
+        if process.poll() is None and not expired:
+            return False
+        if expired and process.poll() is None:
+            lines = ['Preview timed out. Choose another option or output interpreter.']
+        else:
+            job['stdout'].flush(); job['stderr'].flush()
+            job['stdout'].seek(0); job['stderr'].seek(0)
+            if process.returncode:
+                error = job['stderr'].read(4000).decode('utf-8', 'replace').strip()
+                lines = ['Preview unavailable: ' + (error or str(process.returncode))[:500]]
+            else:
+                output = job['stdout'].read(MAX_ARTIFACT_BYTES + 1)
+                lines = (['Preview output exceeded the size limit.'] if len(output) > MAX_ARTIFACT_BYTES
+                         else output.decode('utf-8', 'replace').splitlines())
+        self._remember_sample(job['key'], lines)
+        self._cancel_preview()
+        self._preview_pending = False
+        return True
+
+    def _start_preview(self, config, width, rows, color, key):
+        """Start the generated interpreter with fixture data and disabled hooks.
+
+        Files avoid pipe-buffer deadlocks; only the current result is retained.
+        The UI polls this child while reading keys instead of blocking on it.
+        """
+        temporary = tempfile.TemporaryDirectory(prefix='motd-wizard-preview-')
+        output = error = None
+        try:
+            c = validate_config(config)
+            path = Path(temporary.name) / ('preview' + artifact_suffix(c))
+            path.write_text(generate_artifact(c), encoding='utf-8')
+            command = preview_command(c, path, width=width, rows=rows, color=color)
+            output = tempfile.TemporaryFile(); error = tempfile.TemporaryFile()
+            process = subprocess.Popen(command, stdin=subprocess.DEVNULL,
+                stdout=output, stderr=error, env=preview_environment(c, path),
+                start_new_session=os.name == 'posix')
+            self._preview_job = {'key': key, 'process': process, 'temporary': temporary,
+                                 'stdout': output, 'stderr': error, 'started': time.monotonic()}
+        except (MotdError, OSError) as exc:
+            if output is not None: output.close()
+            if error is not None: error.close()
+            temporary.cleanup()
+            self._remember_sample(key, ['Preview unavailable: ' + str(exc)])
 
     def _windows_console(self):
         """Enable VT output only when the real Windows console supports it.
@@ -2526,11 +2613,19 @@ class WizardUI:
     def sample(self, config, width, rows=None):
         color = self.screen and 'NO_COLOR' not in os.environ and config['display'].get('color') != 'never'
         key = (dump_config(config), width, rows, color)
+        if self._interactive_preview and config['target'] == 'shell':
+            if self._preview_job and self._preview_job['key'] != key:
+                self._cancel_preview()
+            self._poll_preview()
+            if key not in self.cache and self._preview_job is None:
+                self._start_preview(config, width, rows, color, key)
+            self._preview_pending = key not in self.cache
+            return self.cache.get(key, ['Rendering selected option…'])
+        self._preview_pending = False
         if key not in self.cache:
-            try: self.cache[key] = demo_text(config, width, rows=rows, color=color).splitlines()
+            try: self._remember_sample(key, demo_text(config, width, rows=rows, color=color).splitlines())
             except (MotdError, OSError, subprocess.TimeoutExpired) as exc:
-                self.cache[key] = ['Preview unavailable: ' + str(exc)]
-            if len(self.cache) > 24: self.cache.pop(next(iter(self.cache)))
+                self._remember_sample(key, ['Preview unavailable: ' + str(exc)])
         return self.cache[key]
 
     def frame(self, title, lines=(), *, config=None, notice='', footer='', prompt='', answer=''):
@@ -2567,6 +2662,8 @@ class WizardUI:
             self.preview_offset = min(self.preview_offset, max(0, len(content) - available))
             shown = content[self.preview_offset:self.preview_offset + available]
             label = f'PREVIEW {render_width}x{render_rows} | demo | H calls ' + ('sample' if self.show_calls else 'off')
+            if self._preview_pending:
+                label = f'PREVIEW {render_width}x{render_rows} | updating; keys stay active'
             if len(content) > available:
                 label = f'PREVIEW {self.preview_offset + 1}-{self.preview_offset + len(shown)}/{len(content)} | J/K scroll'
             elif width > 240 or available > 200:
@@ -2582,6 +2679,7 @@ class WizardUI:
         self._page = (title, tuple(lines), config, notice, footer)
         self._prompt = ''; self._answer = ''; self._cursor = 0
         if self.screen:
+            self._interactive_preview = self._native_input()
             self._redraw()
         else:
             print('\n' + title)
@@ -2672,6 +2770,8 @@ class WizardUI:
                 current = terminal_size()
                 if current != geometry:
                     geometry = current; self._redraw()
+                elif self._poll_preview():
+                    self._redraw()
                 if escape and time.monotonic() - escape_started > 0.25:
                     escape = ''
                 ready, _, _ = select.select([fd], [], [], 0.1)
@@ -2710,6 +2810,9 @@ class WizardUI:
                 elif char == '\x15': self._answer = ''; self._cursor = 0
                 elif char == '\x01': self._cursor = 0
                 elif char == '\x05': self._cursor = len(self._answer)
+                elif self._selection_input and not self._answer and self._immediate_choices and (
+                        char in '123456789'[:self._immediate_choices] or char.lower() in 'baqn?[]hjk'):
+                    return char
                 elif char.isprintable() and len(self._answer) < 16384:
                     self._answer = self._answer[:self._cursor] + char + self._answer[self._cursor:]; self._cursor += 1
                 self._draw_answer()
@@ -2725,6 +2828,8 @@ class WizardUI:
             current = terminal_size()
             if current != geometry:
                 geometry = current; self._redraw()
+            elif self._poll_preview():
+                self._redraw()
             if not msvcrt.kbhit():
                 time.sleep(0.05)
                 continue
@@ -2756,6 +2861,9 @@ class WizardUI:
             elif char == '\x15': self._answer = ''; self._cursor = 0
             elif char == '\x01': self._cursor = 0
             elif char == '\x05': self._cursor = len(self._answer)
+            elif self._selection_input and not self._answer and self._immediate_choices and (
+                    char in '123456789'[:self._immediate_choices] or char.lower() in 'baqn?[]hjk'):
+                return char
             elif char.isprintable() and len(self._answer) < 16384:
                 self._answer = self._answer[:self._cursor] + char + self._answer[self._cursor:]; self._cursor += 1
             self._draw_answer()
@@ -2791,7 +2899,7 @@ class WizardUI:
                 continue
             return answer if answer else default
 
-    def select(self, title, choices, default=0, *, preview_factory=None, config=None, help_text=''):
+    def select(self, title, choices, default=0, *, preview_factory=None, config=None, help_text='', guided=False):
         selected = default; offset = (default // self.QUESTION_ROWS) * self.QUESTION_ROWS
         while True:
             self._context_help = help_text or ('Available choices: ' + '; '.join(label for label, _ in choices))
@@ -2803,6 +2911,8 @@ class WizardUI:
             previews_choice = bool(preview_factory and self.screen)
             choice_hint = 'Number previews; Enter accepts.' if previews_choice else 'Choose a number, then Enter.'
             footer = 'Up/Down | Enter accepts | ? help Q quit' if self.screen else 'Enter accepts default | ? help | Q quit'
+            if guided:
+                footer = 'Enter next | B back | A fine controls | Q' if self.screen else 'Enter next | B back | A fine controls | Q quit'
             if notice and previews_choice:
                 # Pagination consumes the notice row. Keep the two-step choice
                 # rule visible in the footer even on a 40-column terminal.
@@ -2810,21 +2920,27 @@ class WizardUI:
             self.page(title, [('> ' if i == selected else '  ') + f'{i + 1}. {label}'
                               for i, (label, _) in enumerate(choices) if first <= i < end], config=current,
                       notice=notice or choice_hint, footer=footer)
+            self._immediate_choices = len(choices) if len(choices) <= 9 else 0
             raw = self.read(f'Choice [{selected + 1}]: ', navigation=True, selection=True).strip().lower()
+            self._immediate_choices = 0
             if raw == 'q': raise WizardCancelled()
+            if guided and raw in ('b', 'a'):
+                return ('@' + raw, choices[selected][1])
             if raw == 'p' and current is not None: self.full_preview(current); continue
             if raw in ('[', ']'):
                 offset = max(0, min(((len(choices) - 1) // self.QUESTION_ROWS) * self.QUESTION_ROWS,
                                     offset + (self.QUESTION_ROWS if raw == ']' else -self.QUESTION_ROWS)))
                 continue
-            if not raw: return choices[selected][1]
+            if not raw or (guided and raw == 'n'):
+                return ('@next', choices[selected][1]) if guided else choices[selected][1]
             if raw in ('@up', '@down'):
                 selected = (selected + (-1 if raw == '@up' else 1)) % len(choices)
                 offset = (selected // self.QUESTION_ROWS) * self.QUESTION_ROWS
                 continue
             if raw.isdigit() and 1 <= int(raw) <= len(choices):
                 selected = int(raw) - 1; offset = (selected // self.QUESTION_ROWS) * self.QUESTION_ROWS
-                if not (preview_factory and self.screen): return choices[selected][1]
+                if not (preview_factory and self.screen):
+                    return ('@next', choices[selected][1]) if guided else choices[selected][1]
 
     def full_preview(self, config):
         if not self.screen:
@@ -2847,8 +2963,8 @@ class WizardUI:
         """Explain controls/choices without exposing implementation terminology."""
         previous = self._page
         paragraphs = ([text] if text else []) + [
-            'Type a number and press Enter. Menus that preview a choice ask for Enter again to accept it. In screen mode, Up/Down moves the selection.',
-            'On settings pages, N or Enter continues; B goes back. P opens the preview. Q cancels from menus and settings pages.',
+            'In screen mode, a number or Up/Down previews a choice immediately. Enter accepts it. In line mode, type a number and press Enter.',
+            'The guided setup shows one decision at a time. Enter continues, B goes back, and A opens the fine controls for that decision. Q cancels the draft.',
             'H toggles sample output before and after the message. Configured commands never run in a preview.',
             '[ and ] show more choices. J and K scroll long call samples. Resize the window at any time.',
         ]
@@ -2865,6 +2981,7 @@ class WizardUI:
 
     def finish(self):
         """Leave the next shell prompt below the last grid, with normal colour."""
+        self._cancel_preview()
         if self._used_screen and sys.stdout.isatty():
             sys.stdout.write(f'\x1b[?25h\x1b[0m\x1b[{max(1, terminal_size().lines)};1H\n')
             sys.stdout.flush()
