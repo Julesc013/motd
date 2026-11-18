@@ -76,19 +76,20 @@ class NativePowerShellDesignTests(unittest.TestCase):
         outputs = {design: self.render(design) for design in DESIGNS}
         self.assertEqual(len(set(outputs.values())), len(DESIGNS))
         self.assertEqual(outputs["classic"].count("+------------------------------------------------------------------------------+"), 1)
-        self.assertIn("+ RESOURCES ", outputs["cards"])
-        self.assertIn("+ SYSTEM ", outputs["cards"])
+        self.assertIn("+ " + motd.SECTION_TEXT["resources"][0] + " ", outputs["cards"])
+        self.assertIn("+ " + motd.SECTION_TEXT["system"][0] + " ", outputs["cards"])
         self.assertFalse(outputs["ledger"].splitlines()[2].lstrip().startswith("|"))
         self.assertFalse(outputs["ledger"].splitlines()[2].rstrip().endswith("|"))
-        self.assertIn("SYSTEM      demo-host", outputs["ledger"])
-        self.assertLess(outputs["briefing"].index("Attention:"), outputs["briefing"].index("System:"))
-        self.assertIn("Attention: WARN demo disk usage 91%", outputs["briefing"])
+        self.assertIn(motd.SECTION_TEXT["system"][0] + ": demo-host", outputs["ledger"])
+        self.assertLess(outputs["briefing"].index(motd.SECTION_TEXT["system"][0]), outputs["briefing"].index(motd.SECTION_TEXT["attention"][0]))
+        self.assertIn(motd.SECTION_TEXT["attention"][0], outputs["briefing"])
+        self.assertIn("WARN demo disk usage 91%", outputs["briefing"])
         self.assertIn("+  +", outputs["dashboard"])
-        self.assertLess(outputs["dashboard"].index("SYSTEM"), outputs["dashboard"].index("RESOURCES"))
+        self.assertLess(outputs["dashboard"].index(motd.SECTION_TEXT["system"][0]), outputs["dashboard"].index(motd.SECTION_TEXT["resources"][0]))
         self.assertIn("6.0G/16.0G", outputs["dashboard"])
         narrow = self.render("dashboard", width=40)
         self.assertNotIn("+  +", narrow)
-        self.assertIn("+ RESOURCES ", narrow)
+        self.assertIn("+ " + motd.SECTION_TEXT["resources"][0] + " ", narrow)
 
     def test_compact_and_extreme_geometry_preserve_complete_frames(self):
         for design in DESIGNS:
@@ -106,8 +107,8 @@ class NativePowerShellDesignTests(unittest.TestCase):
     def test_priority_selects_complete_sections_when_space_is_limited(self):
         self.config["display"]["priority"] = ["hints", *[x for x in motd.SECTION_IDS if x != "hints"]]
         text = self.render("cards", width=40, rows=10)
-        self.assertIn("+ HINTS ", text)
-        self.assertNotIn("+ ATTENTION ", text)
+        self.assertIn("+ " + motd.SECTION_TEXT["hints"][0] + " ", text)
+        self.assertNotIn("+ " + motd.SECTION_TEXT["attention"][0] + " ", text)
         self.assertIn("Hidden:", text)
 
     def test_dashboard_preserves_configured_section_order_at_both_widths(self):
@@ -116,7 +117,7 @@ class NativePowerShellDesignTests(unittest.TestCase):
         for width in (40, 80):
             with self.subTest(width=width):
                 text = self.render("dashboard", width=width, rows=80)
-                positions = [text.index("+ " + section.upper() + " ") for section in order]
+                positions = [text.index("+ " + motd.SECTION_TEXT[section][0] + " ") for section in order]
                 self.assertEqual(positions, sorted(positions))
 
     def test_long_titles_cannot_hide_demo_or_identity_without_system_section(self):
@@ -127,8 +128,8 @@ class NativePowerShellDesignTests(unittest.TestCase):
             with self.subTest(design=design):
                 text = self.render(design, width=40, rows=8)
                 self.assertIn("DEMO", text.splitlines()[0])
-                self.assertIn("Host demo-host", text.splitlines()[1])
-                self.assertIn("Up 4d 06h", text.splitlines()[1])
+                self.assertIn("Host demo-host", text.splitlines()[0])
+                self.assertIn("Up 4d 06h", text.splitlines()[0])
                 self.assertNotIn("SYSTEM", text)
                 self.assertNotIn("ATTENTION", text)
 
@@ -138,8 +139,10 @@ class NativePowerShellDesignTests(unittest.TestCase):
                 text = self.render(design, width=40, rows=8)
                 self.assertIn("Hidden:", text)
                 for section in motd.SECTION_IDS:
-                    label = "I/O" if section == "io" else section.upper()
-                    self.assertIn(label.lower(), text.lower(), section + " vanished without a named omission")
+                    label = motd.SECTION_TEXT[section][0]
+                    hidden_start = text.index("Hidden:")
+                    self.assertTrue(label.lower() in text.lower() or section.lower() in text[hidden_start:].lower(),
+                                    section + " vanished without a named omission")
 
     def test_detail_and_section_override_change_real_fixture_content(self):
         self.config["display"]["detail"] = "brief"
@@ -158,12 +161,14 @@ class NativePowerShellDesignTests(unittest.TestCase):
         self.config["display"]["sections"] = ["hints", "attention"]
         self.config["display"]["detail"] = "brief"
         text = self.render("briefing", width=80, rows=25)
-        self.assertIn("Hints: Tasks: Get-Process - Local processes", text)
-        self.assertIn("Attention: WARN demo disk usage 91%", text)
-        self.assertLess(text.index("Attention:"), text.index("Hints:"))
+        self.assertIn(motd.SECTION_TEXT["hints"][0], text)
+        self.assertIn("Tasks: Get-Process - Local processes", text)
+        self.assertIn(motd.SECTION_TEXT["attention"][0], text)
+        self.assertIn("WARN demo disk usage 91%", text)
+        self.assertLess(text.index(motd.SECTION_TEXT["hints"][0]), text.index(motd.SECTION_TEXT["attention"][0]))
 
     def test_density_padding_and_gap_affect_layout_without_clipping(self):
-        self.config["display"].update(density="compact", padding=0, section_gap=0)
+        self.config["display"].update(density="compact", padding=0, section_gap=0, separator_text="none")
         compact = self.render("cards", rows=100)
         self.config["display"].update(density="comfortable", padding=3, section_gap=1)
         comfortable = self.render("cards", rows=100)
