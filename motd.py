@@ -2491,6 +2491,7 @@ class WizardUI:
         self._interactive_preview = False
         self._preview_job = None
         self._preview_pending = False
+        self._last_sample = None
 
     def _native_input(self):
         try:
@@ -2620,8 +2621,18 @@ class WizardUI:
             if key not in self.cache and self._preview_job is None:
                 self._start_preview(config, width, rows, color, key)
             self._preview_pending = key not in self.cache
-            return self.cache.get(key, ['Rendering selected option…'])
+            if key in self.cache:
+                self._last_sample = ((width, rows, color), self.cache[key])
+                return self.cache[key]
+            # Keep the last completed image while a new selection is rendering.
+            # The label explicitly says "updating"; obsolete children cannot
+            # commit their result. A resize needs a new correctly sized image.
+            if self._last_sample and self._last_sample[0] == (width, rows, color):
+                return self._last_sample[1]
+            return ['Rendering selected option…']
         self._preview_pending = False
+        if self._preview_job is not None:
+            self._cancel_preview()
         if key not in self.cache:
             try: self._remember_sample(key, demo_text(config, width, rows=rows, color=color).splitlines())
             except (MotdError, OSError, subprocess.TimeoutExpired) as exc:
@@ -2920,7 +2931,11 @@ class WizardUI:
             self.page(title, [('> ' if i == selected else '  ') + f'{i + 1}. {label}'
                               for i, (label, _) in enumerate(choices) if first <= i < end], config=current,
                       notice=notice or choice_hint, footer=footer)
-            self._immediate_choices = len(choices) if len(choices) <= 9 else 0
+            if guided and not self.screen and current is not None:
+                print('Synthetic preview of the selected option:')
+                print('\n'.join(self.sample(current, min(240, max(40, terminal_size().columns)),
+                                             min(200, max(8, current['display']['rows'])))))
+            self._immediate_choices = len(choices) if len(choices) <= 9 and (preview_factory or guided) else 0
             raw = self.read(f'Choice [{selected + 1}]: ', navigation=True, selection=True).strip().lower()
             self._immediate_choices = 0
             if raw == 'q': raise WizardCancelled()
@@ -3024,6 +3039,21 @@ def _configuration_pages(config):
                                                 ('Inside padding', 'display.padding', 'int'),
                                                 ('Blank rows between sections', 'display.section_gap', 'int'),
                                                 ('Usage bars', 'display.bar_layout', 'choice')]))
+        presentation = [
+            ('Panel arrangement', 'display.panel_layout', 'choice'),
+            ('Panel framing', 'display.panel_frame', 'choice'),
+            ('Border characters', 'display.border_style', 'choice'),
+            ('Visible borders', 'display.border_visibility', 'choice'),
+            ('Section headings', 'display.heading_style', 'choice'),
+            ('Heading alignment', 'display.heading_align', 'choice'),
+            ('Separator notes', 'display.separator_text', 'choice'),
+            ('Label length', 'display.label_style', 'choice'),
+            ('Long text', 'display.overflow', 'choice'),
+            ('Custom section titles', 'display.section_titles', 'section_text'),
+            ('Custom separator notes', 'display.section_notes', 'section_text'),
+        ]
+        presentation = [field for field in presentation if field[1].split('.')[1] in config['display']]
+        if presentation: pages.append(('Presentation fine controls', presentation))
         pages.append(('Sections', [(SECTION_LABELS[name], name, 'section') for name in SECTION_IDS]))
         pages.append(('Detail per section', [(SECTION_LABELS[name], name, 'section_detail') for name in SECTION_IDS]))
         pages.append(('Content', [('Required services', 'services.required', 'list'),
@@ -3043,11 +3073,9 @@ def _configuration_pages(config):
     return result
 
 
-def _configure(config, ui=None):
-    """Edit a validated in-memory draft. Back retains choices; cancel writes nothing."""
-    ui = ui or WizardUI()
-    c = validate_config(config); page_index = 0; notice = ''
-    choices = {
+def _wizard_choices(config):
+    """Validated values used by guided choices and their fine controls."""
+    return {
         'target': [('Greeting after sign-in', 'shell'), ('Console notice before sign-in (agetty)', 'issue'),
                    ('SSH notice before sign-in', 'ssh-banner'), ('Plain text for another program', 'text'),
                    ('Windows batch notice (no PowerShell)', 'batch-text')],
@@ -3069,9 +3097,35 @@ def _configure(config, ui=None):
                                    ('Vivid: stronger colour emphasis', 'vivid')],
         'display.bar_layout': [('Inline: bars beside readings', 'inline'),
                                ('Wide: a full panel row per bar', 'wide')],
+        'display.panel_layout': [('Follow arrangement', 'auto'), ('One column', 'stack'), ('Paired columns when space permits', 'columns')],
+        'display.panel_frame': [('Follow arrangement', 'auto'), ('Continuous frame', 'continuous'),
+                                ('Separate panels', 'separate'), ('Open sections', 'none')],
+        'display.border_style': [('Single lines', 'single'), ('Rounded corners', 'rounded'),
+                                 ('Double lines', 'double'), ('Heavy lines', 'heavy'), ('ASCII characters', 'ascii')],
+        'display.border_visibility': [('All borders', 'all'), ('Outside border', 'outer'),
+                                      ('Section separators', 'sections'), ('No borders', 'none')],
+        'display.heading_style': [('Follow arrangement', 'auto'), ('In separator rules', 'rule'),
+                                  ('Above the content', 'plain'), ('Beside the content', 'inline'), ('Hide headings', 'hidden')],
+        'display.heading_align': [('Left', 'left'), ('Centre', 'center'), ('Right', 'right')],
+        'display.separator_text': [('Headings only', 'none'), ('Observation summaries', 'summary'), ('Custom notes', 'custom')],
+        'display.label_style': [('Full labels', 'full'), ('Short labels', 'short')],
+        'display.overflow': [('Show a truncation marker', 'ellipsis'), ('Clip at the edge', 'clip')],
     }
+
+
+def _configure_details(config, ui=None, only_paths=None):
+    """Fine controls for a guided decision; edits never install files."""
+    ui = ui or WizardUI()
+    c = validate_config(config); page_index = 0; notice = ''
+    choices = _wizard_choices(c)
     while True:
-        pages = _configuration_pages(c); page_index = min(page_index, len(pages) - 1)
+        pages = _configuration_pages(c)
+        if only_paths is not None:
+            pages = [(title, [field for field in fields if field[1] in only_paths or field[2] in only_paths])
+                     for title, fields in pages]
+            pages = [(title, fields) for title, fields in pages if fields]
+        if not pages: return validate_config(c)
+        page_index = min(page_index, len(pages) - 1)
         title, fields = pages[page_index]
         lines = []
         for number, (label, path, kind) in enumerate(fields, 1):
@@ -3084,15 +3138,19 @@ def _configure(config, ui=None):
                 value = str(value).replace('\n', ' / ')
             lines.append(f' {number}. {label}: {value}')
         ui.page(f'{title} | page {page_index + 1}/{len(pages)}', lines, config=c,
-                notice=notice or 'Enter keeps settings. P opens preview.',
-                footer='1-5 edit | N next B back ? help Q quit')
+                notice=notice or 'Fine controls: Enter keeps settings and continues.',
+                footer='1-5 edit | Enter next | B back | D done | Q')
         ui._context_help = (notice + ' ' if notice else '') + '\n'.join(
             label + ': ' + SETTING_HELP.get(path, 'Choose this field to edit it; the preview shows the draft.')
             for label, path, kind in fields)
         notice = ''; raw = ui.read('Page choice: ', navigation=True).strip().lower()
         if raw == 'q': raise WizardCancelled()
         if raw == 'p': ui.full_preview(c); continue
-        if raw == 'b': page_index = max(0, page_index - 1); continue
+        if raw == 'd': return validate_config(c)
+        if raw == 'b':
+            if page_index == 0 and only_paths is not None:
+                return validate_config(c)
+            page_index = max(0, page_index - 1); continue
         if raw in ('', 'n'):
             if page_index == len(pages) - 1: return validate_config(c)
             page_index += 1; continue
@@ -3132,6 +3190,14 @@ def _configure(config, ui=None):
                                   preview_factory=variation, help_text=SETTING_HELP.get(path, ''))
                 _set_setting(candidate, path, value)
                 if path == 'target' and value != 'shell': candidate['hooks'] = {'before': [], 'after': []}
+            elif kind == 'section_text':
+                section = ui.select('Choose a section', [(SECTION_LABELS[x], x) for x in SECTION_IDS], config=c)
+                current = _get_setting(c, path).get(section, '')
+                value = ui.ask(label + ': ' + SECTION_LABELS[section], current, config=c,
+                               help_text='Literal text, up to 120 characters. - restores the default.')
+                target = _get_setting(candidate, path)
+                if value == '-': target.pop(section, None)
+                else: target[section] = value
             elif kind == 'hook':
                 call_type = ui.select('What should this call do?', [
                     ('Show Fastfetch (if installed)', 'fastfetch'), ('Display a line of text', 'text'),
@@ -3187,6 +3253,97 @@ def _configure(config, ui=None):
             c = validate_config(candidate)
         except (MotdError, ValueError, TypeError) as exc:
             notice = str(exc)
+
+
+def _wizard_variant(config, path, value):
+    """Apply the chosen axis while retaining unrelated user customizations."""
+    candidate = copy.deepcopy(config)
+    _set_setting(candidate, path, value)
+    if path == 'display.design' and value != config['display']['design']:
+        # Named arrangements supply only layout defaults. The shared resolver
+        # owns their values; explicit colours, borders and heading choices stay.
+        for field in ('panel_layout', 'panel_frame'):
+            if field in candidate['display']:
+                candidate['display'][field] = 'auto'
+    if path == 'target' and value != 'shell':
+        candidate['hooks'] = {'before': [], 'after': []}
+    return validate_config(candidate)
+
+
+def _guided_steps(config):
+    """High-level decisions, with their related fine controls kept nearby."""
+    steps = [('Where should this message appear?', 'target',
+              ('name', 'target', 'shell', 'audience', 'frequency'))]
+    if config['target'] != 'shell':
+        return steps + [('Public notice', None, ('display.title', 'public_text'))]
+    steps += [
+        ('Choose an arrangement', 'display.design',
+         ('display.title', 'display.site', 'display.panel_layout', 'display.panel_frame',
+          'display.width', 'display.rows')),
+        ('Choose the spacing', 'display.density', ('display.padding', 'display.section_gap')),
+        ('Choose the amount of detail', 'display.detail',
+         ('section_detail', 'display.priority', 'display.label_style', 'display.overflow')),
+        ('Choose the colours', 'display.theme', ('display.color', 'display.color_emphasis')),
+        ('Choose the border characters', 'display.border_style',
+         ('display.border_visibility', 'display.charset', 'display.panel_frame')),
+        ('Choose the section headings', 'display.heading_style',
+         ('display.heading_align', 'display.separator_text', 'display.section_titles', 'display.section_notes')),
+        ('Choose the usage bars', 'display.bar_layout', ('display.bar_layout',)),
+        ('Choose the information to show', 'display.sections',
+         ('section', 'section_detail', 'display.priority', 'services.required', 'services.exclude',
+          'messages', 'hook', 'clear')),
+    ]
+    return [step for step in steps if step[1] is None or not step[1].startswith('display.')
+            or step[1].split('.')[1] in config['display']]
+
+
+def _configure(config, ui=None):
+    """One visual decision at a time; previews are the generated MOTD itself."""
+    ui = ui or WizardUI()
+    current = validate_config(config)
+    index = 0
+    while True:
+        steps = _guided_steps(current)
+        index = min(index, len(steps) - 1)
+        title, path, fine_controls = steps[index]
+        if path is None:
+            current = _configure_details(current, ui, fine_controls)
+            return current
+        if path == 'display.sections':
+            selections = [
+                ('Keep the current selection', list(current['display']['sections'])),
+                ('Workshop: system, services, people and processes', list(SECTION_IDS[:-1])),
+                ('Overview: system, resources, services and warnings',
+                 ['system', 'resources', 'services', 'attention', 'hints']),
+                ('Storage work: resources, disk I/O and processes',
+                 ['system', 'resources', 'io', 'processes', 'services', 'attention']),
+            ]
+            choices = []
+            for item in selections:
+                if item[1] not in [value for _, value in choices]: choices.append(item)
+        else:
+            choices = _wizard_choices(current)[path]
+        value = _get_setting(current, path)
+        selected = [item for _, item in choices].index(value)
+        try:
+            action, value = ui.select(f'{title} | {index + 1}/{len(steps)}', choices,
+                selected, preview_factory=lambda choice: _wizard_variant(current, path, choice),
+                help_text=SETTING_HELP.get(path, 'Choose a look in the preview. A opens related fine controls.'),
+                guided=True)
+            current = _wizard_variant(current, path, value)
+            if action == '@a':
+                current = _configure_details(current, ui, fine_controls)
+            elif action == '@b':
+                index = max(0, index - 1)
+            elif index + 1 == len(steps):
+                return validate_config(current)
+            else:
+                index += 1
+        except (MotdError, ValueError, TypeError) as exc:
+            ui.page('Draft retained', [str(exc)], config=current,
+                    footer='Enter returns to this decision | Q cancels')
+            if ui.read('Continue: ').strip().lower() == 'q':
+                raise WizardCancelled()
 
 
 def _choose_record(state_dir, *, installs=False, ui=None):
