@@ -69,6 +69,8 @@ PRESENTATION_OPTIONS = {
 }
 PRESENTATION_DEFAULTS = {key: values[0] for key, values in PRESENTATION_OPTIONS.items()}
 PRESENTATION_DEFAULTS['overflow'] = 'ellipsis'
+PRESENTATION_DEFAULTS['separator_text'] = 'summary'
+PRESENTATION_DEFAULTS['border_style'] = 'double'
 DESIGN_POLICIES = {
     'classic': ('stack', 'continuous', 'rule'),
     'cards': ('stack', 'separate', 'rule'),
@@ -77,11 +79,11 @@ DESIGN_POLICIES = {
     'briefing': ('stack', 'none', 'plain'),
 }
 SECTION_TEXT = {
-    'system': ('System', 'Sys'), 'resources': ('Memory and storage', 'Resources'),
-    'services': ('Services', 'Svc'), 'processes': ('Processes', 'Proc'),
-    'sessions': ('Sessions', 'Users'), 'connections': ('Connections', 'Net'),
-    'attention': ('Attention', 'Alerts'), 'hints': ('Useful commands', 'Hints'),
-    'io': ('Disk I/O', 'I/O'),
+    'system': ('SYSTEM', 'SYS'), 'resources': ('RESOURCES', 'RES'),
+    'services': ('SERVICES', 'SVC'), 'processes': ('TOP PROCESSES', 'PROC'),
+    'sessions': ('SESSIONS', 'USERS'), 'connections': ('CONNECTIONS', 'NET'),
+    'attention': ('ATTENTION', 'ALERTS'), 'hints': ('HINTS', 'HINTS'),
+    'io': ('DISK I/O', 'I/O'),
 }
 
 DEFAULT_PRIORITY = ('attention', 'resources', 'system', 'services', 'processes',
@@ -129,6 +131,16 @@ class MotdError(Exception):
 
 
 # ======================= 1. CONFIGURATION (NO EXECUTION) ======================
+
+def resolve_presentation(display):
+    """Resolve data presets; explicit independent axes remain authoritative."""
+    result = {key: display.get(key, default) for key, default in PRESENTATION_DEFAULTS.items()}
+    policy = DESIGN_POLICIES[display.get('design', 'classic')]
+    for key, value in zip(('panel_layout', 'panel_frame', 'heading_style'), policy):
+        if result[key] == 'auto':
+            result[key] = value
+    return result
+
 
 def preset_config(name='workshop', shell='bash'):
     """Return independent data. Presets select settings, never duplicate code."""
@@ -405,7 +417,11 @@ def runtime_assignments(config):
 def presentation_callbacks(config):
     """Serialize one section-text registry as literal shell callbacks."""
     d = config['display']
-    lines = ['motd_presentation_text() {', '    case \"$1:$2\" in']
+    lines = ['motd_presentation_policy() {', '    case \"$1\" in']
+    for name, policy in DESIGN_POLICIES.items():
+        assignments = '; '.join(key + '=' + shlex.quote(value) for key, value in zip(('MV_LAYOUT', 'MV_FRAME', 'MV_HEADING'), policy))
+        lines.append('        ' + name + ') ' + assignments + ' ;;')
+    lines += ['    esac', '}', 'motd_presentation_text() {', '    case \"$1:$2\" in']
     for section, labels in SECTION_TEXT.items():
         for style, label in zip(('full', 'short'), labels):
             title = d['section_titles'].get(section, label)
@@ -617,7 +633,9 @@ def powershell_literal(value, depth=0):
 
 def powershell_assignments(config):
     c = validate_config(config)
-    return f"$MotdVersion = '{VERSION}'\n$MotdConfig = " + powershell_literal(c)
+    return (f"$MotdVersion = '{VERSION}'\n$MotdConfig = " + powershell_literal(c) +
+            '\n$MotdSectionText = ' + powershell_literal({key: list(value) for key, value in SECTION_TEXT.items()}) +
+            '\n$MotdDesignPolicies = ' + powershell_literal({key: list(value) for key, value in DESIGN_POLICIES.items()}))
 
 
 def generate_powershell_body(config):
@@ -2084,8 +2102,8 @@ def tx_repair(state_dir, transaction_id):
 def apply_display_options(config, args, *, imported=False):
     """Apply CLI choices to recipe data only; imported code retains exact bytes."""
     fields = ('design', 'density', 'detail', 'padding', 'section_gap', 'color_emphasis', 'bar_layout',
-              'width', 'rows', 'charset', 'color')
-    present = any(getattr(args, key, None) is not None for key in fields + ('sections', 'priority', 'section_detail'))
+              'width', 'rows', 'charset', 'color') + tuple(PRESENTATION_OPTIONS)
+    present = any(getattr(args, key, None) is not None for key in fields + ('sections', 'priority', 'section_detail', 'section_title', 'section_note'))
     if imported and present:
         raise MotdError('Recover the recipe and rebuild to change an imported output design or layout')
     display = config['display']
@@ -2100,6 +2118,12 @@ def apply_display_options(config, args, *, imported=False):
             raise MotdError('--section-detail needs SECTION=brief|normal|full')
         section, detail = item.split('=', 1)
         display['section_detail'][section] = detail
+    for option, key in (('section_title', 'section_titles'), ('section_note', 'section_notes')):
+        for item in getattr(args, option, None) or []:
+            if '=' not in item:
+                raise MotdError('--' + option.replace('_', '-') + ' needs SECTION=TEXT')
+            section, text = item.split('=', 1)
+            display[key][section] = text
 
 
 def resolve_input(args):
@@ -3449,36 +3473,62 @@ def entrypoint():
 
 
 # BEGIN EMBEDDED DESIGNS — regenerated by tools/embed_runtime.py
-DESIGNS_TEMPLATE = r'''# Shared presentation engine for generated Unix outputs.
-#
-# This file only defines POSIX-shell functions. It is embedded once, before the
-# chosen Unix backend. It never collects machine data, invokes a configured
-# command, evaluates configuration as code, or writes persistent files.
-#
-# Backend adapters supply already-collected observations through
-# motd_view_capture(section, content_columns, content_rows, flavour). The
-# callback emits printable ASCII data rows; this engine owns framing, spacing,
-# colour and Unicode borders. motd_view_detail(section) emits its detail policy.
-# Keeping these policies here makes old Bash, dash and delegated Zsh layouts
-# obey the same geometry rather than maintaining separate render algorithms.
+DESIGNS_TEMPLATE = r'''# One data-only presentation engine for every generated Unix design.
+# A design is a preset of orthogonal settings, resolved once before planning.
+# Collectors and section formatters have no design branches and never run here.
+# Content has conservative ASCII cell semantics; generated border glyphs are
+# known single-cell Unicode. Only SGR colour escapes survive row sanitization.
+
+# Raw template probes may omit generated labels. Standalone generated scripts
+# override this callback with the configurator's one literal text registry.
+motd_presentation_policy() { :; }
+motd_presentation_text() { if [ "$2" != note ]; then printf '%s\n' "$1"; fi; }
 
 motd_view_clean() {
-    mv_clean_rest=$1; MV_CLEAN=''; mv_clean_count=0
-    while [ -n "$mv_clean_rest" ] && [ "$mv_clean_count" -lt "$2" ]; do
-        mv_clean_ch=${mv_clean_rest%"${mv_clean_rest#?}"}; mv_clean_rest=${mv_clean_rest#?}
-        case "$mv_clean_ch" in [\ -~]) : ;; *) mv_clean_ch='?' ;; esac
-        MV_CLEAN=$MV_CLEAN$mv_clean_ch; mv_clean_count=$((mv_clean_count + 1))
+    mv_clean_rest=$1; MV_CLEAN=''; MV_LENGTH=0; mv_clean_before=''
+    case "$mv_clean_rest" in *[!\ -~]*) : ;;
+        *) if [ "${#mv_clean_rest}" -le "$2" ]; then MV_CLEAN=$mv_clean_rest; MV_LENGTH=${#mv_clean_rest}; return; fi ;;
+    esac
+    while [ -n "$mv_clean_rest" ]; do
+        case "$mv_clean_rest" in "$MV_ESC"'['*)
+            mv_clean_tail=${mv_clean_rest#??}; mv_clean_sgr=${mv_clean_tail%%m*}
+            case "$mv_clean_tail" in *m*)
+                case "$mv_clean_sgr" in *[!0-9\;]*) : ;;
+                    *) if [ "${#mv_clean_sgr}" -le 32 ]; then
+                        [ "$MV_COLOR" -eq 0 ] || MV_CLEAN=$MV_CLEAN$MV_ESC'['$mv_clean_sgr'm'
+                        mv_clean_rest=${mv_clean_tail#*m}; continue
+                    fi ;;
+                esac ;;
+            esac ;;
+        esac
+        # These generator-owned block glyphs are known one-cell characters.
+        # Match complete UTF-8 literals before byte-wise historical-shell text.
+        case "$mv_clean_rest" in
+            █*) mv_clean_ch='█'; mv_clean_rest=${mv_clean_rest#█} ;;
+            ░*) mv_clean_ch='░'; mv_clean_rest=${mv_clean_rest#░} ;;
+            ▒*) mv_clean_ch='▒'; mv_clean_rest=${mv_clean_rest#▒} ;;
+            ▓*) mv_clean_ch='▓'; mv_clean_rest=${mv_clean_rest#▓} ;;
+            │*) mv_clean_ch='│'; mv_clean_rest=${mv_clean_rest#│} ;;
+            ·*) mv_clean_ch='·'; mv_clean_rest=${mv_clean_rest#·} ;;
+            *) mv_clean_ch=${mv_clean_rest%"${mv_clean_rest#?}"}; mv_clean_rest=${mv_clean_rest#?}
+               case "$mv_clean_ch" in [\ -~]) : ;; *) mv_clean_ch='?' ;; esac ;;
+        esac
+        if [ "$MV_LENGTH" -ge "$2" ]; then
+            if [ "${OVERFLOW-ellipsis}" = ellipsis ] && [ "$2" -gt 0 ]; then MV_CLEAN=$mv_clean_before'~'; fi
+            break
+        fi
+        mv_clean_before=$MV_CLEAN
+        MV_CLEAN=$MV_CLEAN$mv_clean_ch; MV_LENGTH=$((MV_LENGTH + 1))
     done
-    if [ -n "$mv_clean_rest" ] && [ "$2" -gt 0 ]; then MV_CLEAN=${MV_CLEAN%?}'~'; fi
 }
 
 motd_view_repeat() {
-    MV_REPEAT=''; mv_repeat_left=$2
+    MV_REPEAT=''; mv_repeat_left=$2; mv_repeat_piece=$1
     while [ "$mv_repeat_left" -gt 0 ]; do
-        MV_REPEAT=$MV_REPEAT$1; mv_repeat_left=$((mv_repeat_left - 1))
+        if [ "$((mv_repeat_left % 2))" -eq 1 ]; then MV_REPEAT=$MV_REPEAT$mv_repeat_piece; fi
+        mv_repeat_left=$((mv_repeat_left / 2)); mv_repeat_piece=$mv_repeat_piece$mv_repeat_piece
     done
 }
-
 motd_view_fraction_bar() {
     # A bounded data-only formatter shared by both Unix adapters. Work in at
     # most six significant decimal digits before multiplication, keeping a
@@ -3513,10 +3563,142 @@ motd_view_fraction_bar() {
     MV_BAR_VALID=1
 }
 
+
+motd_view_policy() {
+    # This is the sole named-preset dispatch. All subsequent code uses resolved
+    # geometry and decoration values; cosmetic changes never select a renderer.
+    MV_LAYOUT=stack; MV_FRAME=continuous; MV_HEADING=rule
+    motd_presentation_policy "$DESIGN"
+    [ "${PANEL_LAYOUT-auto}" = auto ] || MV_LAYOUT=$PANEL_LAYOUT
+    [ "${PANEL_FRAME-auto}" = auto ] || MV_FRAME=$PANEL_FRAME
+    [ "${HEADING_STYLE-auto}" = auto ] || MV_HEADING=$HEADING_STYLE
+    MV_COLUMNS_PER_ROW=1
+    if [ "$MV_LAYOUT" = columns ] && [ "$MV_COLUMNS" -ge 80 ]; then
+        MV_COLUMNS_PER_ROW=2
+        # Independent adjacent panels cannot share a continuous outer frame.
+        [ "$MV_FRAME" != continuous ] || MV_FRAME=separate
+    fi
+    MV_PANEL_WIDTH=$MV_COLUMNS
+    [ "$MV_COLUMNS_PER_ROW" -eq 1 ] || MV_PANEL_WIDTH=$(((MV_COLUMNS - 2) / 2))
+    MV_OUTER=1; MV_SEPARATORS=1
+    case "${BORDER_VISIBILITY-all}" in outer) MV_SEPARATORS=0 ;; sections) MV_OUTER=0 ;; none) MV_OUTER=0; MV_SEPARATORS=0 ;; esac
+    [ "$MV_FRAME" != none ] || MV_OUTER=0
+    MV_SIDES=$MV_OUTER
+    MV_GAP=$SECTION_GAP; MV_INSET=0
+    case "$DENSITY" in comfortable) MV_GAP=$((MV_GAP + 1)); MV_INSET=1 ;; esac
+    MV_HEADER_ROWS=2
+    if [ "$MV_FRAME" = continuous ] && [ "$MV_OUTER" -eq 1 ]; then MV_HEADER_ROWS=3; fi
+    if [ "$MV_ROWS_LIMIT" -le 25 ]; then
+        MV_SHORT_HEADER=1; MV_HEADER_ROWS=$((MV_HEADER_ROWS - 1))
+    fi
+    MV_FOOTER_WIDTH=$((MV_COLUMNS - 2 * PADDING - 2 * MV_SIDES))
+    MV_H='-'; MV_V='|'; MV_TL='+'; MV_TR='+'; MV_ML='+'; MV_MR='+'; MV_BL='+'; MV_BR='+'
+    if [ "$MV_UNICODE" -eq 1 ] && [ "${BORDER_STYLE-single}" != ascii ]; then
+        MV_H='─'; MV_V='│'; MV_TL='┌'; MV_TR='┐'; MV_ML='├'; MV_MR='┤'; MV_BL='└'; MV_BR='┘'
+        case "${BORDER_STYLE-single}" in
+            rounded) MV_TL='╭'; MV_TR='╮'; MV_BL='╰'; MV_BR='╯' ;;
+            double) MV_H='═'; MV_V='║'; MV_TL='╔'; MV_TR='╗'; MV_ML='╠'; MV_MR='╣'; MV_BL='╚'; MV_BR='╝' ;;
+            heavy) MV_H='━'; MV_V='┃'; MV_TL='┏'; MV_TR='┓'; MV_ML='┣'; MV_MR='┫'; MV_BL='┗'; MV_BR='┛' ;;
+        esac
+    fi
+}
+
+motd_view_colors() {
+    MV_ESC=$(printf '\033'); MV_ACCENT=''; MV_TITLE_COLOR=''; MV_MUTED=''; MV_WARN=''; MV_RESET=''
+    [ "$MV_COLOR" -eq 1 ] || return 0
+    case "$THEME" in green) mv_color_code=32 ;; amber) mv_color_code=33 ;; *) mv_color_code=36 ;; esac
+    MV_RESET=$MV_ESC'[0m'; MV_WARN=$MV_ESC'[1;31m'
+    MV_ACCENT=$MV_ESC'['$mv_color_code'm'; MV_TITLE_COLOR=$MV_ESC'[1;'$mv_color_code'm'; MV_MUTED=$MV_ESC'[90m'
+    case "$COLOR_EMPHASIS" in quiet) MV_TITLE_COLOR=$MV_ACCENT; MV_ACCENT=''; MV_MUTED='' ;; vivid) MV_ACCENT=$MV_TITLE_COLOR ;; esac
+}
+
+motd_view_caption() {
+    MV_CAPTION=$(motd_presentation_text "$1" "${LABEL_STYLE-full}")
+    MV_NOTE=''
+    case "${SEPARATOR_TEXT-none}" in
+        custom) MV_NOTE=$(motd_presentation_text "$1" note) ;;
+        summary) MV_NOTE=$(motd_view_summary "$1" "${2-0}" "${3-$MV_PANEL_WIDTH}") ;;
+    esac
+}
+
+motd_view_content_width() {
+    MV_CONTENT_WIDTH=$(($2 - 2 * PADDING - 2 * MV_SIDES))
+    if [ "$MV_HEADING" = inline ]; then MV_CONTENT_WIDTH=$((MV_CONTENT_WIDTH - 13)); fi
+    [ "$MV_CONTENT_WIDTH" -gt 0 ] || MV_CONTENT_WIDTH=1
+}
+
+motd_view_take_line() {
+    MV_LINE=${MV_TEXT%%'
+'*}
+    case "$MV_TEXT" in *'
+'*) MV_TEXT=${MV_TEXT#*'
+'} ;; *) MV_TEXT='' ;; esac
+}
+
+motd_view_tint() {
+    MV_ROW_COLOR=''
+    case "$1" in *ERROR:*|*WARNING:*|*WARN:*|*': failed'*|*' FAIL'*) MV_ROW_COLOR=$MV_WARN ;; esac
+}
+
+motd_view_row() {
+    # $3 controls exterior side glyphs. Visible width counts exclude SGR bytes.
+    mv_row_width=$2; mv_row_sides=$3; mv_row_inner=$((mv_row_width - 2 * PADDING - 2 * mv_row_sides))
+    motd_view_clean "$1" "$mv_row_inner"; motd_view_tint "$1"
+    [ "$mv_row_sides" -eq 0 ] || printf '%s%s%s' "$MV_ACCENT" "$MV_V" "$MV_RESET"
+    printf '%*s%s%s%s%*s%*s' "$PADDING" '' "${4-$MV_ROW_COLOR}" "$MV_CLEAN" "$MV_RESET" "$((mv_row_inner - MV_LENGTH))" '' "$PADDING" ''
+    [ "$mv_row_sides" -eq 0 ] || printf '%s%s%s' "$MV_ACCENT" "$MV_V" "$MV_RESET"
+    printf '\n'
+}
+
+motd_view_rule() {
+    # A heading can be centered independently of the border character family.
+    mv_rule_width=$1; mv_rule_left=$2; mv_rule_right=$3; mv_rule_label=$4
+    mv_rule_inside=$((mv_rule_width - 2))
+    if [ -n "$mv_rule_label" ]; then
+        motd_view_clean "$mv_rule_label" "$((mv_rule_inside - 2))"; mv_rule_label=" $MV_CLEAN "; mv_rule_length=$((MV_LENGTH + 2))
+    else mv_rule_length=0; fi
+    mv_rule_spare=$((mv_rule_inside - mv_rule_length)); mv_rule_before=0
+    case "${HEADING_ALIGN-left}" in center) mv_rule_before=$((mv_rule_spare / 2)) ;; right) mv_rule_before=$mv_rule_spare ;; esac
+    motd_view_repeat "$MV_H" "$mv_rule_before"; mv_rule_prefix=$MV_REPEAT
+    motd_view_repeat "$MV_H" "$((mv_rule_spare - mv_rule_before))"
+    printf '%s%s%s%s%s%s%s%s%s\n' "$MV_ACCENT" "$mv_rule_left" "$mv_rule_prefix" "$MV_TITLE_COLOR" "$mv_rule_label" "$MV_ACCENT" "$MV_REPEAT" "$mv_rule_right" "$MV_RESET"
+}
+
+motd_view_plain_heading() {
+    motd_view_clean "$1" "$(($2 - 2 * PADDING - 2 * MV_SIDES))"
+    mv_heading_text=$MV_CLEAN; mv_heading_space=$(($2 - 2 * PADDING - 2 * MV_SIDES - MV_LENGTH))
+    case "${HEADING_ALIGN-left}" in
+        center) mv_heading_space=$((mv_heading_space / 2)) ;;
+        right) : ;;
+        *) mv_heading_space=0 ;;
+    esac
+    motd_view_repeat ' ' "$mv_heading_space"
+    motd_view_row "$MV_REPEAT$mv_heading_text" "$2" "$MV_SIDES" "$MV_TITLE_COLOR"
+}
+
+motd_view_overhead() {
+    MV_OVERHEAD=$MV_INSET
+    # A separate closed panel has top+bottom; the title may occupy its top.
+    if [ "$MV_FRAME" = separate ] && [ "$MV_OUTER" -eq 1 ]; then MV_OVERHEAD=$((MV_OVERHEAD + 2)); fi
+    case "$MV_HEADING" in
+        rule)
+            if [ "$MV_FRAME" != separate ] || [ "$MV_OUTER" -eq 0 ]; then MV_OVERHEAD=$((MV_OVERHEAD + 1)); fi ;;
+        plain) MV_OVERHEAD=$((MV_OVERHEAD + 1)) ;;
+    esac
+    # Rule headings carry metadata on their same row. Other heading styles
+    # use an explicit note row, whose cost is measured before allocation.
+    case " $MV_NOTE_IDS " in *" $1 "*)
+        [ "$MV_HEADING" = rule ] || MV_OVERHEAD=$((MV_OVERHEAD + 1)) ;;
+    esac
+}
+
 motd_view_get() {
-    MV_ALLOCATED=0
+    MV_ALLOCATED=0; MV_MINIMUM=1; MV_PRESENT=0
     for mv_get_record in $MV_PLAN; do
-        if [ "${mv_get_record%%:*}" = "$1" ]; then MV_ALLOCATED=${mv_get_record#*:}; break; fi
+        if [ "${mv_get_record%%:*}" = "$1" ]; then MV_ALLOCATED=${mv_get_record#*:}; MV_PRESENT=1; break; fi
+    done
+    for mv_get_record in $MV_MINIMA; do
+        if [ "${mv_get_record%%:*}" = "$1" ]; then MV_MINIMUM=${mv_get_record#*:}; break; fi
     done
 }
 
@@ -3524,45 +3706,10 @@ motd_view_set() {
     mv_set_result=''
     for mv_set_record in $MV_PLAN; do
         if [ "${mv_set_record%%:*}" = "$1" ]; then
-            if [ "$2" -gt 0 ]; then mv_set_result="$mv_set_result $1:$2"; fi
+            [ "$2" -lt 0 ] || mv_set_result="$mv_set_result $1:$2"
         else mv_set_result="$mv_set_result $mv_set_record"; fi
     done
     MV_PLAN=$mv_set_result
-}
-
-motd_view_caption() {
-    case "$1" in
-        system) MV_CAPTION=SYSTEM; MV_HEADLINE='System' ;;
-        resources) MV_CAPTION=RESOURCES; MV_HEADLINE='Capacity' ;;
-        services) MV_CAPTION=SERVICES; MV_HEADLINE='Services' ;;
-        processes) MV_CAPTION=PROCESSES; MV_HEADLINE='Top workloads' ;;
-        sessions) MV_CAPTION=SESSIONS; MV_HEADLINE='People online' ;;
-        connections) MV_CAPTION=CONNECTIONS; MV_HEADLINE='Connections' ;;
-        attention) MV_CAPTION=ATTENTION; MV_HEADLINE='Attention' ;;
-        hints) MV_CAPTION=HINTS; MV_HEADLINE='Useful commands' ;;
-        io) MV_CAPTION='DISK I/O'; MV_HEADLINE='Disk activity' ;;
-    esac
-}
-
-motd_view_content_width() {
-    # Each backend formats at its final data width. We do not create a larger
-    # table and crop it afterwards, including the headings in a briefing.
-    MV_CONTENT_WIDTH=$((MV_PANEL_WIDTH - 2 - 2 * PADDING))
-    case "$DESIGN" in
-        ledger)
-            mv_content_label=12; [ "$MV_COLUMNS" -ge 60 ] || mv_content_label=10
-            MV_CONTENT_WIDTH=$((MV_COLUMNS - PADDING - mv_content_label - 3)) ;;
-        briefing)
-            if [ "$1" = resources ] && [ "${BAR_LAYOUT-inline}" = wide ]; then
-                # Resource labels identify their own quantities. Give every
-                # numeric/bar pair the same indented width rather than losing
-                # the first denominator to an additional "Capacity: " prefix.
-                MV_CONTENT_WIDTH=$((MV_COLUMNS - 2 * PADDING - 2))
-            else
-                motd_view_caption "$1"; mv_content_prefix=${#MV_HEADLINE}
-                MV_CONTENT_WIDTH=$((MV_COLUMNS - mv_content_prefix - 2))
-            fi ;;
-    esac
 }
 
 motd_view_footer() {
@@ -3570,8 +3717,8 @@ motd_view_footer() {
     [ -n "$MV_OMITTED" ] || return 0
     mv_footer_row='Hidden:'
     for mv_footer_id in $MV_OMITTED; do
-        mv_footer_next="$mv_footer_row $mv_footer_id"; mv_footer_length=${#mv_footer_next}
-        if [ "$mv_footer_length" -gt "$MV_FOOTER_WIDTH" ]; then
+        mv_footer_next="$mv_footer_row $mv_footer_id"
+        if [ "${#mv_footer_next}" -gt "$MV_FOOTER_WIDTH" ]; then
             MV_FOOTER="$MV_FOOTER$mv_footer_row
 "; MV_FOOTER_COUNT=$((MV_FOOTER_COUNT + 1)); mv_footer_row=$mv_footer_id
         else mv_footer_row=$mv_footer_next; fi
@@ -3581,72 +3728,68 @@ motd_view_footer() {
 }
 
 motd_view_cost() {
-    # A dashboard pair costs the taller card, not the sum of its two cards.
-    # Gaps, interior blank rows, borders, headers and omission text all count.
     motd_view_footer
     MV_COST=$((MV_HEADER_ROWS + MV_FOOTER_COUNT)); mv_cost_groups=0; mv_cost_pending=0
     for mv_cost_record in $MV_PLAN; do
-        mv_cost_rows=${mv_cost_record#*:}
-        case "$DESIGN" in
-            classic) mv_cost_rows=$((mv_cost_rows + 1 + MV_INSET)) ;;
-            cards|dashboard) mv_cost_rows=$((mv_cost_rows + 2 + MV_INSET)) ;;
-            ledger|briefing) mv_cost_rows=$((mv_cost_rows + MV_INSET)) ;;
-        esac
+        motd_view_overhead "${mv_cost_record%%:*}"
+        mv_cost_rows=$((${mv_cost_record#*:} + MV_OVERHEAD))
         if [ "$MV_COLUMNS_PER_ROW" -eq 2 ]; then
             if [ "$mv_cost_pending" -eq 0 ]; then mv_cost_pending=$mv_cost_rows; continue; fi
-            if [ "$mv_cost_pending" -gt "$mv_cost_rows" ]; then mv_cost_rows=$mv_cost_pending; fi
+            [ "$mv_cost_pending" -le "$mv_cost_rows" ] || mv_cost_rows=$mv_cost_pending
             mv_cost_pending=0
         fi
         MV_COST=$((MV_COST + mv_cost_rows)); mv_cost_groups=$((mv_cost_groups + 1))
     done
-    if [ "$mv_cost_pending" -gt 0 ]; then
-        MV_COST=$((MV_COST + mv_cost_pending)); mv_cost_groups=$((mv_cost_groups + 1))
-    fi
-    if [ "$mv_cost_groups" -gt 1 ]; then MV_COST=$((MV_COST + (mv_cost_groups - 1) * MV_GAP)); fi
+    if [ "$mv_cost_pending" -gt 0 ]; then MV_COST=$((MV_COST + mv_cost_pending)); mv_cost_groups=$((mv_cost_groups + 1)); fi
+    [ "$mv_cost_groups" -lt 2 ] || MV_COST=$((MV_COST + (mv_cost_groups - 1) * MV_GAP))
 }
 
 motd_view_plan() {
-    MV_PLAN=''; MV_OMITTED=''; MV_REVERSE_PRIORITY=''; MV_ORDER=$MV_SECTION_IDS
-    # Briefing explicitly leads with attention. Other layouts preserve the
-    # configured display order. Priority influences allocation, not ordering.
-    if [ "$DESIGN" = briefing ]; then
-        MV_ORDER=''
-        case " $MV_SECTION_IDS " in *' attention '*) MV_ORDER=attention ;; esac
-        for mv_order_id in $MV_SECTION_IDS; do
-            [ "$mv_order_id" = attention ] || MV_ORDER="$MV_ORDER $mv_order_id"
+    MV_PLAN=''; MV_MINIMA=''; MV_OMITTED=''; MV_REVERSE_PRIORITY=''
+    MV_ORDER=$MV_SECTION_IDS; MV_PRIORITY_ORDER=''; MV_NOTE_IDS=''
+    if [ "${SEPARATOR_TEXT-none}" != none ]; then
+        for mv_note_id in $MV_ORDER; do
+            motd_view_caption "$mv_note_id"
+            [ -z "$MV_NOTE" ] || MV_NOTE_IDS="$MV_NOTE_IDS $mv_note_id"
         done
     fi
-    MV_PRIORITY_ORDER=''
-    for mv_order_id in $MV_PRIORITY $MV_SECTION_IDS; do
-        case " $MV_PRIORITY_ORDER " in *" $mv_order_id "*) continue ;; esac
-        case " $MV_SECTION_IDS " in *" $mv_order_id "*)
-            MV_PRIORITY_ORDER="$MV_PRIORITY_ORDER $mv_order_id"
-            MV_REVERSE_PRIORITY="$mv_order_id $MV_REVERSE_PRIORITY" ;;
+    for mv_plan_id in $MV_PRIORITY $MV_SECTION_IDS; do
+        case " $MV_PRIORITY_ORDER " in *" $mv_plan_id "*) continue ;; esac
+        case " $MV_SECTION_IDS " in *" $mv_plan_id "*)
+            MV_PRIORITY_ORDER="$MV_PRIORITY_ORDER $mv_plan_id"
+            MV_REVERSE_PRIORITY="$mv_plan_id $MV_REVERSE_PRIORITY" ;;
         esac
     done
     for mv_plan_id in $MV_ORDER; do
         mv_plan_detail=$(motd_view_detail "$mv_plan_id")
-        case "$mv_plan_detail" in brief) mv_plan_rows=1 ;;
-            full)
-                case "$mv_plan_id" in system) mv_plan_rows=4 ;; resources) mv_plan_rows=7 ;;
-                    services|sessions) mv_plan_rows=6 ;; processes|attention|io) mv_plan_rows=8 ;;
-                    connections) mv_plan_rows=4 ;; hints) mv_plan_rows=5 ;; esac ;;
-            *)
-                case "$mv_plan_id" in resources|io) mv_plan_rows=3 ;; processes) mv_plan_rows=4 ;;
-                    *) mv_plan_rows=2 ;; esac ;;
+        case "$mv_plan_detail" in
+            brief) MV_MAX_ROWS=1 ;;
+            full) case "$mv_plan_id" in resources|io|processes|services) MV_MAX_ROWS=12 ;; *) MV_MAX_ROWS=8 ;; esac ;;
+            *) case "$mv_plan_id" in resources|services|processes|io) MV_MAX_ROWS=4 ;; *) MV_MAX_ROWS=2 ;; esac ;;
         esac
-        # A wide resource can use one numeric row and one bar row. Ask for
-        # enough space for RAM, storage and optional swap; the adapter still
-        # returns a numeric summary if a smaller final allocation cannot fit
-        # both rows. Other sections and inline defaults are unchanged.
-        if [ "$mv_plan_id" = resources ] && [ "${BAR_LAYOUT-inline}" = wide ]; then
-            case "$mv_plan_detail" in normal) mv_plan_rows=6 ;; full) mv_plan_rows=9 ;; esac
+        if [ "$mv_plan_id" = resources ] && [ "${BAR_LAYOUT-inline}" = wide ] && [ "$mv_plan_detail" != brief ]; then MV_MAX_ROWS=9; fi
+        MV_MIN_ROWS=1
+        if [ "$mv_plan_detail" = normal ] && [ "$MV_ROWS_LIMIT" -le 25 ]; then
+            case "$mv_plan_id" in
+                system|services|sessions) MV_MAX_ROWS=2 ;;
+                resources) [ "${BAR_LAYOUT-inline}" = wide ] || MV_MAX_ROWS=3 ;;
+                processes) MV_MAX_ROWS=4 ;;
+                attention) MV_MAX_ROWS=1 ;;
+            esac
         fi
-        # Charge populated rows, not an arbitrary rectangle of empty space.
-        # This is formatting of the existing model, never a second collection.
-        # A short section can therefore leave room for another complete panel.
-        motd_view_content_width "$mv_plan_id"
-        mv_plan_text=$(motd_view_capture "$mv_plan_id" "$MV_CONTENT_WIDTH" "$mv_plan_rows" "$DESIGN")
+        if [ "$mv_plan_detail" != full ] && [ "$MV_HEADING" = rule ] && [ "${SEPARATOR_TEXT-summary}" = summary ]; then
+            case " $MV_NOTE_IDS " in *" $mv_plan_id "*)
+                case "$mv_plan_id" in connections|hints) MV_MIN_ROWS=0
+                    [ "$MV_ROWS_LIMIT" -gt 25 ] || MV_MAX_ROWS=0 ;; esac ;;
+            esac
+        fi
+        motd_view_content_width "$mv_plan_id" "$MV_PANEL_WIDTH"
+        motd_view_limits "$mv_plan_id" "$MV_CONTENT_WIDTH" "$mv_plan_detail"
+        [ "$MV_MAX_ROWS" -ge "$MV_MIN_ROWS" ] || MV_MAX_ROWS=$MV_MIN_ROWS
+        if [ "$MV_MAX_ROWS" -eq 0 ]; then
+            MV_PLAN="$MV_PLAN $mv_plan_id:0"; MV_MINIMA="$MV_MINIMA $mv_plan_id:0"; continue
+        fi
+        mv_plan_text=$(motd_view_capture "$mv_plan_id" "$MV_CONTENT_WIDTH" "$MV_MAX_ROWS" section)
         mv_plan_count=0
         while [ -n "$mv_plan_text" ]; do
             mv_plan_count=$((mv_plan_count + 1))
@@ -3655,161 +3798,117 @@ motd_view_plan() {
 '} ;; *) mv_plan_text='' ;; esac
         done
         [ "$mv_plan_count" -gt 0 ] || mv_plan_count=1
-        if [ "$mv_plan_count" -lt "$mv_plan_rows" ]; then mv_plan_rows=$mv_plan_count; fi
-        MV_PLAN="$MV_PLAN $mv_plan_id:$mv_plan_rows"
+        [ "$mv_plan_count" -ge "$MV_MAX_ROWS" ] || MV_MAX_ROWS=$mv_plan_count
+        [ "$MV_MIN_ROWS" -le "$MV_MAX_ROWS" ] || MV_MIN_ROWS=$MV_MAX_ROWS
+        MV_PLAN="$MV_PLAN $mv_plan_id:$MV_MAX_ROWS"; MV_MINIMA="$MV_MINIMA $mv_plan_id:$MV_MIN_ROWS"
     done
     motd_view_cost
-    # Trim meaningful detail from low-priority sections before removing one.
     for mv_plan_id in $MV_REVERSE_PRIORITY; do
         motd_view_get "$mv_plan_id"
-        while [ "$MV_COST" -gt "$MV_LIMIT" ] && [ "$MV_ALLOCATED" -gt 1 ]; do
-            mv_plan_next=$((MV_ALLOCATED - 1)); motd_view_set "$mv_plan_id" "$mv_plan_next"
-            motd_view_cost; motd_view_get "$mv_plan_id"
+        while [ "$MV_COST" -gt "$MV_LIMIT" ] && [ "$MV_ALLOCATED" -gt "$MV_MINIMUM" ]; do
+            motd_view_set "$mv_plan_id" "$((MV_ALLOCATED - 1))"; motd_view_cost; motd_view_get "$mv_plan_id"
         done
     done
     for mv_plan_id in $MV_REVERSE_PRIORITY; do
         [ "$MV_COST" -gt "$MV_LIMIT" ] || break
-        motd_view_get "$mv_plan_id"; [ "$MV_ALLOCATED" -gt 0 ] || continue
-        # At an eight-row preview, decoration yields before the final useful
-        # section. Spacing is always charged, never silently allowed to scroll.
+        motd_view_get "$mv_plan_id"; [ "$MV_PRESENT" -eq 1 ] || continue
         mv_plan_remaining=0
-        for mv_plan_record in $MV_PLAN; do mv_plan_remaining=$((mv_plan_remaining + 1)); done
+        for mv_remaining_record in $MV_PLAN; do mv_plan_remaining=$((mv_plan_remaining + 1)); done
         if [ "$mv_plan_remaining" -eq 1 ]; then
-            MV_GAP=0; MV_INSET=0; MV_SHORT_HEADER=1
-            if [ "$DESIGN" = classic ]; then MV_HEADER_ROWS=2; else MV_HEADER_ROWS=1; fi
+            MV_GAP=0; MV_INSET=0; MV_SHORT_HEADER=1; MV_HEADER_ROWS=1
+            if [ "$MV_FRAME" = continuous ] && [ "$MV_OUTER" -eq 1 ]; then MV_HEADER_ROWS=2; fi
             motd_view_cost
             [ "$MV_COST" -gt "$MV_LIMIT" ] || break
         fi
-        motd_view_set "$mv_plan_id" 0; MV_OMITTED="$MV_OMITTED $mv_plan_id"
-        motd_view_cost
+        motd_view_set "$mv_plan_id" -1; MV_OMITTED="$MV_OMITTED $mv_plan_id"; motd_view_cost
     done
-}
-
-motd_view_colors() {
-    MV_ACCENT=''; MV_TITLE_COLOR=''; MV_MUTED=''; MV_WARN=''; MV_RESET=''
-    [ "$MV_COLOR" -eq 1 ] || return 0
-    case "$THEME" in green) mv_color_code=32 ;; amber) mv_color_code=33 ;; *) mv_color_code=36 ;; esac
-    MV_RESET=$(printf '\033[0m'); MV_WARN=$(printf '\033[1;31m')
-    MV_TITLE_COLOR=$(printf '\033[1;%sm' "$mv_color_code")
-    case "$COLOR_EMPHASIS" in
-        quiet) MV_TITLE_COLOR=$(printf '\033[%sm' "$mv_color_code") ;;
-        vivid) MV_ACCENT=$(printf '\033[1;%sm' "$mv_color_code"); MV_MUTED=$(printf '\033[36m') ;;
-        *) MV_ACCENT=$(printf '\033[%sm' "$mv_color_code"); MV_MUTED=$(printf '\033[90m') ;;
-    esac
-}
-
-motd_view_plain_row() {
-    motd_view_clean "$1" "$MV_COLUMNS"
-    motd_view_tint "$1"
-    printf '%s%s%s\n' "${MV_ROW_COLOR:-${2-}}" "$MV_CLEAN" "$MV_RESET"
-}
-
-motd_view_tint() {
-    MV_ROW_COLOR=''
-    # A phrase such as "0 failed" is not an alert. Colour explicit failing
-    # states or severity labels rather than merely finding the word "failed".
-    case "$1" in *ERROR:*|*WARNING:*|*WARN:*|*': failed'*|*' FAIL'*) MV_ROW_COLOR=$MV_WARN ;; esac
-}
-
-motd_view_rule() {
-    # Results are already cell-padded before adding ANSI colour or Unicode.
-    mv_rule_width=$1; mv_rule_left=$2; mv_rule_right=$3; mv_rule_title=$4
-    if [ -n "$mv_rule_title" ]; then
-        motd_view_clean "$mv_rule_title" "$((mv_rule_width - 4))"; mv_rule_title=$MV_CLEAN
-        mv_rule_length=${#mv_rule_title}
-        motd_view_repeat "$MV_H" "$((mv_rule_width - mv_rule_length - 4))"
-        printf '%s%s %s %s%s%s\n' "$MV_ACCENT" "$mv_rule_left" "$mv_rule_title" "$MV_REPEAT" "$mv_rule_right" "$MV_RESET"
-    else
-        motd_view_repeat "$MV_H" "$((mv_rule_width - 2))"
-        printf '%s%s%s%s%s\n' "$MV_ACCENT" "$mv_rule_left" "$MV_REPEAT" "$mv_rule_right" "$MV_RESET"
+    # At tiny sizes, the named omission list can exceed available rows by
+    # itself. Replace it with a truthful count while preserving the prompt row.
+    if [ "$MV_COST" -gt "$MV_LIMIT" ]; then
+        mv_plan_omitted=0; for mv_plan_id in $MV_OMITTED; do mv_plan_omitted=$((mv_plan_omitted + 1)); done
+        MV_FOOTER="Hidden: $mv_plan_omitted sections; resize for more."
+        MV_FOOTER_COUNT=1
     fi
 }
 
-motd_view_box_row() {
-    mv_box_width=$1; mv_box_text=$2; mv_box_inner=$((mv_box_width - 2 - 2 * PADDING))
-    motd_view_clean "$mv_box_text" "$mv_box_inner"
-    motd_view_tint "$mv_box_text"; mv_box_color=$MV_ROW_COLOR
-    printf '%s%s%s%*s%s%-*s%s%*s%s%s%s\n' "$MV_ACCENT" "$MV_V" "$MV_RESET" "$PADDING" '' \
-        "$mv_box_color" "$mv_box_inner" "$MV_CLEAN" "$MV_RESET" "$PADDING" '' "$MV_ACCENT" "$MV_V" "$MV_RESET"
-}
-
-motd_view_take_line() {
-    # Parameter expansion keeps both old-shell execution and FIFO-free capture
-    # deterministic. MV_TEXT is a newline-separated list of already-safe rows.
-    MV_LINE=${MV_TEXT%%'
-'*}
-    case "$MV_TEXT" in *'
-'*) MV_TEXT=${MV_TEXT#*'
-'} ;; *) MV_TEXT='' ;; esac
-}
-
-motd_view_card() {
-    mv_card_id=$1; mv_card_rows=$2; mv_card_width=$3; mv_card_height=${4-$2}
-    motd_view_caption "$mv_card_id"
-    motd_view_rule "$mv_card_width" "$MV_TL" "$MV_TR" "$MV_CAPTION"
-    if [ "$MV_INSET" -gt 0 ]; then motd_view_box_row "$mv_card_width" ''; fi
-    MV_TEXT=$(motd_view_capture "$mv_card_id" "$((mv_card_width - 2 - 2 * PADDING))" "$mv_card_rows" card)
-    mv_card_index=0
-    while [ "$mv_card_index" -lt "$mv_card_height" ]; do
-        motd_view_take_line; motd_view_box_row "$mv_card_width" "$MV_LINE"
-        mv_card_index=$((mv_card_index + 1))
+motd_view_panel() {
+    # The sole section compositor. Each panel reads the same collector-owned
+    # observations at its final width; headings/notes/borders consume real rows.
+    mv_panel_id=$1; mv_panel_rows=$2; mv_panel_width=$3; mv_panel_height=${4-0}
+    motd_view_caption "$mv_panel_id" "$mv_panel_rows" "$mv_panel_width"; mv_panel_caption=$MV_CAPTION; mv_panel_note=$MV_NOTE
+    mv_panel_label=$mv_panel_caption
+    [ -z "$mv_panel_note" ] || mv_panel_label="$mv_panel_label | $mv_panel_note"
+    if [ "$MV_FRAME" = separate ] && [ "$MV_OUTER" -eq 1 ]; then
+        if [ "$MV_HEADING" = rule ]; then motd_view_rule "$mv_panel_width" "$MV_TL" "$MV_TR" "$mv_panel_label"
+        else motd_view_rule "$mv_panel_width" "$MV_TL" "$MV_TR" ''; fi
+    fi
+    case "$MV_HEADING" in
+        rule)
+            if [ "$MV_FRAME" != separate ] || [ "$MV_OUTER" -eq 0 ]; then
+                if [ "$MV_SEPARATORS" -eq 1 ]; then
+                    mv_panel_left=$MV_ML; mv_panel_right=$MV_MR
+                    if [ "$MV_SIDES" -eq 0 ]; then mv_panel_left=$MV_H; mv_panel_right=$MV_H; fi
+                    motd_view_rule "$mv_panel_width" "$mv_panel_left" "$mv_panel_right" "$mv_panel_label"
+                else motd_view_plain_heading "$mv_panel_label" "$mv_panel_width"; fi
+            fi ;;
+        plain) motd_view_plain_heading "$mv_panel_caption" "$mv_panel_width" ;;
+    esac
+    if [ -n "$mv_panel_note" ] && [ "$MV_HEADING" != rule ]; then motd_view_row "$mv_panel_note" "$mv_panel_width" "$MV_SIDES" "$MV_MUTED"; fi
+    [ "$MV_INSET" -eq 0 ] || motd_view_row '' "$mv_panel_width" "$MV_SIDES"
+    motd_view_content_width "$mv_panel_id" "$mv_panel_width"
+    MV_TEXT=$(motd_view_capture "$mv_panel_id" "$MV_CONTENT_WIDTH" "$mv_panel_rows" section)
+    mv_panel_index=0
+    while [ "$mv_panel_index" -lt "$mv_panel_rows" ]; do
+        motd_view_take_line
+        if [ "$MV_HEADING" = inline ]; then
+            mv_panel_prefix=''
+            [ "$mv_panel_index" -ne 0 ] || mv_panel_prefix=$mv_panel_caption
+            motd_view_clean "$mv_panel_prefix" 10
+            mv_panel_prefix=$(printf '%s%*s' "$MV_CLEAN" "$((10 - MV_LENGTH))" '')
+            MV_LINE="$MV_TITLE_COLOR$mv_panel_prefix$MV_RESET | $MV_LINE"
+        fi
+        motd_view_row "$MV_LINE" "$mv_panel_width" "$MV_SIDES"
+        mv_panel_index=$((mv_panel_index + 1))
     done
-    motd_view_rule "$mv_card_width" "$MV_BL" "$MV_BR" ''
+    # Pair alignment expands only whitespace; data budgets remain independent.
+    motd_view_overhead "$mv_panel_id"
+    mv_panel_size=$((mv_panel_rows + MV_OVERHEAD))
+    while [ "$mv_panel_size" -lt "$mv_panel_height" ]; do
+        motd_view_row '' "$mv_panel_width" "$MV_SIDES"; mv_panel_size=$((mv_panel_size + 1))
+    done
+    if [ "$MV_FRAME" = separate ] && [ "$MV_OUTER" -eq 1 ]; then motd_view_rule "$mv_panel_width" "$MV_BL" "$MV_BR" ''; fi
 }
 
 motd_view_gap() {
     mv_gap_left=$MV_GAP
     while [ "$mv_gap_left" -gt 0 ]; do
-        if [ "$DESIGN" = classic ]; then motd_view_box_row "$MV_COLUMNS" ''; else printf '\n'; fi
-        mv_gap_left=$((mv_gap_left - 1))
+        mv_gap_sides=0; [ "$MV_FRAME" != continuous ] || mv_gap_sides=$MV_SIDES
+        motd_view_row '' "$MV_COLUMNS" "$mv_gap_sides"; mv_gap_left=$((mv_gap_left - 1))
     done
 }
 
 motd_design_render() {
     MV_LIMIT=$((MV_ROWS_LIMIT - 1)); MV_SHORT_HEADER=0
-    MV_HEADER_ROWS=2; MV_GAP=$SECTION_GAP; MV_INSET=0; MV_COLUMNS_PER_ROW=1
-    [ "$DESIGN" != classic ] || MV_HEADER_ROWS=3
-    case "$DENSITY" in
-        comfortable) MV_GAP=$((MV_GAP + 1)); MV_INSET=1 ;;
-        balanced) case "$DESIGN" in cards|briefing|dashboard) MV_GAP=$((MV_GAP + 1)) ;; esac ;;
-    esac
-    if [ "$DESIGN" = dashboard ] && [ "$MV_COLUMNS" -ge 80 ]; then MV_COLUMNS_PER_ROW=2; fi
-    MV_PANEL_WIDTH=$MV_COLUMNS
-    if [ "$MV_COLUMNS_PER_ROW" -eq 2 ]; then MV_PANEL_WIDTH=$(((MV_COLUMNS - 2) / 2)); fi
-    MV_FOOTER_WIDTH=$MV_COLUMNS
-    [ "$DESIGN" != classic ] || MV_FOOTER_WIDTH=$((MV_COLUMNS - 2 - 2 * PADDING))
-    MV_H='-'; MV_V='|'; MV_TL='+'; MV_TR='+'; MV_ML='+'; MV_MR='+'; MV_BL='+'; MV_BR='+'
-    if [ "$MV_UNICODE" -eq 1 ]; then
-        MV_H='─'; MV_V='│'; MV_TL='┌'; MV_TR='┐'; MV_ML='├'; MV_MR='┤'; MV_BL='└'; MV_BR='┘'
+    motd_view_policy; motd_view_colors; motd_view_plan
+    MV_HEADER_TITLE=$MV_TITLE
+    if [ "$MV_SHORT_HEADER" -eq 1 ]; then
+        MV_HEADER_TITLE="${MV_COMPACT_PREFIX-}${MV_COMPACT_CONTEXT-$MV_SUBTITLE} | ${MV_TITLE#DEMO | }"
     fi
-    motd_view_colors; motd_view_plan
-    case "$DESIGN" in
-        classic)
-            motd_view_rule "$MV_COLUMNS" "$MV_TL" "$MV_TR" "$MV_TITLE"
-            [ "$MV_SHORT_HEADER" -eq 1 ] || motd_view_box_row "$MV_COLUMNS" "$MV_SUBTITLE" ;;
-        briefing)
-            motd_view_plain_row "$MV_TITLE / BRIEFING" "$MV_TITLE_COLOR"
-            [ "$MV_SHORT_HEADER" -eq 1 ] || motd_view_plain_row "$MV_SUBTITLE" "$MV_MUTED" ;;
-        dashboard)
-            motd_view_plain_row "$MV_TITLE / DASHBOARD" "$MV_TITLE_COLOR"
-            [ "$MV_SHORT_HEADER" -eq 1 ] || motd_view_plain_row "$MV_METRICS" "$MV_MUTED" ;;
-        ledger)
-            motd_view_plain_row "$MV_TITLE / LEDGER" "$MV_TITLE_COLOR"
-            [ "$MV_SHORT_HEADER" -eq 1 ] || motd_view_plain_row "$MV_SUBTITLE" "$MV_MUTED" ;;
-        cards)
-            motd_view_plain_row "$MV_TITLE / CARDS" "$MV_TITLE_COLOR"
-            [ "$MV_SHORT_HEADER" -eq 1 ] || motd_view_plain_row "$MV_SUBTITLE" "$MV_MUTED" ;;
-    esac
+    if [ "$MV_FRAME" = continuous ] && [ "$MV_OUTER" -eq 1 ]; then motd_view_rule "$MV_COLUMNS" "$MV_TL" "$MV_TR" "$MV_HEADER_TITLE"
+    else motd_view_row "$MV_HEADER_TITLE" "$MV_COLUMNS" 0 "$MV_TITLE_COLOR"; fi
+    mv_render_header_sides=0; [ "$MV_FRAME" != continuous ] || mv_render_header_sides=$MV_SIDES
+    [ "$MV_SHORT_HEADER" -eq 1 ] || motd_view_row "$MV_SUBTITLE" "$MV_COLUMNS" "$mv_render_header_sides" "$MV_MUTED"
     mv_render_first=1; mv_render_pending=''
     for mv_render_record in $MV_PLAN; do
         mv_render_id=${mv_render_record%%:*}; mv_render_rows=${mv_render_record#*:}
         if [ "$MV_COLUMNS_PER_ROW" -eq 2 ]; then
             if [ -z "$mv_render_pending" ]; then mv_render_pending=$mv_render_record; continue; fi
             [ "$mv_render_first" -eq 1 ] || motd_view_gap
-            mv_render_height=${mv_render_pending#*:}
-            if [ "$mv_render_rows" -gt "$mv_render_height" ]; then mv_render_height=$mv_render_rows; fi
-            mv_render_left=$(motd_view_card "${mv_render_pending%%:*}" "${mv_render_pending#*:}" "$MV_PANEL_WIDTH" "$mv_render_height")
-            mv_render_right=$(motd_view_card "$mv_render_id" "$mv_render_rows" "$MV_PANEL_WIDTH" "$mv_render_height")
+            motd_view_overhead "${mv_render_pending%%:*}"; mv_render_height=$((${mv_render_pending#*:} + MV_OVERHEAD))
+            motd_view_overhead "$mv_render_id"; mv_render_right_height=$((mv_render_rows + MV_OVERHEAD))
+            [ "$mv_render_height" -ge "$mv_render_right_height" ] || mv_render_height=$mv_render_right_height
+            mv_render_left=$(motd_view_panel "${mv_render_pending%%:*}" "${mv_render_pending#*:}" "$MV_PANEL_WIDTH" "$mv_render_height")
+            mv_render_right=$(motd_view_panel "$mv_render_id" "$mv_render_rows" "$MV_PANEL_WIDTH" "$mv_render_height")
             while [ -n "$mv_render_left" ] || [ -n "$mv_render_right" ]; do
                 MV_TEXT=$mv_render_left; motd_view_take_line; mv_render_cell_left=$MV_LINE; mv_render_left=$MV_TEXT
                 MV_TEXT=$mv_render_right; motd_view_take_line; mv_render_cell_right=$MV_LINE; mv_render_right=$MV_TEXT
@@ -3819,72 +3918,19 @@ motd_design_render() {
             mv_render_pending=''; mv_render_first=0; continue
         fi
         [ "$mv_render_first" -eq 1 ] || motd_view_gap
+        motd_view_panel "$mv_render_id" "$mv_render_rows" "$MV_COLUMNS"
         mv_render_first=0
-        case "$DESIGN" in
-            cards|dashboard) motd_view_card "$mv_render_id" "$mv_render_rows" "$MV_COLUMNS" ;;
-            classic)
-                motd_view_caption "$mv_render_id"
-                motd_view_rule "$MV_COLUMNS" "$MV_ML" "$MV_MR" "$MV_CAPTION"
-                [ "$MV_INSET" -eq 0 ] || motd_view_box_row "$MV_COLUMNS" ''
-                MV_TEXT=$(motd_view_capture "$mv_render_id" "$((MV_COLUMNS - 2 - 2 * PADDING))" "$mv_render_rows" card)
-                mv_render_index=0
-                while [ "$mv_render_index" -lt "$mv_render_rows" ]; do
-                    motd_view_take_line; motd_view_box_row "$MV_COLUMNS" "$MV_LINE"
-                    mv_render_index=$((mv_render_index + 1))
-                done ;;
-            ledger|briefing)
-                motd_view_caption "$mv_render_id"; mv_render_caption=$MV_CAPTION; mv_render_headline=$MV_HEADLINE
-                mv_render_label_width=12; [ "$MV_COLUMNS" -ge 60 ] || mv_render_label_width=10
-                motd_view_content_width "$mv_render_id"; mv_render_content_width=$MV_CONTENT_WIDTH
-                MV_TEXT=$(motd_view_capture "$mv_render_id" "$mv_render_content_width" "$mv_render_rows" "$DESIGN")
-                if [ "$DESIGN" = briefing ] && { [ "$mv_render_id" != resources ] || [ "${BAR_LAYOUT-inline}" != wide ]; }; then
-                    # A concise first sentence comes from the same one-row
-                    # section adapter. Keep the first actual observation: it
-                    # may be a service, address or session, not a heading.
-                    # Only an identical summary or known table heading can
-                    # be replaced. The row budget still bounds the result.
-                    mv_render_head=$(motd_view_capture "$mv_render_id" "$mv_render_content_width" 1 briefing)
-                    mv_render_first_line=${MV_TEXT%%'
-'*}
-                    if [ "$mv_render_first_line" = "$mv_render_head" ]; then
-                        motd_view_take_line
-                    else
-                        case "$mv_render_id:$mv_render_first_line" in
-                            processes:'CPU avg / PID name'*|io:'Disk I/O / '*) motd_view_take_line ;;
-                        esac
-                    fi
-                    MV_TEXT="$mv_render_head
-$MV_TEXT"
-                fi
-                mv_render_index=0
-                [ "$MV_INSET" -eq 0 ] || printf '\n'
-                while [ "$mv_render_index" -lt "$mv_render_rows" ]; do
-                    motd_view_take_line
-                    if [ "$DESIGN" = briefing ]; then
-                        if [ "$mv_render_index" -eq 0 ] && { [ "$mv_render_id" != resources ] || [ "${BAR_LAYOUT-inline}" != wide ]; }; then motd_view_plain_row "$mv_render_headline: $MV_LINE" "$MV_TITLE_COLOR"
-                        else printf '%*s' "$((PADDING + 2))" ''; motd_view_clean "$MV_LINE" "$mv_render_content_width"; printf '%s\n' "$MV_CLEAN"; fi
-                    else
-                        motd_view_clean "$mv_render_caption" "$mv_render_label_width"; mv_render_label=$MV_CLEAN
-                        motd_view_clean "$MV_LINE" "$mv_render_content_width"
-                        motd_view_tint "$MV_LINE"
-                        printf '%*s%s%-*s%s | %s%-*s%s\n' "$PADDING" '' "$MV_TITLE_COLOR" "$mv_render_label_width" "$mv_render_label" "$MV_RESET" "$MV_ROW_COLOR" "$mv_render_content_width" "$MV_CLEAN" "$MV_RESET"
-                        mv_render_caption=''
-                    fi
-                    mv_render_index=$((mv_render_index + 1))
-                done ;;
-        esac
     done
     if [ -n "$mv_render_pending" ]; then
         [ "$mv_render_first" -eq 1 ] || motd_view_gap
-        motd_view_card "${mv_render_pending%%:*}" "${mv_render_pending#*:}" "$MV_PANEL_WIDTH"
+        motd_view_panel "${mv_render_pending%%:*}" "${mv_render_pending#*:}" "$MV_PANEL_WIDTH"
     fi
     MV_TEXT=$MV_FOOTER
     while [ -n "$MV_TEXT" ]; do
         motd_view_take_line; [ -n "$MV_LINE" ] || continue
-        if [ "$DESIGN" = classic ]; then motd_view_box_row "$MV_COLUMNS" "$MV_LINE"
-        else motd_view_plain_row "$MV_LINE" "$MV_MUTED"; fi
+        motd_view_row "$MV_LINE" "$MV_COLUMNS" "$mv_render_header_sides" "$MV_MUTED"
     done
-    [ "$DESIGN" != classic ] || motd_view_rule "$MV_COLUMNS" "$MV_BL" "$MV_BR" ''
+    if [ "$MV_FRAME" = continuous ] && [ "$MV_OUTER" -eq 1 ]; then motd_view_rule "$MV_COLUMNS" "$MV_BL" "$MV_BR" ''; fi
 }
 '''
 # END EMBEDDED DESIGNS
@@ -3938,6 +3984,15 @@ DESIGN=classic                  # classic | cards | ledger | briefing | dashboar
 DENSITY=balanced                # compact | balanced | comfortable
 DETAIL=normal                   # brief | normal | full; independent of spacing
 PADDING=1 SECTION_GAP=0
+PANEL_LAYOUT=auto
+PANEL_FRAME=auto
+HEADING_STYLE=auto
+BORDER_STYLE=double
+BORDER_VISIBILITY=all
+HEADING_ALIGN=left
+SEPARATOR_TEXT=summary
+LABEL_STYLE=full
+OVERFLOW=ellipsis
 COLOR_EMPHASIS=balanced          # quiet | balanced | vivid
 SECTION_PRIORITY=(attention resources system services processes io sessions connections hints)
 declare -A SECTION_DETAIL=()
@@ -4220,6 +4275,24 @@ parse_options() {
                 case ${2-} in brief|normal|full) DETAIL=$2 ;; *) return 2 ;; esac; shift 2 ;;
             --color-emphasis)
                 case ${2-} in quiet|balanced|vivid) COLOR_EMPHASIS=$2 ;; *) return 2 ;; esac; shift 2 ;;
+            --panel-layout)
+                case ${2-} in auto|stack|columns) PANEL_LAYOUT=$2 ;; *) return 2 ;; esac; shift 2 ;;
+            --panel-frame)
+                case ${2-} in auto|continuous|separate|none) PANEL_FRAME=$2 ;; *) return 2 ;; esac; shift 2 ;;
+            --heading-style)
+                case ${2-} in auto|rule|plain|inline|hidden) HEADING_STYLE=$2 ;; *) return 2 ;; esac; shift 2 ;;
+            --border-style)
+                case ${2-} in single|rounded|double|heavy|ascii) BORDER_STYLE=$2 ;; *) return 2 ;; esac; shift 2 ;;
+            --border-visibility)
+                case ${2-} in all|outer|sections|none) BORDER_VISIBILITY=$2 ;; *) return 2 ;; esac; shift 2 ;;
+            --heading-align)
+                case ${2-} in left|center|right) HEADING_ALIGN=$2 ;; *) return 2 ;; esac; shift 2 ;;
+            --separator-text)
+                case ${2-} in none|summary|custom) SEPARATOR_TEXT=$2 ;; *) return 2 ;; esac; shift 2 ;;
+            --label-style)
+                case ${2-} in full|short) LABEL_STYLE=$2 ;; *) return 2 ;; esac; shift 2 ;;
+            --overflow)
+                case ${2-} in ellipsis|clip) OVERFLOW=$2 ;; *) return 2 ;; esac; shift 2 ;;
             --bar-layout)
                 case ${2-} in inline|wide) BAR_LAYOUT=$2 ;; *) return 2 ;; esac; shift 2 ;;
             --padding)
@@ -4610,7 +4683,6 @@ main() {
         printf '%s\n' 'Invalid section registry or display configuration; inspect SETTINGS.' >&2
         return 2
     fi
-    ui_plan_layout || return $?
     ((VALIDATE_ONLY==0)) || return 0
     collect_all; prepare_view
     render_adaptive || return $?
@@ -5819,7 +5891,7 @@ ui_plain_cell() {
     local value=$1 width=$2 colour=${3-} align=${4-left}
     safe_text "$value"; value=$REPLY
     if ((${#value}>width)); then
-        if ((width>=3)); then value=${value:0:width-3}'...'; else value=${value:0:width}; fi
+        if [[ ${OVERFLOW-ellipsis} == ellipsis ]] && ((width>=3)); then value=${value:0:width-3}'...'; else value=${value:0:width}; fi
     fi
     if [[ $align == right ]]; then printf -v REPLY '%*s%s' "$((width-${#value}))" '' "$value"
     else printf -v REPLY '%s%*s' "$value" "$((width-${#value}))" ''; fi
@@ -5837,11 +5909,9 @@ ui_value_cell() {
 ui_emit() {
     ((UI_REMAIN>0)) || return 0
     if ((${UI_DESIGN_CAPTURE:-0})); then
-        strip_ansi "$1"
-        # Remove right-padding before a plain-language heading is added. The
-        # shared engine repads the final cell to its own measured width.
-        REPLY=${REPLY%"${REPLY##*[! ]}"}
-        UI_CAPTURE_LINES+=("$REPLY")
+        # Keep the collector formatter's semantic SGR spans. The common
+        # compositor measures visible cells and accepts only SGR escapes.
+        UI_CAPTURE_LINES+=("$1")
         ((UI_REMAIN-=1)); ((UI_EMITTED+=1)); return 0
     fi
     line "$BORDER$V$RST $1 $BORDER$V$RST"
@@ -5889,24 +5959,12 @@ ui_begin() {
     UI_SECTION_ID=$1; UI_REMAIN=${2:-0}; UI_EMITTED=0
     local title=${UI_SECTION_TITLE:-${SECTION_TITLE[$1]:-$1}}
     if ((${UI_DESIGN_CAPTURE:-0})); then
-        UI_CAPTURE_SUMMARY=${3-}; ((UI_REMAIN-=1)); return 0
+        UI_CAPTURE_SUMMARY=${3-}; ((UI_REMAIN-=1))
+        ((${UI_META_ONLY:-0}==0)) || UI_REMAIN=0
+        return 0
     fi
     ui_heading "$title" "${3-}" "${4-${COLOR[muted]}}"
 }
-ui_top() {
-    local host=${MODEL[host]:-?} clock=${MODEL[sampled]-} title=''
-    ui_enabled header title && title=$TITLE
-    clock=${clock#* }; clock=${clock%% *}
-    [[ $clock != "${MODEL[sampled]-}" ]] || clock=''
-    if ui_enabled system identity && ui_enabled header host; then
-        if ((TEXT_WIDTH>=60)); then title+="${title:+ | }$host"; else title="$host${title:+ | $title}"; fi
-    fi
-    if ui_enabled header site && [[ -n $SITE_LABEL && $SITE_LABEL != Workshop ]]; then title+="${title:+ | }$SITE_LABEL"; fi
-    ui_enabled header time || clock=''
-    ((DEMO==0)) || clock="DEMO $clock"
-    ui_rule "$title" "$clock" "$TL" "$TR"
-}
-ui_bottom() { rule_full "$BL" "$BR"; }
 ui_columns() {
     local count=$1 i width available
     UI_COL_WIDTHS=(); UI_CELLS=()
@@ -5959,7 +6017,10 @@ ui_system() {
             row="IP $ip"; room=$((TEXT_WIDTH-${#row}-3))
             if ((room>=8)) && ui_enabled system domain; then
                 safe_text "${MODEL[domain]:-?}"; domain=$REPLY
-                ((${#domain}<=room)) || domain=${domain:0:room-3}'...'
+                if ((${#domain}>room)); then
+                    if [[ ${OVERFLOW-ellipsis} == ellipsis ]]; then domain=${domain:0:room-3}'...'
+                    else domain=${domain:0:room}; fi
+                fi
                 row+=" | $domain"
             fi
             ui_row "$row"
@@ -6156,10 +6217,15 @@ ui_role_state() {
 ui_services() {
     local budget=$1 summary='' role count=0 columns capacity shown=0 omitted=0 state shade unit group label i flag raw
     local -a roles=() failed=() normal=() units=()
-    local -A states=() colours=()
+    local -A states=() colours=() required_unique=()
+    local required_count=0
+    for unit in "${REQUIRED_UNITS[@]}"; do
+        [[ ! ${required_unique[$unit]+set} ]] || continue
+        required_unique[$unit]=1; ((required_count+=1))
+    done
     if [[ $SERVICES_MODE == all ]]; then ui_services_inventory "$budget"; return; fi
     columns=$(((TEXT_WIDTH+3)/15)); ((columns>=1)) || columns=1
-    capacity=$(((budget>0 ? budget-1 : 0)*columns))
+    capacity=$(((budget>required_count ? budget-1-required_count : 0)*columns))
     for role in "${SERVICE_ROLE_ORDER[@]}"; do
         ui_enabled services "$role" || continue
         ui_role_state "$role" || continue
@@ -6173,7 +6239,13 @@ ui_services() {
     shade=${COLOR[muted]}; ((${MODEL[svc_failed]:-0}==0)) || shade=${COLOR[error]}
     ui_enabled services summary || summary=''
     ui_begin services "$budget" "$summary" "$shade"
-    if ((${#roles[@]}==0)); then ui_row 'No observed configured service roles.' "${COLOR[muted]}"; return; fi
+    local -A required_seen=()
+    for unit in "${REQUIRED_UNITS[@]}"; do
+        [[ ! ${required_seen[$unit]+set} ]] || continue; required_seen[$unit]=1
+        svc_state "$unit"; state=$REPLY; shade=$SVC_COLOR
+        ui_value_cell "$TEXT_WIDTH" "Required $unit" "$state" "$shade"; ui_emit "$REPLY"
+    done
+    if ((${#roles[@]}==0)); then ui_row 'No observed configured service roles.'  "${COLOR[muted]}"; return; fi
     while ((shown<${#roles[@]} && UI_REMAIN>0)); do
         ui_columns "$columns"
         for ((i=0;i<columns;i++)); do
@@ -6614,86 +6686,53 @@ ui_section_rows() {
     else REPLY=10000; fi
 }
 
-ui_plan_layout() {
-    local id available total=0 changed=1 minimum rows reduction
-    UI_PLAN=(); UI_OMITTED_SECTIONS=0
-    ((UI_REGISTRY_READY)) || ui_registry_init || return 2
-    for id in "${SECTIONS[@]}"; do
-        ui_section_enabled "$id" || continue
-        rows=$REPLY
-        UI_PLAN[$id]=$((10#$rows)); ((total+=10#$rows))
-    done
-    [[ $MODE == concise ]] || return 0
-    available=$((COMPACT_ROWS-3)); ((available>=0)) || available=0
-    # Reduce content, never the named framing. Attention retains its first notice.
-    for id in "${COMPACT_TRIM_ORDER[@]}" "${SECTIONS[@]}"; do
-        ((total>available)) || break
-        [[ ${UI_PLAN[$id]+set} ]] || continue
-        minimum=${SECTION_MIN_ROWS[$id]:-1}
-        if [[ $id == processes ]] && ((${TEXT_WIDTH:-76}<60 && minimum<4)); then minimum=4; fi
-        reduction=$((UI_PLAN[$id]-minimum)); ((reduction>0)) || continue
-        ((reduction<=total-available)) || reduction=$((total-available))
-        ((UI_PLAN[$id]-=reduction,total-=reduction))
-    done
-    # A small terminal is a presentation constraint, not a configuration error.
-    # Keep complete sections and borders, reserve a visible omission notice,
-    # and prefer resources/identity/attention over secondary detail. Nothing is
-    # collected a second time, and no oversized screen is cropped after render.
-    if ((total>available)); then
-        ((available-=1))
-        for id in hints connections io sessions services processes resources system attention "${SECTIONS[@]}"; do
-            ((total>available)) || break
-            [[ ${UI_PLAN[$id]+set} ]] || continue
-            ((total-=UI_PLAN[$id],UI_OMITTED_SECTIONS+=1))
-            unset 'UI_PLAN[$id]'
-        done
-    fi
-    # Only an explicitly larger row budget expands the compact baseline.
-    if ((COMPACT_ROWS>25)); then
-        changed=1
-        while ((total<available && changed)); do
-            changed=0
-            for id in "${COMPACT_EXPAND_ORDER[@]}" "${SECTIONS[@]}"; do
-                [[ ${UI_PLAN[$id]+set} ]] || continue
-                [[ ! ${SECTION_ROWS[$id]+set} && ! ${SECTION_ROWS[$MODE.$id]+set} ]] || continue
-                if ((${UI_PLAN[$id]}<${SECTION_MAX_ROWS[$id]:-1})); then
-                    ((UI_PLAN[$id]+=1,total+=1)); changed=1
-                    ((total<available)) || break
-                fi
-            done
-        done
-    fi
-}
-
-ui_render_sections() {
-    local id
-    ui_plan_layout || return $?
-    OUTPUT=''
-    ui_top
-    for id in "${SECTIONS[@]}"; do
-        [[ ${UI_PLAN[$id]+set} ]] || continue
-        UI_SECTION_TITLE=${SECTION_TITLE[$id]}
-        "${SECTION_RENDERER[$id]}" "${UI_PLAN[$id]}"
-    done
-    if ((UI_OMITTED_SECTIONS)); then
-        UI_REMAIN=1
-        ui_row "+$UI_OMITTED_SECTIONS sections; resize for more." "${COLOR[muted]}"
-    fi
-    ui_bottom
-}
-
 # The design engine consumes the same section callbacks and validated model.
 # It changes presentation only: collection, ranking and metric formulas still
 # have exactly one owner. Capturing happens in the engine's command-substitution
 # subshell, so temporary widths and glyph choices cannot leak into other cards.
 motd_view_detail() { printf '%s\n' "${SECTION_DETAIL[$1]:-$DETAIL}"; }
 
+motd_view_summary() {
+    # Summary and its omission counts belong to the existing section formatter.
+    # Pass the actual final allocation; the metadata-only capture prevents body
+    # work and never runs collection. The planner calls this only for presence.
+    local id=$1 rows=${2-0} TEXT_WIDTH=$(( ${3-80} - 2 * PADDING - 2 * MV_SIDES ))
+    local INNER=$((TEXT_WIDTH+2)) COLS=$((TEXT_WIDTH+4))
+    local UI_DESIGN_CAPTURE=1 UI_META_ONLY=1 UI_CAPTURE_SUMMARY='' UI_SECTION_TITLE=${SECTION_TITLE[$1]}
+    local -a UI_CAPTURE_LINES=()
+    "${SECTION_RENDERER[$id]}" "$((rows+1))"
+    printf '%s\n' "$UI_CAPTURE_SUMMARY"
+}
+
+motd_view_limits() {
+    local id=$1 cap required=0 unit
+    local -A seen=()
+    if [[ $id == processes ]]; then
+        MV_MIN_ROWS=0
+        for unit in cpu rss io; do ui_enabled processes "$unit" && ((MV_MIN_ROWS+=1)); done
+        if (($2>=60)); then MV_MIN_ROWS=2; fi
+    fi
+    if [[ $id == services && $3 != brief ]]; then
+        for unit in "${REQUIRED_UNITS[@]}"; do
+            [[ ! ${seen[$unit]+set} ]] || continue; seen[$unit]=1; ((required+=1))
+        done
+        ((required<=MV_MIN_ROWS)) || MV_MIN_ROWS=$required
+    fi
+    ((MV_MAX_ROWS>=MV_MIN_ROWS)) || MV_MAX_ROWS=$MV_MIN_ROWS
+    # Explicit historical SECTION_ROWS caps include the section's decoration.
+    if [[ ${SECTION_ROWS[$id]+set} || ${SECTION_ROWS[$MODE.$id]+set} ]]; then
+        ui_section_rows "$id"; cap=$REPLY
+        motd_view_overhead "$id"; cap=$((cap-MV_OVERHEAD)); ((cap>=0)) || cap=0
+        ((MV_MAX_ROWS<=cap)) || MV_MAX_ROWS=$cap
+        ((MV_MIN_ROWS<=cap)) || MV_MIN_ROWS=$cap
+    fi
+}
+
 motd_view_capture() {
     local id=$1 rows=$3 flavour=$4 TEXT_WIDTH=$2 INNER=$(($2 + 2)) COLS=$(($2 + 4))
     local UI_DESIGN_CAPTURE=1 UI_CAPTURE_SUMMARY='' UI_SECTION_TITLE=${SECTION_TITLE[$1]}
-    local GLYPH_USED='#' GLYPH_FREE='.' kind pid memory disk summary=''
+    local kind pid memory disk summary=''
     local -a UI_CAPTURE_LINES=() UI_TASK_IDS=()
-    MODEL[unicode]=0
     # A one-row section must contain an observation, never only a table header.
     if ((rows==1)); then
         case $id in
@@ -6712,11 +6751,6 @@ motd_view_capture() {
                     summary+="${summary:+ | }$disk"
                 fi
                 if [[ -n $summary ]]; then printf '%s\n' "$summary"; return; fi ;;
-            services)
-                if ui_enabled services summary; then
-                    if [[ ${MODEL[svc_runtime_state]-} == ok ]]; then printf '%s\n' "${MODEL[svc_running]:-?} running; ${MODEL[svc_failed]:-?} failed"
-                    else printf '%s\n' "Service state: ${MODEL[svc_runtime_state]:-unavailable}"; fi; return
-                fi ;;
             processes|io)
                 for kind in cpu rss io; do
                     if [[ $id == io ]]; then [[ $kind == io ]] || continue
@@ -6739,29 +6773,20 @@ motd_view_capture() {
     else printf '%s\n' 'No additional observations in this section.'; fi
 }
 
-ui_classic_defaults() {
-    [[ $DESIGN == classic && $DENSITY == balanced && $DETAIL == normal && $PADDING == 1 &&
-       $SECTION_GAP == 0 && $COLOR_EMPHASIS == balanced && $BAR_LAYOUT == inline && ${#SECTION_DETAIL[@]} == 0 &&
-       ${SECTION_PRIORITY[*]} == 'attention resources system services processes io sessions connections hints' ]]
-}
-
 render_adaptive() {
     local MODE=concise id memory='RAM unavailable' storage="Disk ${MODEL[storage_state]:-unavailable}"
-    if ui_classic_defaults; then
-        ui_plan_layout || return $?
-        if ((UI_OMITTED_SECTIONS==0)); then ui_render_sections; return $?; fi
-    fi
     MV_SECTION_IDS=''
     for id in "${SECTIONS[@]}"; do ui_section_enabled "$id" && MV_SECTION_IDS+=" $id"; done
     MV_COLUMNS=${MODEL[columns]}; MV_ROWS_LIMIT=$COMPACT_ROWS
     MV_PRIORITY=${SECTION_PRIORITY[*]}; MV_COLOR=${MODEL[color]}; MV_UNICODE=${MODEL[unicode]}
-    MV_TITLE=''; MV_SUBTITLE=''; MV_METRICS=''
+    MV_TITLE=''; MV_SUBTITLE=''; MV_METRICS=''; MV_COMPACT_CONTEXT=''; MV_COMPACT_PREFIX=''
     ui_enabled header title && MV_TITLE=$TITLE
     # Keep machine identity and uptime visible in every design's context row.
     # The demo marker leads the title so a long configured title cannot hide it.
-    ((DEMO==0)) || MV_TITLE="DEMO${MV_TITLE:+ | }$MV_TITLE"
+    if ((DEMO)); then MV_TITLE="DEMO${MV_TITLE:+ | }$MV_TITLE"; MV_COMPACT_PREFIX='DEMO | '; fi
     if ui_enabled header host && ui_enabled system identity; then
         MV_SUBTITLE="${MODEL[host]:-?} | up ${MODEL[uptime]:-?}"
+        MV_COMPACT_CONTEXT=$MV_SUBTITLE
         MV_METRICS=$MV_SUBTITLE
     fi
     if ui_enabled header site && [[ -n $SITE_LABEL ]]; then MV_SUBTITLE+="${MV_SUBTITLE:+ | }$SITE_LABEL"; fi
@@ -6863,7 +6888,7 @@ clip_sgr_cell() {
     local pattern=$'\033''\[[0-9;]*m'
     ((width>0)) || { REPLY=''; return 0; }
     remaining=$width
-    if ((width>=3)); then remaining=$((width-3)); suffix='...'; fi
+    if [[ ${OVERFLOW-ellipsis} == ellipsis ]] && ((width>=3)); then remaining=$((width-3)); suffix='...'; fi
     while [[ $text =~ $pattern ]]; do
         token=${BASH_REMATCH[0]}; prefix=${text%%"$token"*}
         if [[ -n $prefix ]] && ((${#prefix}>=remaining)); then
@@ -6900,6 +6925,15 @@ DENSITY=balanced
 DETAIL=normal
 PADDING=1
 SECTION_GAP=0
+PANEL_LAYOUT=auto
+PANEL_FRAME=auto
+HEADING_STYLE=auto
+BORDER_STYLE=double
+BORDER_VISIBILITY=all
+HEADING_ALIGN=left
+SEPARATOR_TEXT=summary
+LABEL_STYLE=full
+OVERFLOW=ellipsis
 COLOR_EMPHASIS=balanced
 SECTION_PRIORITY='attention resources system services processes io sessions connections hints'
 MAX_WIDTH=80
@@ -6946,6 +6980,24 @@ while [ "$#" -gt 0 ]; do
             shift; case "${1-}" in brief|normal|full) DETAIL=$1 ;; *) exit 2 ;; esac ;;
         --color-emphasis)
             shift; case "${1-}" in quiet|balanced|vivid) COLOR_EMPHASIS=$1 ;; *) exit 2 ;; esac ;;
+        --panel-layout)
+            shift; case "${1-}" in auto|stack|columns) PANEL_LAYOUT=$1 ;; *) exit 2 ;; esac ;;
+        --panel-frame)
+            shift; case "${1-}" in auto|continuous|separate|none) PANEL_FRAME=$1 ;; *) exit 2 ;; esac ;;
+        --heading-style)
+            shift; case "${1-}" in auto|rule|plain|inline|hidden) HEADING_STYLE=$1 ;; *) exit 2 ;; esac ;;
+        --border-style)
+            shift; case "${1-}" in single|rounded|double|heavy|ascii) BORDER_STYLE=$1 ;; *) exit 2 ;; esac ;;
+        --border-visibility)
+            shift; case "${1-}" in all|outer|sections|none) BORDER_VISIBILITY=$1 ;; *) exit 2 ;; esac ;;
+        --heading-align)
+            shift; case "${1-}" in left|center|right) HEADING_ALIGN=$1 ;; *) exit 2 ;; esac ;;
+        --separator-text)
+            shift; case "${1-}" in none|summary|custom) SEPARATOR_TEXT=$1 ;; *) exit 2 ;; esac ;;
+        --label-style)
+            shift; case "${1-}" in full|short) LABEL_STYLE=$1 ;; *) exit 2 ;; esac ;;
+        --overflow)
+            shift; case "${1-}" in ellipsis|clip) OVERFLOW=$1 ;; *) exit 2 ;; esac ;;
         --bar-layout)
             shift; case "${1-}" in inline|wide) BAR_LAYOUT=$1 ;; *) exit 2 ;; esac ;;
         --padding)
@@ -7327,36 +7379,8 @@ $motd_service_rows
 MOTD_UNIQUE_SERVICES_END
 motd_service_rows=$motd_unique_services
 
-# Allocate rows before rendering so the last sections retain representation.
-# A section has a heading + minimum one row. Extra rows first enable all three
-# process metrics and storage, then expand the lists. One row stays for a prompt.
-motd_inner=$((MAX_WIDTH - 4)); motd_sections=0
-for motd_section in $SECTIONS; do motd_sections=$((motd_sections + 1)); done
-motd_visible_sections=$SECTIONS; motd_omitted_sections=0; motd_available_rows=$((ROWS - 4))
-# Keep the same complete framed sections at short terminal heights. A named
-# omission row replaces hidden sections; the preview is never a cropped larger
-# render. Attention remains visible after lower-priority detail is omitted.
-if [ "$((2 * motd_sections))" -gt "$motd_available_rows" ]; then
-    motd_available_rows=$((motd_available_rows - 1))
-    for motd_remove in hints connections io sessions services processes resources system attention; do
-        if [ "$((2 * motd_sections))" -le "$motd_available_rows" ]; then break; fi
-        motd_remaining=''
-        for motd_section in $motd_visible_sections; do
-            if [ "$motd_section" = "$motd_remove" ]; then
-                motd_sections=$((motd_sections - 1)); motd_omitted_sections=$((motd_omitted_sections + 1))
-            else motd_remaining="$motd_remaining $motd_section"; fi
-        done
-        motd_visible_sections=$motd_remaining
-    done
-fi
-motd_extra=$((motd_available_rows - 2 * motd_sections)); if [ "$motd_extra" -lt 0 ]; then motd_extra=0; fi
-motd_process_extra=0; motd_resource_extra=0
-case " $motd_visible_sections " in *' processes '*)
-    if [ "$motd_extra" -gt 1 ]; then motd_process_extra=2; motd_extra=$((motd_extra - 2))
-    elif [ "$motd_extra" -gt 0 ]; then motd_process_extra=1; motd_extra=$((motd_extra - 1)); fi ;; esac
-case " $motd_visible_sections " in *' resources '*) if [ "$motd_extra" -gt 0 ]; then motd_resource_extra=1; motd_extra=$((motd_extra - 1)); fi ;; esac
-motd_share=0
-if [ "$motd_sections" -gt 0 ]; then motd_share=$((motd_extra / motd_sections)); motd_extra=$((motd_extra % motd_sections)); fi
+# Geometry is owned by the shared composer; data formatters receive its budget.
+motd_inner=$((MAX_WIDTH - 4)); motd_process_extra=0; motd_resource_extra=0
 motd_budget=$((ROWS - 1)); motd_section_budget=0; motd_color=''; motd_reset=''
 if [ "$MOTD_PLAIN" -eq 0 ] && [ "$THEME" != mono ] && { [ -t 1 ] || [ "$MOTD_FORCE_COLOR" -eq 1 ]; } && [ -z "${NO_COLOR+x}" ] && [ "${TERM-dumb}" != dumb ]; then
     case "$THEME" in cyan) motd_color=$(printf '\033[1;36m') ;; green) motd_color=$(printf '\033[1;32m') ;; amber) motd_color=$(printf '\033[1;33m') ;; esac
@@ -7375,7 +7399,7 @@ motd_clean_text() {
         case "$motd_character" in [\ -~]) : ;; *) motd_character='?' ;; esac
         motd_clean=$motd_clean$motd_character; motd_count=$((motd_count + 1))
     done
-    if [ -n "$motd_rest" ] && [ "$2" -gt 0 ]; then motd_clean=${motd_clean%?}'~'; fi
+    if [ -n "$motd_rest" ] && [ "$2" -gt 0 ] && [ "${OVERFLOW-ellipsis}" = ellipsis ]; then motd_clean=${motd_clean%?}'~'; fi
 }
 motd_border() {
     if [ "${motd_capture_mode-0}" -eq 1 ]; then return; fi
@@ -7496,6 +7520,33 @@ MOTD_SERVICES_END
 
 motd_view_detail() { motd_section_detail "$1"; }
 
+motd_view_summary() {
+    case "$1" in
+        services) printf '%s\n' "$motd_service_summary" ;;
+        sessions) printf '%s\n' "$motd_session_summary" ;;
+        processes) printf '%s\n' 'CPU / RSS / cumulative I/O' ;;
+        resources) printf '%s\n' 'Memory / storage / swap' ;;
+        connections) printf '%s\n' "$motd_connections" ;;
+        hints) printf '%s\n' 'ps | df -Pk / | who' ;;
+        *) printf '%s\n' '' ;;
+    esac
+}
+
+motd_view_limits() {
+    if [ "$1" = processes ]; then MV_MIN_ROWS=3; fi
+    if [ "$1" = services ] && [ "$3" != brief ]; then
+        mv_required_count=1
+        mv_required_lines=$(motd_required_services)
+        while [ -n "$mv_required_lines" ]; do
+            mv_required_count=$((mv_required_count + 1))
+            case "$mv_required_lines" in *'
+'*) mv_required_lines=${mv_required_lines#*'
+'} ;; *) mv_required_lines='' ;; esac
+        done
+        [ "$mv_required_count" -le "$MV_MIN_ROWS" ] || MV_MIN_ROWS=$mv_required_count
+    fi
+}
+
 motd_view_capture() {
     motd_capture_mode=1; motd_section_budget=$3; motd_inner=$2; motd_budget=10000
     motd_process_extra=0; motd_resource_extra=0
@@ -7513,38 +7564,14 @@ motd_view_capture() {
     motd_render_section "$1"
 }
 
-motd_classic_defaults() {
-    [ "$DESIGN" = classic ] && [ "$DENSITY" = balanced ] && [ "$DETAIL" = normal ] &&
-    [ "$PADDING" = 1 ] && [ "$SECTION_GAP" = 0 ] && [ "$COLOR_EMPHASIS" = balanced ] && [ "$BAR_LAYOUT" = inline ] &&
-    [ "$SECTION_PRIORITY" = 'attention resources system services processes io sessions connections hints' ] || return 1
-    for motd_default_id in $SECTIONS; do
-        [ "$(motd_section_detail "$motd_default_id")" = normal ] || return 1
-    done
-    return 0
-}
-
 motd_header_title=$TITLE
 [ "$MOTD_DEMO" -eq 0 ] || motd_header_title="DEMO | $TITLE"
-if motd_classic_defaults && [ "$motd_omitted_sections" -eq 0 ]; then
-motd_border "$motd_tl" "$motd_tr" "$motd_header_title"
-motd_section_budget=1
-if [ -n "$SITE_LABEL" ]; then motd_line "$SITE_LABEL | Portable Unix"
-else motd_line 'Portable Unix | local observations'; fi
-for motd_section in $motd_visible_sections; do
-    motd_section_budget=$((1 + motd_share))
-    if [ "$motd_extra" -gt 0 ]; then motd_section_budget=$((motd_section_budget + 1)); motd_extra=$((motd_extra - 1)); fi
-    motd_render_section "$motd_section"
-done
-if [ "$motd_omitted_sections" -gt 0 ]; then
-    motd_section_budget=1
-    motd_line "+$motd_omitted_sections sections; resize for more."
-fi
-motd_border "$motd_bl" "$motd_br" ''
-else
     MV_COLUMNS=$MAX_WIDTH; MV_ROWS_LIMIT=$ROWS; MV_SECTION_IDS=$SECTIONS
     MV_PRIORITY=$SECTION_PRIORITY; MV_UNICODE=$((1 - MOTD_ASCII)); MV_COLOR=0
     [ -z "$motd_color" ] || MV_COLOR=1
     MV_TITLE=$motd_header_title; MV_SUBTITLE="$motd_host | up $motd_uptime s"
+    MV_COMPACT_CONTEXT=$MV_SUBTITLE; MV_COMPACT_PREFIX=''
+    [ "$MOTD_DEMO" -eq 0 ] || MV_COMPACT_PREFIX='DEMO | '
     MV_METRICS=$MV_SUBTITLE
     MV_SUBTITLE="$MV_SUBTITLE | $SITE_LABEL | Portable Unix"
     case " $MV_SECTION_IDS " in *' resources '*)
@@ -7553,7 +7580,6 @@ else
         else MV_METRICS="$MV_METRICS | RAM unavailable | $motd_disk"; fi ;;
     esac
     motd_design_render || exit "$?"
-fi
 motd_after_hooks || exit "$?"
 '''
 # END EMBEDDED SH

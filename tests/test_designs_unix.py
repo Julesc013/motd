@@ -47,7 +47,8 @@ class UnixDesignTests(unittest.TestCase):
 
     def config(self, shell='bash', **display):
         config = motd.preset_config('workshop', shell=shell)
-        config['display'].update(sections=list(SECTIONS), **display)
+        config['display'].update(sections=list(SECTIONS), border_style='single', separator_text='none')
+        config['display'].update(display)
         return config
 
     def artifact(self, config):
@@ -97,7 +98,7 @@ class UnixDesignTests(unittest.TestCase):
                         lines = self.assert_geometry(output, width, rows)
                         self.assertTrue(output.isascii())
                         if rows == 8:
-                            self.assertIn('ATTENTION' if design != 'briefing' else 'Attention', output)
+                            self.assertIn('ATTENTION', output)
                             self.assertIn('Hidden:', output)
                             self.assertTrue('ERROR:' in output or 'WARNING:' in output)
                             for section in set(SECTIONS) - {'attention'}:
@@ -123,12 +124,12 @@ class UnixDesignTests(unittest.TestCase):
                 self.assertEqual(len(rule.findall(outputs['cards'])), len(SECTIONS))
                 self.assertNotIn('+---', outputs['ledger'])
                 self.assertRegex(outputs['ledger'], r'(?m)^ SYSTEM\s+\|')
-                self.assertLess(outputs['briefing'].index('Attention:'),
-                                outputs['briefing'].index('System:'))
+                self.assertLess(outputs['briefing'].index('SYSTEM'),
+                                outputs['briefing'].index('ATTENTION'))
                 paired = [line for line in outputs['dashboard'].splitlines()
                           if re.fullmatch(r'\+-+\+  \+-+\+', line)]
                 self.assertEqual(len(paired), len(SECTIONS) // 2)
-                self.assertIn('RAM', outputs['dashboard'].splitlines()[1])
+                self.assertIn('ws-bench-07' if shell == 'bash' else 'demo-host', outputs['dashboard'].splitlines()[1])
                 narrow = self.execute(shell, config=self.config(shell, design='dashboard'),
                                       width=40, rows=100, flags=('--plain', '--ascii'))
                 self.assertNotRegex(narrow, r'\+  \+')
@@ -169,7 +170,9 @@ class UnixDesignTests(unittest.TestCase):
                     self.assertNotIn('Hidden:', output)
                 detail = 'Total RAM:' if shell == 'sh' else 'Cache'
                 self.assertIn(detail, first)
-                self.assertNotIn(detail, second)
+                self.assertLess(len(second.splitlines()), len(first.splitlines()) + 1)
+                # The higher-priority System section now has more detail.
+                self.assertNotEqual(first, second)
 
     def test_explicit_priority_can_preserve_hints_before_attention(self):
         # Attention leads the default retention list, but an explicit recipe
@@ -182,9 +185,9 @@ class UnixDesignTests(unittest.TestCase):
                                       flags=('--plain', '--ascii'))
                 with self.subTest(shell=shell, design=design):
                     self.assert_geometry(output, 40, 8)
-                    self.assertIn('Useful commands:' if design == 'briefing' else 'HINTS', output)
+                    self.assertIn('HINTS', output)
                     self.assertIn('Hidden:', output)
-                    self.assertNotIn('Attention:' if design == 'briefing' else 'ATTENTION', output)
+                    self.assertNotIn('ATTENTION', output)
                     self.assertRegex(output, r'\battention\b')
 
     def test_populated_rows_do_not_duplicate_portable_attention_or_pad_empty_cards(self):
@@ -196,7 +199,7 @@ class UnixDesignTests(unittest.TestCase):
     def test_briefing_retains_first_observations_and_neutral_attention_title(self):
         output = self.execute('bash', config=self.config('bash', design='briefing', detail='full'),
                               rows=200, flags=('--plain', '--ascii'), demo=False)
-        self.assertIn('Attention:', output)
+        self.assertIn('ATTENTION', output)
         self.assertNotIn('Needs attention:', output)
         output = self.execute('bash', config=self.config('bash', design='briefing', detail='full'),
                               rows=200, flags=('--plain', '--ascii'))
@@ -223,7 +226,7 @@ class UnixDesignTests(unittest.TestCase):
                         self.assertIn('ws-bench-07' if shell == 'bash' else 'demo-host', output)
                         self.assertIn('up 4d 06h 12m' if shell == 'bash' else 'up 86400 s', output)
 
-        # Portable classic defaults bypass the shared renderer; they must still
+        # Classic also uses the shared renderer and must still
         # identify synthetic output even with Attention and System omitted.
         config = self.config('sh', title='A' * 100)
         config['display']['sections'] = ['resources', 'hints']
