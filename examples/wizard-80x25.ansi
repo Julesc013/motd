@@ -1,25 +1,25 @@
-[1;36mMOTD 0.3.0 | Theme[0m[0m
- 1. Cyan[0m
- 2. Green [selected][0m
- 3. Amber[0m
- 4. Mono[0m
+[1;36mMOTD 0.4.0 | Theme[0m[0m
+  1. Cyan[0m
+> 2. Green[0m
+  3. Amber[0m
+  4. Mono[0m
 [0m
-[0m
-Number chooses | Enter accepts | P H Q[0m
+Choose a number, then Enter. ? explains the keys.[0m
+Up/Down | Enter accepts | ? help Q quit[0m
 Choice [2]: [0m
-[1;36mPREVIEW 80x15 | demo | calls off[0m[0m
-[32m╔═[0m [1;32mWORKSHOP STATUS | ws-bench-07[0m [32m═══════════════════════════════[0m [90mDEMO 13:30:00[0m [32m╗[0m[0m
-[32m╠═[0m [1;32mSYSTEM[0m [32m══════════════════════════════════════════════════════[0m [90mup 4d 06h 12m[0m [32m╣[0m[0m
-[32m║[0m [1;32mDomain workshop.example             [0m[90m │ [0m[37mIP eno1 192.0.2.17/24                [0m [32m║[0m[0m
-[32m╠═[0m [1;32mRESOURCES[0m [32m══════════════════════════════════════════════════════[0m [90mMax FS 38%[0m [32m╣[0m[0m
-[32m║[0m [1;32mRAM  [0m[37m8.0Gi/32.0Gi   [0m [1;34m████[0m[36m████[0m[35m█[0m[90m░░░░░░░░░[0m  avail 24.0Gi  25.0%                 [32m║[0m[0m
-[32m║[0m [1;32mDISK [0m[37m220Gi/600Gi    [0m [1;34m█[0m[36m██████[0m[33m[0m[90m░░░░░░░░░░░[0m  free 375Gi                          [32m║[0m[0m
-[32m╠═[0m [1;32mTOP PROCESSES[0m [32m═══════════════════════[0m [90m184 tasks D0 Z0 | 8C L1.42 | I/O 42ms[0m [32m╣[0m[0m
-[32m║[0m [1;33mCPU avg / PID name     [0m[90m │ [0m[1;35mRAM RSS / PID name     [0m[90m │ [0m[1;36mI/O R+W/s [184/184]     [0m [32m║[0m[0m
-[32m║[0m [1;32m2418 badblocks   [0m [1;33m82.4%[0m[90m │ [0m[1;32m1632 postgres    [0m [1;35m1.3Gi[0m[90m │ [0m[1;32m2418 badblocks  [0m [1;36m181Mi/s[0m [32m║[0m[0m
-[32m╠═[0m [1;32mATTENTION[0m [32m════════════════════════════════════════════════════════[0m [32mE0 W0 I0[0m [32m╣[0m[0m
-[32m║[0m [32mNo configured alerts in collected scope.                                    [0m [32m║[0m[0m
-[32m║[0m [90m+4 sections; resize for more.                                               [0m [32m║[0m[0m
-[32m╚══════════════════════════════════════════════════════════════════════════════╝[0m[0m
-[0m
+[1;36mPREVIEW 80x15 | demo | H calls off[0m[0m
+[32m┌ DEMO | WORKSHOP STATUS ──────────────────────────────────────────────────────┐[0m[0m
+[32m│[0m ws-bench-07 | up 4d 06h 12m | Workshop | local observations                 [0m [32m│[0m[0m
+[32m├ SYSTEM ──────────────────────────────────────────────────────────────────────┤[0m[0m
+[32m│[0m ws-bench-07 | up 4d 06h 12m | Debian GNU/Linux 13 (trixie)                  [0m [32m│[0m[0m
+[32m├ RESOURCES ───────────────────────────────────────────────────────────────────┤[0m[0m
+[32m│[0m RAM 8.0Gi/32.0Gi | Disk 220Gi/600Gi                                         [0m [32m│[0m[0m
+[32m├ SERVICES ────────────────────────────────────────────────────────────────────┤[0m[0m
+[32m│[0m 16 running; 0 failed                                                        [0m [32m│[0m[0m
+[32m├ PROCESSES ───────────────────────────────────────────────────────────────────┤[0m[0m
+[32m│[0m cpu: 2418 badblocks 82.4%                                                   [0m [32m│[0m[0m
+[32m├ ATTENTION ───────────────────────────────────────────────────────────────────┤[0m[0m
+[32m│[0m No configured alerts in collected scope.                                    [0m [32m│[0m[0m
+[32m│[0m Hidden: hints connections sessions                                          [0m [32m│[0m[0m
+[32m└──────────────────────────────────────────────────────────────────────────────┘[0m[0m
 [0m

@@ -1,0 +1,42 @@
+[1;36m┌ DEMO | WORKSHOP STATUS ──────────────┐[0m
+[1;36m│[0m Workshop | Portable Unix             [1;36m│[0m
+[1;36m├ SYSTEM ──────────────────────────────┤[0m
+[1;36m│[0m Host: demo-host | Linux demo-kernel  [1;36m│[0m
+[1;36m│[0m Up: 86400 s | Load: 0.25 0.18 0.12   [1;36m│[0m
+[1;36m├ RESOURCES ───────────────────────────┤[0m
+[1;36m│[0m Memory available: 12582912 KiB       [1;36m│[0m
+[1;36m│[0m Root: 42% used; 286 GiB available    [1;36m│[0m
+[1;36m│[0m Total RAM: 16777216 KiB              [1;36m│[0m
+[1;36m│[0m Swap free: 4194304 / 4194304 KiB     [1;36m│[0m
+[1;36m│[0m Pressure CPU/mem/I/O: 0.1/0.0/0.2%   [1;36m│[0m
+[1;36m│[0m zram: 640 MiB data / 218 MiB RAM     [1;36m│[0m
+[1;36m├ SERVICES ────────────────────────────┤[0m
+[1;36m│[0m Services: 8 running; 0 failed        [1;36m│[0m
+[1;36m│[0m sshd: running                        [1;36m│[0m
+[1;36m│[0m cron: running                        [1;36m│[0m
+[1;36m│[0m docker: running                      [1;36m│[0m
+[1;36m│[0m nginx: running                       [1;36m│[0m
+[1;36m├ PROCESSES (visible sample) ──────────┤[0m
+[1;36m│[0m CPU: compiler 32.4% (pid 2184)       [1;36m│[0m
+[1;36m│[0m RSS: database 842112 KiB (pid 1401)  [1;36m│[0m
+[1;36m│[0m I/O bytes: database 1090519040 B (p~ [1;36m│[0m
+[1;36m│[0m CPU = ps%; I/O = cumulative read+wr~ [1;36m│[0m
+[1;36m│[0m compiler 32.4% (pid 2184)            [1;36m│[0m
+[1;36m│[0m python 8.6% (pid 1902)               [1;36m│[0m
+[1;36m├ SESSIONS ────────────────────────────┤[0m
+[1;36m│[0m Sessions: 3 logged-in terminals      [1;36m│[0m
+[1;36m│[0m jules  pts/0  10:21  (192.0.2.10)    [1;36m│[0m
+[1;36m│[0m alex   pts/1  10:34  (192.0.2.20)    [1;36m│[0m
+[1;36m│[0m jules  tty1   09:08  (local)         [1;36m│[0m
+[1;36m├ CONNECTIONS ─────────────────────────┤[0m
+[1;36m│[0m TCP: 12 established; 5 listening     [1;36m│[0m
+[1;36m│[0m ssh :22      2 established           [1;36m│[0m
+[1;36m│[0m https :443  10 established           [1;36m│[0m
+[1;36m├ ATTENTION ───────────────────────────┤[0m
+[1;36m│[0m DEMO fixture; no live machine data.  [1;36m│[0m
+[1;36m├ HINTS ───────────────────────────────┤[0m
+[1;36m│[0m Tasks: top - CPU and memory          [1;36m│[0m
+[1;36m│[0m I/O: iotop -o - If installed and pe~ [1;36m│[0m
+[1;36m│[0m Services: systemctl --failed - Fail~ [1;36m│[0m
+[1;36m│[0m Sessions: loginctl list-sessions - ~ [1;36m│[0m
+[1;36m└──────────────────────────────────────┘[0m

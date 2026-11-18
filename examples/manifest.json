@@ -1,15 +1,15 @@
 {
-  "generator": "0.3.0",
+  "generator": "0.4.0",
   "examples": [
     {
       "preset": "workshop",
       "path": "examples/workshop.bash",
-      "sha256": "29c64f7eb86b9190666a47227441e71b1b1faab67c994456790a453aac9a01b4"
+      "sha256": "d2ad66d6879bf9c318543884deb695a5bb109e746d007c91ad080f58fa004718"
     },
     {
       "preset": "home-lab",
       "path": "examples/home-lab.bash",
-      "sha256": "4020a4955e0c9c36257cca155702924e4ac22ee7c6fddd3591151c3959cf153c"
+      "sha256": "36149a526aaf2af9c06737b075e30cbdcf4b3010a046f11a0964aa3786b47f14"
     },
     {
       "preset": "public-console",
@@ -17,40 +17,82 @@
       "sha256": "781f5cd19056f1014b61c223e9396ed617b81d6b97931dd2cd73a53e9e9f2699"
     },
     {
+      "preset": "public-console",
+      "target": "ssh-banner",
+      "path": "examples/public-ssh-banner.txt",
+      "sha256": "781f5cd19056f1014b61c223e9396ed617b81d6b97931dd2cd73a53e9e9f2699"
+    },
+    {
+      "preset": "public-console",
+      "target": "text",
+      "path": "examples/public-notice.txt",
+      "sha256": "781f5cd19056f1014b61c223e9396ed617b81d6b97931dd2cd73a53e9e9f2699"
+    },
+    {
+      "preset": "public-console",
+      "target": "batch-text",
+      "path": "examples/public-notice.cmd",
+      "sha256": "1ee62c37cc12ca9dfaeb0276accfcd5e23d21e036177bce8aa18f42b7b6e3e0c"
+    },
+    {
       "preset": "workshop",
       "shell": "zsh",
       "path": "examples/workshop.zsh",
-      "sha256": "14f840ab1f657e38f222e1b92c874b3e068d1aa37f556f32b0822e9220df0830"
+      "sha256": "52b280ad63b4b3947bf9977b53b8699c83c2eb4dddfb1aacf301a2ebf593c78e"
     },
     {
       "preset": "workshop",
       "shell": "sh",
       "path": "examples/workshop.sh",
-      "sha256": "d77c6463db4cc324286d1c8c421083bcf8e40b1973c546ba8be8ae53a1fedc09"
+      "sha256": "541984f20425087f3788969a3c3663b6bfb3842e305eafe19d9d9ba8f7f38ebe"
     },
     {
       "preset": "workshop",
       "shell": "powershell",
       "path": "examples/workshop.ps1",
-      "sha256": "340facb45f72e106fa114099edfbfcb9230a51d43eee0c390364a6108ca07f19"
+      "sha256": "790a2f4e057494830dcaaaee0b281df81a03dd68185a782b0c608aad08f6b82e"
+    },
+    {
+      "preset": "workshop",
+      "shell": "fish",
+      "path": "examples/workshop.fish",
+      "sha256": "60b80b1dfae74b5de1ad3329a503cfa34b66e492420b75e7932fcfe833c824ce"
+    },
+    {
+      "preset": "workshop",
+      "shell": "cmd",
+      "path": "examples/workshop.cmd",
+      "sha256": "d1fe311d068da246af5ab3ab43aef46ff164c6be88294cc58ae4152126421a29"
     },
     {
       "preset": "home-lab",
       "shell": "zsh",
       "path": "examples/home-lab.zsh",
-      "sha256": "cf907bdc92ed2c3ff074443479791e49128d626c3b247748a88603a41350efd0"
+      "sha256": "32ed2db121736aefa5b09f2e9055b5142581166269d4332e2238da3383724fc4"
     },
     {
       "preset": "home-lab",
       "shell": "sh",
       "path": "examples/home-lab.sh",
-      "sha256": "896bec39acd4c39451149bc08c23c6658b0d61c17956c2e44efb112ef6e3e2ef"
+      "sha256": "14f0a46bbd44cf6d0d70ce2db720231bb917da37db804a9eaecbe1523f8d3dc7"
     },
     {
       "preset": "home-lab",
       "shell": "powershell",
       "path": "examples/home-lab.ps1",
-      "sha256": "85698bde4854560ed110e04eb258100b4f91840554166cc55a4ad1c530efbf69"
+      "sha256": "d231c8cdb11da2cf9ce6fc25f7902650b1c7a6e465528befdb4257ae7e3560dd"
+    },
+    {
+      "preset": "home-lab",
+      "shell": "fish",
+      "path": "examples/home-lab.fish",
+      "sha256": "6fabf8c49039091ae3c04d545dd4540e621437af882cdc8b1af29b670904992d"
+    },
+    {
+      "preset": "home-lab",
+      "shell": "cmd",
+      "path": "examples/home-lab.cmd",
+      "sha256": "6654715c08e6938c52cc93b93c901372671c65df34ef634a684816641828df13"
     }
   ]
 }

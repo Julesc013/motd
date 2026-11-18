@@ -1,0 +1,17 @@
+[?1h=[36m DEMO | HOME LAB | BRIEFING             [0m
+[90m Host demo-host | Up 4d 06h             [0m
+[90m Attention: Scope: selected local ob... [0m
+[36m System: demo-host | 8 logical CPUs     [0m
+   Windows / Unix | User operator       
+   Up 4d 06h | PowerShell capability... 
+[36m Resources: MEM 6.0G/16.0G [███░░░░░]   [0m
+   DISK 120.0G/512.0G [██░░░░░░]        
+   Swap/pagefile 512M/8.0G              
+[90m   Compressed memory: 256 MiB (demo)    [0m
+[90m   Pressure: memory some avg10 0.00%    [0m
+[36m Services: 16 run / 21 loaded           [0m
+[32m   [RUN] sshd  [RUN] storage-worker     [0m
+   [RUN] backup  [STOP] optional-web    
+ Hints: Tasks: Get-Process - Local p... 
+   Services: Get-Service - Windows s... 
+   Storage: Get-PSDrive -PSProvider ... 

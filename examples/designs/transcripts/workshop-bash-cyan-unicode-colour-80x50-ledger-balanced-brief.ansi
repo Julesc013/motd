@@ -1,0 +1,10 @@
+[1;36mDEMO | WORKSHOP STATUS / LEDGER[0m
+[90mws-bench-07 | up 4d 06h 12m | Workshop | local observations[0m
+ [1;36mSYSTEM      [0m | ws-bench-07 | up 4d 06h 12m | Debian GNU/Linux 13 (trixie)      [0m
+ [1;36mRESOURCES   [0m | RAM 8.0Gi/32.0Gi | Disk 220Gi/600Gi                             [0m
+ [1;36mSERVICES    [0m | 16 running; 0 failed                                            [0m
+ [1;36mPROCESSES   [0m | cpu: 2418 badblocks 82.4%                                       [0m
+ [1;36mSESSIONS    [0m | 4 sessions / 1 users                                            [0m
+ [1;36mCONNECTIONS [0m | 8 TCP / 3 admin                                                 [0m
+ [1;36mATTENTION   [0m | No configured alerts in collected scope.                        [0m
+ [1;36mHINTS       [0m | Tasks                                                        top[0m

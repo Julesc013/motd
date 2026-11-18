@@ -1,0 +1,16 @@
+[1;36mDEMO | HOME LAB / BRIEFING[0m
+[90mdemo-host | up 86400 s | Home lab | Portable Unix[0m
+[1;36mAttention: DEMO fixture; no live machine data.[0m
+
+[1;36mSystem: demo-host | up 86400 s | Linux[0m
+   Host: demo-host | Linux demo-kernel
+
+[1;36mCapacity: RAM 12582912 KiB available | Root: 42% used; 286 GiB available[0m
+   Memory available: 12582912 KiB
+   Root: 42% used; 286 GiB available
+
+[1;36mServices: Services: 8 running; 0 failed[0m
+   sshd: running
+
+[1;36mUseful commands: Tasks: top - CPU and memory[0m
+   I/O: iotop -o - If installed and permitted

@@ -1,32 +1,39 @@
 {
   "schema": "motd-powershell-verification-v04-1",
-  "recorded_at_utc": "2026-11-17T01:25:38.049242+00:00",
-  "revision_scope": "v0.4.0 canonical PowerShell designs, literal-print hooks and exact-engine harness; local Linux evidence. Windows/macOS and actual PS2 CI must be recorded separately after execution.",
-  "status": "passed-local-native-contracts",
+  "recorded_at_utc": "2026-11-17T01:46:52.831954+00:00",
+  "revision_scope": "Final v0.4.0 canonical PowerShell rendering source at 4cc32280509d02e1d12475060e30f830265f62d0: Linux6.2.7/7.6.10/7.7.0 integrated execution plus successful native Windows5.1/7, macOS7 and actual WindowsPS2 CI. Source hashes distinguish runtime/code verification from later evidence/gallery commits.",
+  "status": "passed-final-local-and-native-contracts",
   "source_at_recording": {
-    "configurator_sha256": "dbca3a9444bc855debb7054f7f3247cabec12592b09dea2860b3308a462ced5e",
-    "canonical_runtime_sha256": "82be3e5a357fcff2598966ddfb677bad93c21a678f1604b3654aec7dbfb3707f",
+    "configurator_sha256": "dd4c8e379796adce0b44b3809ac292c5ab848693c3cb9f69ead360034a35c6a4",
+    "canonical_runtime_sha256": "ea883b1b33ccf5953a0a828e201a494d1f7cb20136a50a290b18eb8487004832",
     "generator_functions_ast_sha256": "b53f8e7ea347aab14b4c2ee19964b84ad9f4640954cb840dca5cd5f36793dfc8",
     "version": "0.4.0"
   },
   "summary": {
-    "engines": 3,
-    "unit_tests_passed": 108,
-    "harness_cases_passed": 123,
-    "failures": 0,
-    "skips": 0
+    "linux_engines": 3,
+    "linux_unit_tests_passed": 117,
+    "linux_harness_cases_passed": 123,
+    "initial_ps2_windows_harness_cases_passed": 41,
+    "initial_ps2_source_commit": "16996e839694a1588d454eba57e4e7def37b0f79",
+    "final_ps2_windows_harness_cases_passed": 41,
+    "final_native_workflow_jobs_passed": 4,
+    "final_native_source_commit": "4cc32280509d02e1d12475060e30f830265f62d0",
+    "linux_failures": 0,
+    "linux_skips": 0
   },
   "scope": [
     "Five designs: classic, cards, ledger, briefing, dashboard.",
     "ASCII/Unicode and 40x25, 40x50, 80x25, 80x50 demonstrations; additional 8/15/200-row geometry cases.",
     "Density, detail, per-section detail, padding, gaps, priorities, color emphasis, Unicode data and fixture content.",
     "Native literal argv, timeout/failure behavior, no-hook previews, and data-only motd:print before/after actions.",
-    "Legacy harness rejects a different engine before executing the input; exact matching engine executes 40 synthetic cases plus one local live case per run."
+    "Legacy harness rejects a different engine before executing the input; exact matching engine executes 40 synthetic cases plus one local live case per run.",
+    "Final custom dashboard section order, long-title DEMO disclosure, persistent host/uptime context without System/Attention, and full named omission lists budgeted across multiple rows, including 40x8."
   ],
   "provenance_notes": [
-    "Each final suite used integrated motd.py and its embedded canonical PowerShell runtime; no source or template overrides.",
-    "The full configurator changed during the 6.2.7 run and after the two PS7 runs while independent work continued. Generator-function AST, canonical PS runtime and test sources are checked against the recording state; all five exact generated harness artifacts match that state byte for byte.",
-    "Earlier isolated-template runs were provisional and are not counted as final integrated evidence."
+    "Each final Linux suite used integrated motd.py and its embedded canonical PowerShell runtime; no source or template overrides.",
+    "All full configurator, canonical runtime, harness and test source hashes stayed unchanged during all three final suites and match the recording state; all five generated harness artifacts also match byte for byte.",
+    "Earlier isolated and pre-header local checks are superseded by these final runs. Initial actual Windows CI is preserved with its exact earlier commit; final_native_ci separately records the successful rerun after all renderer changes.",
+    "POWERSHELL_TELEMETRY_OPTOUT=1 and DOTNET_CLI_TELEMETRY_OPTOUT=1 were set for every final engine command."
   ],
   "runtimes": [
     {
@@ -36,38 +43,40 @@
       "os_description": "Linux 6.18.57 #1 SMP Tue Oct 20 21:56:04 UTC 2026",
       "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
       "python": "3.12.14",
-      "tests_run": 36,
-      "passed": 36,
+      "tests_run": 39,
+      "passed": 39,
       "failed": 0,
       "skipped": 0,
-      "elapsed_seconds": 107.112,
-      "started_at_utc": "2026-11-17T01:22:01.837661+00:00",
-      "completed_at_utc": "2026-11-17T01:23:54.550601+00:00",
+      "elapsed_seconds": 134.363,
+      "started_at_utc": "2026-11-17T01:40:37.927255+00:00",
+      "completed_at_utc": "2026-11-17T01:42:58.255709+00:00",
       "test_command": "MOTD_TEST_POWERSHELL=<exact installed engine> python3 -m unittest discover -s tests -p test_*powershell.py -v",
       "source_release": "https://github.com/PowerShell/PowerShell/releases/tag/v6.2.7",
       "required_environment": {
         "DOTNET_SYSTEM_GLOBALIZATION_INVARIANT": "1",
-        "LD_LIBRARY_PATH": "/workspace/scratch/c65930e4593e/work/powershell-6-libs/extracted/usr/lib/x86_64-linux-gnu"
+        "LD_LIBRARY_PATH": "/workspace/scratch/c65930e4593e/work/powershell-6-libs/extracted/usr/lib/x86_64-linux-gnu",
+        "POWERSHELL_TELEMETRY_OPTOUT": "1",
+        "DOTNET_CLI_TELEMETRY_OPTOUT": "1"
       },
       "generation_mode": "Integrated motd.py generation with embedded canonical PowerShell runtime; no template or function overrides.",
       "canonical_embed_matches": true,
       "source_before": {
         "generator_functions_ast_sha256": "b53f8e7ea347aab14b4c2ee19964b84ad9f4640954cb840dca5cd5f36793dfc8",
         "inputs_sha256": {
-          "motd.py": "faa1ffb6213421a8e2a32f471d0df25ae74c4a2e6675754f82f15515adac01a1",
-          "runtime/motd.ps1": "82be3e5a357fcff2598966ddfb677bad93c21a678f1604b3654aec7dbfb3707f",
-          "tests/test_powershell.py": "d4547f5348e022a5e401d706d0603ddba780c15373b8040e805eea9e56b00329",
-          "tests/test_designs_powershell.py": "61290101eefc4e45f272d4fb9288204ac79534c3befc73cf1c56ab5f3187445c",
+          "motd.py": "dd4c8e379796adce0b44b3809ac292c5ab848693c3cb9f69ead360034a35c6a4",
+          "runtime/motd.ps1": "ea883b1b33ccf5953a0a828e201a494d1f7cb20136a50a290b18eb8487004832",
+          "tests/test_powershell.py": "a8f847b00ec0a15195bb8c028a4c78d79e39ef9171f082ecd1778c88107f5fee",
+          "tests/test_designs_powershell.py": "1bbb52120543f2ef06195e266ab58ef1afac3d5962ac2c26d3c5ddb16d6172e4",
           "tools/test_legacy_powershell.ps1": "373678b8592672c8d1c070f07eb0525cc4a9a5b973ff03328d147f5c89178301"
         }
       },
       "source_after": {
         "generator_functions_ast_sha256": "b53f8e7ea347aab14b4c2ee19964b84ad9f4640954cb840dca5cd5f36793dfc8",
         "inputs_sha256": {
-          "motd.py": "dbca3a9444bc855debb7054f7f3247cabec12592b09dea2860b3308a462ced5e",
-          "runtime/motd.ps1": "82be3e5a357fcff2598966ddfb677bad93c21a678f1604b3654aec7dbfb3707f",
-          "tests/test_powershell.py": "d4547f5348e022a5e401d706d0603ddba780c15373b8040e805eea9e56b00329",
-          "tests/test_designs_powershell.py": "61290101eefc4e45f272d4fb9288204ac79534c3befc73cf1c56ab5f3187445c",
+          "motd.py": "dd4c8e379796adce0b44b3809ac292c5ab848693c3cb9f69ead360034a35c6a4",
+          "runtime/motd.ps1": "ea883b1b33ccf5953a0a828e201a494d1f7cb20136a50a290b18eb8487004832",
+          "tests/test_powershell.py": "a8f847b00ec0a15195bb8c028a4c78d79e39ef9171f082ecd1778c88107f5fee",
+          "tests/test_designs_powershell.py": "1bbb52120543f2ef06195e266ab58ef1afac3d5962ac2c26d3c5ddb16d6172e4",
           "tools/test_legacy_powershell.ps1": "373678b8592672c8d1c070f07eb0525cc4a9a5b973ff03328d147f5c89178301"
         }
       },
@@ -76,7 +85,7 @@
         "exit_code": 0,
         "evidence": {
           "schema-version": "1",
-          "started-at-utc": "2026-11-17T01:23:49.9307492Z",
+          "started-at-utc": "2026-11-17T01:42:53.3955982Z",
           "status": "passed",
           "expected-major": "6",
           "actual-version": "6.2.7",
@@ -87,14 +96,14 @@
           "scriptblock-create-available": "True",
           "cases": "41",
           "failed": "0",
-          "completed-at-utc": "2026-11-17T01:23:54.5246453Z"
+          "completed-at-utc": "2026-11-17T01:42:58.2315943Z"
         },
-        "xml_sha256": "9a00244fcae13abc8b2b2529b2bd45d1ce9bfce5d7982662cf3696a1caf3e4e9",
+        "xml_sha256": "5cba0d0bd4a4344adffde7e14cecad16040fbc255f294d77d759d8750a4a21aa",
         "stderr": "",
         "artifacts": [
           {
             "file": "briefing.ps1",
-            "sha256": "10560cc23a0bb1e634472182d0656857701111afca6f9c7937c19fe9121ed753",
+            "sha256": "0714be5a8352ca7551e0cfc63afe80e1531ebf8185381c034666a3da2951eeca",
             "cases": [
               {
                 "columns": "40",
@@ -164,7 +173,7 @@
           },
           {
             "file": "cards.ps1",
-            "sha256": "8341fac94b89f085fc43d916e898ef090357a5679d9616b8edb708fbfbcb047c",
+            "sha256": "19247f0e77ae16927ed71d9c25ab5e939d5747357b993747861d8f68645a0110",
             "cases": [
               {
                 "columns": "40",
@@ -234,7 +243,7 @@
           },
           {
             "file": "classic.ps1",
-            "sha256": "7d0ed1d79f2db80385156cc67c11eedf1ea33bae8575e0c7f317c09cf349449c",
+            "sha256": "8d45e81b453727e2e1ee1731e71fcb74736a29a0534e7dfc8612d70902e8e669",
             "cases": [
               {
                 "columns": "40",
@@ -304,7 +313,7 @@
           },
           {
             "file": "dashboard.ps1",
-            "sha256": "1f25c4ee34da9d28bc9f8055b95221e7e00861806c36662dc2aa3bdcf4fbe1c1",
+            "sha256": "430e605084a99320508825a836a8dd1d1cf5d84bc62187e90cc1fc88fce9f9c7",
             "cases": [
               {
                 "columns": "40",
@@ -360,7 +369,7 @@
                 "unicode": "False",
                 "kind": "synthetic-alerts",
                 "passed": "True",
-                "rendered-rows": "36"
+                "rendered-rows": "35"
               },
               {
                 "columns": "80",
@@ -368,13 +377,13 @@
                 "unicode": "True",
                 "kind": "synthetic-alerts",
                 "passed": "True",
-                "rendered-rows": "36"
+                "rendered-rows": "35"
               }
             ]
           },
           {
             "file": "ledger.ps1",
-            "sha256": "1ebd4b7f9ddc71566f839e76e0a67a097345798578a254e2cd39c52e45fad4cc",
+            "sha256": "3fa1df5be4fb1d1dbe73ff4a23877618cfda080ec2da864ce6e8908c9adcf6b9",
             "cases": [
               {
                 "columns": "40",
@@ -453,7 +462,8 @@
       },
       "final_generation_confirmation": {
         "generator_ast_matches_current": true,
-        "runtime_and_test_sources_match_current": true,
+        "all_source_and_test_hashes_stayed_unchanged_during_suite": true,
+        "all_source_and_test_hashes_match_recording_state": true,
         "all_five_generated_harness_artifacts_match_current": true
       }
     },
@@ -464,35 +474,38 @@
       "os_description": "Debian GNU/Linux 13 (trixie)",
       "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
       "python": "3.12.14",
-      "tests_run": 36,
-      "passed": 36,
+      "tests_run": 39,
+      "passed": 39,
       "failed": 0,
       "skipped": 0,
-      "elapsed_seconds": 84.877,
-      "started_at_utc": "2026-11-17T01:22:01.803388+00:00",
-      "completed_at_utc": "2026-11-17T01:23:30.588610+00:00",
+      "elapsed_seconds": 104.682,
+      "started_at_utc": "2026-11-17T01:40:37.912376+00:00",
+      "completed_at_utc": "2026-11-17T01:42:26.975543+00:00",
       "test_command": "MOTD_TEST_POWERSHELL=<exact installed engine> python3 -m unittest discover -s tests -p test_*powershell.py -v",
       "source_release": "https://github.com/PowerShell/PowerShell/releases/tag/v7.6.10",
-      "required_environment": {},
+      "required_environment": {
+        "POWERSHELL_TELEMETRY_OPTOUT": "1",
+        "DOTNET_CLI_TELEMETRY_OPTOUT": "1"
+      },
       "generation_mode": "Integrated motd.py generation with embedded canonical PowerShell runtime; no template or function overrides.",
       "canonical_embed_matches": true,
       "source_before": {
         "generator_functions_ast_sha256": "b53f8e7ea347aab14b4c2ee19964b84ad9f4640954cb840dca5cd5f36793dfc8",
         "inputs_sha256": {
-          "motd.py": "faa1ffb6213421a8e2a32f471d0df25ae74c4a2e6675754f82f15515adac01a1",
-          "runtime/motd.ps1": "82be3e5a357fcff2598966ddfb677bad93c21a678f1604b3654aec7dbfb3707f",
-          "tests/test_powershell.py": "d4547f5348e022a5e401d706d0603ddba780c15373b8040e805eea9e56b00329",
-          "tests/test_designs_powershell.py": "61290101eefc4e45f272d4fb9288204ac79534c3befc73cf1c56ab5f3187445c",
+          "motd.py": "dd4c8e379796adce0b44b3809ac292c5ab848693c3cb9f69ead360034a35c6a4",
+          "runtime/motd.ps1": "ea883b1b33ccf5953a0a828e201a494d1f7cb20136a50a290b18eb8487004832",
+          "tests/test_powershell.py": "a8f847b00ec0a15195bb8c028a4c78d79e39ef9171f082ecd1778c88107f5fee",
+          "tests/test_designs_powershell.py": "1bbb52120543f2ef06195e266ab58ef1afac3d5962ac2c26d3c5ddb16d6172e4",
           "tools/test_legacy_powershell.ps1": "373678b8592672c8d1c070f07eb0525cc4a9a5b973ff03328d147f5c89178301"
         }
       },
       "source_after": {
         "generator_functions_ast_sha256": "b53f8e7ea347aab14b4c2ee19964b84ad9f4640954cb840dca5cd5f36793dfc8",
         "inputs_sha256": {
-          "motd.py": "faa1ffb6213421a8e2a32f471d0df25ae74c4a2e6675754f82f15515adac01a1",
-          "runtime/motd.ps1": "82be3e5a357fcff2598966ddfb677bad93c21a678f1604b3654aec7dbfb3707f",
-          "tests/test_powershell.py": "d4547f5348e022a5e401d706d0603ddba780c15373b8040e805eea9e56b00329",
-          "tests/test_designs_powershell.py": "61290101eefc4e45f272d4fb9288204ac79534c3befc73cf1c56ab5f3187445c",
+          "motd.py": "dd4c8e379796adce0b44b3809ac292c5ab848693c3cb9f69ead360034a35c6a4",
+          "runtime/motd.ps1": "ea883b1b33ccf5953a0a828e201a494d1f7cb20136a50a290b18eb8487004832",
+          "tests/test_powershell.py": "a8f847b00ec0a15195bb8c028a4c78d79e39ef9171f082ecd1778c88107f5fee",
+          "tests/test_designs_powershell.py": "1bbb52120543f2ef06195e266ab58ef1afac3d5962ac2c26d3c5ddb16d6172e4",
           "tools/test_legacy_powershell.ps1": "373678b8592672c8d1c070f07eb0525cc4a9a5b973ff03328d147f5c89178301"
         }
       },
@@ -501,7 +514,7 @@
         "exit_code": 0,
         "evidence": {
           "schema-version": "1",
-          "started-at-utc": "2026-11-17T01:23:27.5347256Z",
+          "started-at-utc": "2026-11-17T01:42:23.4514477Z",
           "status": "passed",
           "expected-major": "7",
           "actual-version": "7.6.10",
@@ -512,14 +525,14 @@
           "scriptblock-create-available": "True",
           "cases": "41",
           "failed": "0",
-          "completed-at-utc": "2026-11-17T01:23:30.5502733Z"
+          "completed-at-utc": "2026-11-17T01:42:26.9382324Z"
         },
-        "xml_sha256": "0a910aec647db875898f1d7a94518665c87a3f8ebf31bae0efd1fc448481e4c0",
+        "xml_sha256": "dd62f4828f8f3263dc5bcb10f5739a1a50d28112ed79876a81fccbc78f4943dc",
         "stderr": "",
         "artifacts": [
           {
             "file": "briefing.ps1",
-            "sha256": "10560cc23a0bb1e634472182d0656857701111afca6f9c7937c19fe9121ed753",
+            "sha256": "0714be5a8352ca7551e0cfc63afe80e1531ebf8185381c034666a3da2951eeca",
             "cases": [
               {
                 "columns": "40",
@@ -589,7 +602,7 @@
           },
           {
             "file": "cards.ps1",
-            "sha256": "8341fac94b89f085fc43d916e898ef090357a5679d9616b8edb708fbfbcb047c",
+            "sha256": "19247f0e77ae16927ed71d9c25ab5e939d5747357b993747861d8f68645a0110",
             "cases": [
               {
                 "columns": "40",
@@ -659,7 +672,7 @@
           },
           {
             "file": "classic.ps1",
-            "sha256": "7d0ed1d79f2db80385156cc67c11eedf1ea33bae8575e0c7f317c09cf349449c",
+            "sha256": "8d45e81b453727e2e1ee1731e71fcb74736a29a0534e7dfc8612d70902e8e669",
             "cases": [
               {
                 "columns": "40",
@@ -729,7 +742,7 @@
           },
           {
             "file": "dashboard.ps1",
-            "sha256": "1f25c4ee34da9d28bc9f8055b95221e7e00861806c36662dc2aa3bdcf4fbe1c1",
+            "sha256": "430e605084a99320508825a836a8dd1d1cf5d84bc62187e90cc1fc88fce9f9c7",
             "cases": [
               {
                 "columns": "40",
@@ -785,7 +798,7 @@
                 "unicode": "False",
                 "kind": "synthetic-alerts",
                 "passed": "True",
-                "rendered-rows": "36"
+                "rendered-rows": "35"
               },
               {
                 "columns": "80",
@@ -793,13 +806,13 @@
                 "unicode": "True",
                 "kind": "synthetic-alerts",
                 "passed": "True",
-                "rendered-rows": "36"
+                "rendered-rows": "35"
               }
             ]
           },
           {
             "file": "ledger.ps1",
-            "sha256": "1ebd4b7f9ddc71566f839e76e0a67a097345798578a254e2cd39c52e45fad4cc",
+            "sha256": "3fa1df5be4fb1d1dbe73ff4a23877618cfda080ec2da864ce6e8908c9adcf6b9",
             "cases": [
               {
                 "columns": "40",
@@ -878,7 +891,8 @@
       },
       "final_generation_confirmation": {
         "generator_ast_matches_current": true,
-        "runtime_and_test_sources_match_current": true,
+        "all_source_and_test_hashes_stayed_unchanged_during_suite": true,
+        "all_source_and_test_hashes_match_recording_state": true,
         "all_five_generated_harness_artifacts_match_current": true
       }
     },
@@ -889,35 +903,38 @@
       "os_description": "Debian GNU/Linux 13 (trixie)",
       "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
       "python": "3.12.14",
-      "tests_run": 36,
-      "passed": 36,
+      "tests_run": 39,
+      "passed": 39,
       "failed": 0,
       "skipped": 0,
-      "elapsed_seconds": 79.122,
-      "started_at_utc": "2026-11-17T01:22:01.843232+00:00",
-      "completed_at_utc": "2026-11-17T01:23:25.354357+00:00",
+      "elapsed_seconds": 102.353,
+      "started_at_utc": "2026-11-17T01:40:37.925255+00:00",
+      "completed_at_utc": "2026-11-17T01:42:25.598779+00:00",
       "test_command": "MOTD_TEST_POWERSHELL=<exact installed engine> python3 -m unittest discover -s tests -p test_*powershell.py -v",
       "source_release": "https://github.com/PowerShell/PowerShell/releases/tag/v7.7.0",
-      "required_environment": {},
+      "required_environment": {
+        "POWERSHELL_TELEMETRY_OPTOUT": "1",
+        "DOTNET_CLI_TELEMETRY_OPTOUT": "1"
+      },
       "generation_mode": "Integrated motd.py generation with embedded canonical PowerShell runtime; no template or function overrides.",
       "canonical_embed_matches": true,
       "source_before": {
         "generator_functions_ast_sha256": "b53f8e7ea347aab14b4c2ee19964b84ad9f4640954cb840dca5cd5f36793dfc8",
         "inputs_sha256": {
-          "motd.py": "faa1ffb6213421a8e2a32f471d0df25ae74c4a2e6675754f82f15515adac01a1",
-          "runtime/motd.ps1": "82be3e5a357fcff2598966ddfb677bad93c21a678f1604b3654aec7dbfb3707f",
-          "tests/test_powershell.py": "d4547f5348e022a5e401d706d0603ddba780c15373b8040e805eea9e56b00329",
-          "tests/test_designs_powershell.py": "61290101eefc4e45f272d4fb9288204ac79534c3befc73cf1c56ab5f3187445c",
+          "motd.py": "dd4c8e379796adce0b44b3809ac292c5ab848693c3cb9f69ead360034a35c6a4",
+          "runtime/motd.ps1": "ea883b1b33ccf5953a0a828e201a494d1f7cb20136a50a290b18eb8487004832",
+          "tests/test_powershell.py": "a8f847b00ec0a15195bb8c028a4c78d79e39ef9171f082ecd1778c88107f5fee",
+          "tests/test_designs_powershell.py": "1bbb52120543f2ef06195e266ab58ef1afac3d5962ac2c26d3c5ddb16d6172e4",
           "tools/test_legacy_powershell.ps1": "373678b8592672c8d1c070f07eb0525cc4a9a5b973ff03328d147f5c89178301"
         }
       },
       "source_after": {
         "generator_functions_ast_sha256": "b53f8e7ea347aab14b4c2ee19964b84ad9f4640954cb840dca5cd5f36793dfc8",
         "inputs_sha256": {
-          "motd.py": "faa1ffb6213421a8e2a32f471d0df25ae74c4a2e6675754f82f15515adac01a1",
-          "runtime/motd.ps1": "82be3e5a357fcff2598966ddfb677bad93c21a678f1604b3654aec7dbfb3707f",
-          "tests/test_powershell.py": "d4547f5348e022a5e401d706d0603ddba780c15373b8040e805eea9e56b00329",
-          "tests/test_designs_powershell.py": "61290101eefc4e45f272d4fb9288204ac79534c3befc73cf1c56ab5f3187445c",
+          "motd.py": "dd4c8e379796adce0b44b3809ac292c5ab848693c3cb9f69ead360034a35c6a4",
+          "runtime/motd.ps1": "ea883b1b33ccf5953a0a828e201a494d1f7cb20136a50a290b18eb8487004832",
+          "tests/test_powershell.py": "a8f847b00ec0a15195bb8c028a4c78d79e39ef9171f082ecd1778c88107f5fee",
+          "tests/test_designs_powershell.py": "1bbb52120543f2ef06195e266ab58ef1afac3d5962ac2c26d3c5ddb16d6172e4",
           "tools/test_legacy_powershell.ps1": "373678b8592672c8d1c070f07eb0525cc4a9a5b973ff03328d147f5c89178301"
         }
       },
@@ -926,7 +943,7 @@
         "exit_code": 0,
         "evidence": {
           "schema-version": "1",
-          "started-at-utc": "2026-11-17T01:23:22.0004843Z",
+          "started-at-utc": "2026-11-17T01:42:21.3421636Z",
           "status": "passed",
           "expected-major": "7",
           "actual-version": "7.7.0",
@@ -937,14 +954,14 @@
           "scriptblock-create-available": "True",
           "cases": "41",
           "failed": "0",
-          "completed-at-utc": "2026-11-17T01:23:25.3137264Z"
+          "completed-at-utc": "2026-11-17T01:42:25.5667345Z"
         },
-        "xml_sha256": "03c89272439ed462e60620200ba5880a2eb03e1b69cadfac35350807c3762f62",
+        "xml_sha256": "4c7dadbd5e26ad64cb6f01156affdd35707491ece2a944c687dfac0cf631625f",
         "stderr": "",
         "artifacts": [
           {
             "file": "briefing.ps1",
-            "sha256": "10560cc23a0bb1e634472182d0656857701111afca6f9c7937c19fe9121ed753",
+            "sha256": "0714be5a8352ca7551e0cfc63afe80e1531ebf8185381c034666a3da2951eeca",
             "cases": [
               {
                 "columns": "40",
@@ -1014,7 +1031,7 @@
           },
           {
             "file": "cards.ps1",
-            "sha256": "8341fac94b89f085fc43d916e898ef090357a5679d9616b8edb708fbfbcb047c",
+            "sha256": "19247f0e77ae16927ed71d9c25ab5e939d5747357b993747861d8f68645a0110",
             "cases": [
               {
                 "columns": "40",
@@ -1084,7 +1101,7 @@
           },
           {
             "file": "classic.ps1",
-            "sha256": "7d0ed1d79f2db80385156cc67c11eedf1ea33bae8575e0c7f317c09cf349449c",
+            "sha256": "8d45e81b453727e2e1ee1731e71fcb74736a29a0534e7dfc8612d70902e8e669",
             "cases": [
               {
                 "columns": "40",
@@ -1154,7 +1171,7 @@
           },
           {
             "file": "dashboard.ps1",
-            "sha256": "1f25c4ee34da9d28bc9f8055b95221e7e00861806c36662dc2aa3bdcf4fbe1c1",
+            "sha256": "430e605084a99320508825a836a8dd1d1cf5d84bc62187e90cc1fc88fce9f9c7",
             "cases": [
               {
                 "columns": "40",
@@ -1210,7 +1227,7 @@
                 "unicode": "False",
                 "kind": "synthetic-alerts",
                 "passed": "True",
-                "rendered-rows": "36"
+                "rendered-rows": "35"
               },
               {
                 "columns": "80",
@@ -1218,13 +1235,13 @@
                 "unicode": "True",
                 "kind": "synthetic-alerts",
                 "passed": "True",
-                "rendered-rows": "36"
+                "rendered-rows": "35"
               }
             ]
           },
           {
             "file": "ledger.ps1",
-            "sha256": "1ebd4b7f9ddc71566f839e76e0a67a097345798578a254e2cd39c52e45fad4cc",
+            "sha256": "3fa1df5be4fb1d1dbe73ff4a23877618cfda080ec2da864ce6e8908c9adcf6b9",
             "cases": [
               {
                 "columns": "40",
@@ -1303,7 +1320,8 @@
       },
       "final_generation_confirmation": {
         "generator_ast_matches_current": true,
-        "runtime_and_test_sources_match_current": true,
+        "all_source_and_test_hashes_stayed_unchanged_during_suite": true,
+        "all_source_and_test_hashes_match_recording_state": true,
         "all_five_generated_harness_artifacts_match_current": true
       }
     }
@@ -1320,9 +1338,9 @@
   },
   "historical_windows": {
     "powershell_1_3_4_5_0": "UNVERIFIED: no actual engine/host executed during this work. PS1-era grammar and API selection are compatibility targets, not execution evidence.",
-    "powershell_2": "PENDING CI: windows-2022 exact -Version 2 probe and optional-component attempt are defined in .github/workflows/powershell-compatibility.yml. No PS2 execution or pass is claimed by this local record.",
-    "powershell_5_1_and_7_windows": "PENDING current revision CI. Prior v0.3 native runs do not certify changed v0.4 behavior.",
-    "powershell_7_macos": "PENDING current revision CI; Linux results do not verify macOS providers.",
+    "powershell_2": "VERIFIED at final source4cc3228: actual PS2.0 / CLR2.0.50727.9188 on x64 Windows NT10.0.20348.0,41/41 harness cases. All five artifact hashes match current generation with native Windows CRLF.",
+    "powershell_5_1_and_7_windows": "VERIFIED native design/adapter/export job success at final source4cc3228; exact engine/OS details are in final native CI records/logs.",
+    "powershell_7_macos": "VERIFIED native design and cross-platform export job success at final source4cc3228 after correcting executable lookup. Windows-only execution cases are skipped there.",
     "runnable_harness": "tools/test_legacy_powershell.ps1",
     "scriptblock_create_boundary": "A Microsoft PS2 example documents ScriptBlock.Create; PS1 availability remains unverified and is recorded by reflection on any host running the harness.",
     "primary_sources": [
@@ -1337,5 +1355,868 @@
     "No universal OS, distribution, service manager, terminal, font, shell minor-release or future-version claim.",
     "Exact-engine harness accepts and executes trusted input scripts; it is not a sandbox.",
     "WMI/provider initialization and native API calls have no hard whole-render deadline; hook timeout guarantees are separate."
-  ]
+  ],
+  "initial_native_ci": {
+    "source_commit": "16996e839694a1588d454eba57e4e7def37b0f79",
+    "run_url": "https://github.com/Julesc013/motd/actions/runs/43995922674",
+    "powershell_2_job_id": 133747854828,
+    "artifact_url": "https://github.com/Julesc013/motd/actions/runs/43995922674/artifacts/14290006975",
+    "scope": "Actual engine proof at the initial source commit. Final header/order/omission changes require the subsequent native run.",
+    "powershell_2": {
+      "probe": {
+        "before": {
+          "stderr": "",
+          "version": "2.0",
+          "exit_code": 0
+        },
+        "component_installation": "not needed",
+        "recorded_at_utc": "2026-11-17T01:29:43.7379345Z",
+        "runner": "windows-2022",
+        "os": "Microsoft Windows NT 10.0.20348.0",
+        "after": {
+          "stderr": "",
+          "version": "2.0",
+          "exit_code": 0
+        },
+        "expected_major": 2,
+        "status": "engine-available-tests-pending",
+        "optional_components_before": [
+          {
+            "Name": "NET-Framework-Core",
+            "InstallState": 1
+          },
+          {
+            "Name": "PowerShell-V2",
+            "InstallState": 1
+          }
+        ]
+      },
+      "probe_sha256": "f22f87abe66f2bc0116ef36dae0349f370c2a05540d81560ffe77020139ed245",
+      "harness": {
+        "schema-version": "1",
+        "started-at-utc": "2026-11-17T01:29:45.5703918Z",
+        "status": "passed",
+        "expected-major": "2",
+        "actual-version": "2.0",
+        "clr-version": "2.0.50727.9188",
+        "os-version": "Microsoft Windows NT 10.0.20348.0",
+        "process-bitness": "64",
+        "automation-assembly": "System.Management.Automation, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35",
+        "scriptblock-create-available": "True",
+        "cases": "41",
+        "failed": "0",
+        "completed-at-utc": "2026-11-17T01:29:51.6649199Z"
+      },
+      "harness_xml_sha256": "5ecccc2b89035decee2ea5e32161fc52bd0a89b34b71e28a5418c2d8bd6971b5",
+      "artifacts": [
+        {
+          "file": "briefing.ps1",
+          "sha256": "7dfd12883f01638e6d13f1803a6c2e8067ed0b65e40b95fd555f6a4c82549697",
+          "cases": [
+            {
+              "columns": "40",
+              "rows": "25",
+              "unicode": "False",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "24"
+            },
+            {
+              "columns": "40",
+              "rows": "25",
+              "unicode": "True",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "24"
+            },
+            {
+              "columns": "40",
+              "rows": "50",
+              "unicode": "False",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "37"
+            },
+            {
+              "columns": "40",
+              "rows": "50",
+              "unicode": "True",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "37"
+            },
+            {
+              "columns": "80",
+              "rows": "25",
+              "unicode": "False",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "24"
+            },
+            {
+              "columns": "80",
+              "rows": "25",
+              "unicode": "True",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "24"
+            },
+            {
+              "columns": "80",
+              "rows": "50",
+              "unicode": "False",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "37"
+            },
+            {
+              "columns": "80",
+              "rows": "50",
+              "unicode": "True",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "37"
+            }
+          ]
+        },
+        {
+          "file": "cards.ps1",
+          "sha256": "6eeb1b37c174832680ef746a648cca727e51f563a5cb1561fb78d98b64189216",
+          "cases": [
+            {
+              "columns": "40",
+              "rows": "25",
+              "unicode": "False",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "24"
+            },
+            {
+              "columns": "40",
+              "rows": "25",
+              "unicode": "True",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "24"
+            },
+            {
+              "columns": "40",
+              "rows": "50",
+              "unicode": "False",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "49"
+            },
+            {
+              "columns": "40",
+              "rows": "50",
+              "unicode": "True",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "49"
+            },
+            {
+              "columns": "80",
+              "rows": "25",
+              "unicode": "False",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "24"
+            },
+            {
+              "columns": "80",
+              "rows": "25",
+              "unicode": "True",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "24"
+            },
+            {
+              "columns": "80",
+              "rows": "50",
+              "unicode": "False",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "49"
+            },
+            {
+              "columns": "80",
+              "rows": "50",
+              "unicode": "True",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "49"
+            }
+          ]
+        },
+        {
+          "file": "classic.ps1",
+          "sha256": "a46a4cc606ebc46e9f8ae1d30eaee7325e206cf86432520c3cc2b25e953a2785",
+          "cases": [
+            {
+              "columns": "40",
+              "rows": "25",
+              "unicode": "False",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "24"
+            },
+            {
+              "columns": "40",
+              "rows": "25",
+              "unicode": "True",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "24"
+            },
+            {
+              "columns": "40",
+              "rows": "50",
+              "unicode": "False",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "42"
+            },
+            {
+              "columns": "40",
+              "rows": "50",
+              "unicode": "True",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "42"
+            },
+            {
+              "columns": "80",
+              "rows": "25",
+              "unicode": "False",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "24"
+            },
+            {
+              "columns": "80",
+              "rows": "25",
+              "unicode": "True",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "24"
+            },
+            {
+              "columns": "80",
+              "rows": "50",
+              "unicode": "False",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "42"
+            },
+            {
+              "columns": "80",
+              "rows": "50",
+              "unicode": "True",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "42"
+            }
+          ]
+        },
+        {
+          "file": "dashboard.ps1",
+          "sha256": "e08a04362bfdbc1530c25a3660d2076e1156c1a0dda00137ebef776569feced1",
+          "cases": [
+            {
+              "columns": "40",
+              "rows": "25",
+              "unicode": "False",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "24"
+            },
+            {
+              "columns": "40",
+              "rows": "25",
+              "unicode": "True",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "24"
+            },
+            {
+              "columns": "40",
+              "rows": "50",
+              "unicode": "False",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "49"
+            },
+            {
+              "columns": "40",
+              "rows": "50",
+              "unicode": "True",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "49"
+            },
+            {
+              "columns": "80",
+              "rows": "25",
+              "unicode": "False",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "24"
+            },
+            {
+              "columns": "80",
+              "rows": "25",
+              "unicode": "True",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "24"
+            },
+            {
+              "columns": "80",
+              "rows": "50",
+              "unicode": "False",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "36"
+            },
+            {
+              "columns": "80",
+              "rows": "50",
+              "unicode": "True",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "36"
+            }
+          ]
+        },
+        {
+          "file": "ledger.ps1",
+          "sha256": "ae1d08858db39fb9a7a627aeff28c33caeff598622a0c5455ff412316253a292",
+          "cases": [
+            {
+              "columns": "40",
+              "rows": "25",
+              "unicode": "False",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "24"
+            },
+            {
+              "columns": "40",
+              "rows": "25",
+              "unicode": "True",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "24"
+            },
+            {
+              "columns": "40",
+              "rows": "50",
+              "unicode": "False",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "39"
+            },
+            {
+              "columns": "40",
+              "rows": "50",
+              "unicode": "True",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "39"
+            },
+            {
+              "columns": "80",
+              "rows": "25",
+              "unicode": "False",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "24"
+            },
+            {
+              "columns": "80",
+              "rows": "25",
+              "unicode": "True",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "24"
+            },
+            {
+              "columns": "80",
+              "rows": "50",
+              "unicode": "False",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "39"
+            },
+            {
+              "columns": "80",
+              "rows": "50",
+              "unicode": "True",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "39"
+            }
+          ]
+        }
+      ],
+      "live_cases": [
+        {
+          "kind": "live-local-no-hooks",
+          "passed": "True",
+          "rendered-rows": "41"
+        }
+      ],
+      "status_note": "The unmodified probe JSON was written before testing and says engine-available-tests-pending; the completed XML independently records the exact major2 engine and 41 successful cases. No optional component installation was needed."
+    },
+    "windows_powershell_5_1_and_7": "Native design, adapter, portable export and Python compatibility jobs passed at this commit; exact engine/OS versions remain in the linked native job logs.",
+    "macos_initial_job": "Failed before tests because executable lookup returned multiple paths. Root corrected lookup to select the first application; a fresh native run is pending."
+  },
+  "final_native_ci": {
+    "source_commit": "4cc32280509d02e1d12475060e30f830265f62d0",
+    "run_url": "https://github.com/Julesc013/motd/actions/runs/43997494337",
+    "jobs": {
+      "windows_powershell_5_1": {
+        "id": 133753033053,
+        "conclusion": "success"
+      },
+      "windows_powershell_7": {
+        "id": 133753032947,
+        "conclusion": "success"
+      },
+      "macos_powershell_7": {
+        "id": 133753032696,
+        "conclusion": "success"
+      },
+      "actual_powershell_2": {
+        "id": 133753032980,
+        "conclusion": "success"
+      }
+    },
+    "artifact_url": "https://github.com/Julesc013/motd/actions/runs/43997494337/artifacts/14290472775",
+    "artifact_zip_sha256": "4830a3c327fb034b20cf810f5b9b81f2c034933c27bdeebe394853a321e39e72",
+    "powershell_2": {
+      "probe": {
+        "before": {
+          "stderr": "",
+          "version": "2.0",
+          "exit_code": 0
+        },
+        "component_installation": "not needed",
+        "recorded_at_utc": "2026-11-17T01:42:22.1657303Z",
+        "runner": "windows-2022",
+        "os": "Microsoft Windows NT 10.0.20348.0",
+        "after": {
+          "stderr": "",
+          "version": "2.0",
+          "exit_code": 0
+        },
+        "expected_major": 2,
+        "status": "passed",
+        "optional_components_before": [
+          {
+            "Name": "NET-Framework-Core",
+            "InstallState": 1
+          },
+          {
+            "Name": "PowerShell-V2",
+            "InstallState": 1
+          }
+        ],
+        "cases": 41,
+        "failed": 0
+      },
+      "probe_file": "build/verification-powershell2-v04-probe.json",
+      "probe_sha256": "42a27ec7d978eb36fd1da7207337c884da7974d12a5181ba1a97aae320dff375",
+      "harness": {
+        "schema-version": "1",
+        "started-at-utc": "2026-11-17T01:42:24.2074764Z",
+        "status": "passed",
+        "expected-major": "2",
+        "actual-version": "2.0",
+        "clr-version": "2.0.50727.9188",
+        "os-version": "Microsoft Windows NT 10.0.20348.0",
+        "process-bitness": "64",
+        "automation-assembly": "System.Management.Automation, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35",
+        "scriptblock-create-available": "True",
+        "cases": "41",
+        "failed": "0",
+        "completed-at-utc": "2026-11-17T01:42:31.7047667Z"
+      },
+      "harness_file": "build/verification-powershell2-v04.xml",
+      "harness_xml_sha256": "01fbf7083851d21e5278d7aab056f7aa4e292296c05b7ab6624d843a78e1b1b6",
+      "artifacts": [
+        {
+          "file": "briefing.ps1",
+          "sha256": "7da6e5be4093cdafb8107ea7ce7286370ff8ceaacb6d213a5697e19c011c9af4",
+          "matches_current_generation_crlf": true,
+          "cases": [
+            {
+              "columns": "40",
+              "rows": "25",
+              "unicode": "False",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "24"
+            },
+            {
+              "columns": "40",
+              "rows": "25",
+              "unicode": "True",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "24"
+            },
+            {
+              "columns": "40",
+              "rows": "50",
+              "unicode": "False",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "37"
+            },
+            {
+              "columns": "40",
+              "rows": "50",
+              "unicode": "True",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "37"
+            },
+            {
+              "columns": "80",
+              "rows": "25",
+              "unicode": "False",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "24"
+            },
+            {
+              "columns": "80",
+              "rows": "25",
+              "unicode": "True",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "24"
+            },
+            {
+              "columns": "80",
+              "rows": "50",
+              "unicode": "False",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "37"
+            },
+            {
+              "columns": "80",
+              "rows": "50",
+              "unicode": "True",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "37"
+            }
+          ]
+        },
+        {
+          "file": "cards.ps1",
+          "sha256": "fe364f03566edd664ca0ce564a2abaa49cfabfd05d20bd3ce379a47f8e32679c",
+          "matches_current_generation_crlf": true,
+          "cases": [
+            {
+              "columns": "40",
+              "rows": "25",
+              "unicode": "False",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "24"
+            },
+            {
+              "columns": "40",
+              "rows": "25",
+              "unicode": "True",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "24"
+            },
+            {
+              "columns": "40",
+              "rows": "50",
+              "unicode": "False",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "49"
+            },
+            {
+              "columns": "40",
+              "rows": "50",
+              "unicode": "True",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "49"
+            },
+            {
+              "columns": "80",
+              "rows": "25",
+              "unicode": "False",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "24"
+            },
+            {
+              "columns": "80",
+              "rows": "25",
+              "unicode": "True",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "24"
+            },
+            {
+              "columns": "80",
+              "rows": "50",
+              "unicode": "False",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "49"
+            },
+            {
+              "columns": "80",
+              "rows": "50",
+              "unicode": "True",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "49"
+            }
+          ]
+        },
+        {
+          "file": "classic.ps1",
+          "sha256": "efab20cb24618a4e676e92e09c22b4c4254361133ecdd20d97e4206782d30e21",
+          "matches_current_generation_crlf": true,
+          "cases": [
+            {
+              "columns": "40",
+              "rows": "25",
+              "unicode": "False",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "24"
+            },
+            {
+              "columns": "40",
+              "rows": "25",
+              "unicode": "True",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "24"
+            },
+            {
+              "columns": "40",
+              "rows": "50",
+              "unicode": "False",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "42"
+            },
+            {
+              "columns": "40",
+              "rows": "50",
+              "unicode": "True",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "42"
+            },
+            {
+              "columns": "80",
+              "rows": "25",
+              "unicode": "False",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "24"
+            },
+            {
+              "columns": "80",
+              "rows": "25",
+              "unicode": "True",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "24"
+            },
+            {
+              "columns": "80",
+              "rows": "50",
+              "unicode": "False",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "42"
+            },
+            {
+              "columns": "80",
+              "rows": "50",
+              "unicode": "True",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "42"
+            }
+          ]
+        },
+        {
+          "file": "dashboard.ps1",
+          "sha256": "3c48ac625a7a9e56484def1e9ee592a911eced054371ff0844c65eb9c5ab718e",
+          "matches_current_generation_crlf": true,
+          "cases": [
+            {
+              "columns": "40",
+              "rows": "25",
+              "unicode": "False",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "24"
+            },
+            {
+              "columns": "40",
+              "rows": "25",
+              "unicode": "True",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "24"
+            },
+            {
+              "columns": "40",
+              "rows": "50",
+              "unicode": "False",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "49"
+            },
+            {
+              "columns": "40",
+              "rows": "50",
+              "unicode": "True",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "49"
+            },
+            {
+              "columns": "80",
+              "rows": "25",
+              "unicode": "False",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "24"
+            },
+            {
+              "columns": "80",
+              "rows": "25",
+              "unicode": "True",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "24"
+            },
+            {
+              "columns": "80",
+              "rows": "50",
+              "unicode": "False",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "35"
+            },
+            {
+              "columns": "80",
+              "rows": "50",
+              "unicode": "True",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "35"
+            }
+          ]
+        },
+        {
+          "file": "ledger.ps1",
+          "sha256": "ae11ea54cd3be818307a8e534b1ba6a92efbf4ab653532fe610d07be6e6b7a38",
+          "matches_current_generation_crlf": true,
+          "cases": [
+            {
+              "columns": "40",
+              "rows": "25",
+              "unicode": "False",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "24"
+            },
+            {
+              "columns": "40",
+              "rows": "25",
+              "unicode": "True",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "24"
+            },
+            {
+              "columns": "40",
+              "rows": "50",
+              "unicode": "False",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "39"
+            },
+            {
+              "columns": "40",
+              "rows": "50",
+              "unicode": "True",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "39"
+            },
+            {
+              "columns": "80",
+              "rows": "25",
+              "unicode": "False",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "24"
+            },
+            {
+              "columns": "80",
+              "rows": "25",
+              "unicode": "True",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "24"
+            },
+            {
+              "columns": "80",
+              "rows": "50",
+              "unicode": "False",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "39"
+            },
+            {
+              "columns": "80",
+              "rows": "50",
+              "unicode": "True",
+              "kind": "synthetic-alerts",
+              "passed": "True",
+              "rendered-rows": "39"
+            }
+          ]
+        }
+      ],
+      "live_cases": [
+        {
+          "kind": "live-local-no-hooks",
+          "passed": "True",
+          "rendered-rows": "41"
+        }
+      ],
+      "newline_provenance": "The Windows workflow generates artifacts with Path.write_text, which translates LF into CRLF. All five XML SHA256 values exactly match current generation written with that Windows convention."
+    },
+    "scope_notes": [
+      "Native design, Windows adapter, portable export and Python compatibility suites are separate from the existing provider/source test job.",
+      "Windows-only adapter execution cases are skipped in the macOS job; an actual Windows job covers them.",
+      "Actual PowerShell2 XML proves engine2.0; it is not a renamed5.1 fallback. No optional component installation was needed.",
+      "Historical PS1,3,4 and5.0 hosts were not executed.",
+      "The summary zero-failure/zero-skip counts apply to the three Linux runs only. Native CI has platform/interpreter-specific skips; exact native counts belong to the corresponding job logs and separate native record."
+    ]
+  }
 }

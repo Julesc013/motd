@@ -88,8 +88,11 @@ developer gallery tool needs Pillow, wcwidth, the selected output interpreters,
 the installed monospace font and optional [oxipng](https://github.com/oxipng/oxipng).
 The build and verification tool runs on a POSIX host; it uses POSIX PTYs and
 `TIOCSWINSZ`. The PNGs and local HTML index can be viewed on any platform.
+The recorded builds disable PowerShell/.NET telemetry before starting any child
+interpreter. Use the same environment for a local capture:
 
 ```sh
+export POWERSHELL_TELEMETRY_OPTOUT=1 DOTNET_CLI_TELEMETRY_OPTOUT=1
 python3 tools/build_gallery.py \
   --powershell /path/to/pwsh \
   --optimizer /path/to/oxipng \
@@ -161,3 +164,9 @@ smaller matrix; `--require-sampler` checks the exact separate 140-case selection
 Source provenance includes the shared `runtime/designs.sh` presentation source.
 Source changes invalidate the recorded build; recapture from the
 changed source before claiming the images demonstrate that version.
+
+The 0.4.0 retained-file verification is summarized in
+`build/verification-gallery-v04.json`: 524 classic cases, 140 design cases,
+346 gallery PNG files including comparison sheets, five wizard frames and
+16 generated example artifacts. It includes source/manifest hashes, exact PNG
+byte totals, archive hashes and the specific images inspected visually.

@@ -1,0 +1,123 @@
+{
+  "schema_version": 1,
+  "project_version": "0.4.0",
+  "recorded_at_utc": "2026-11-17T01:42:39Z",
+  "scope": "Actual CPython 3.8.20 on current Linux; configurator, parser, CLI, transactions in temporary directories, and available native renderers. No original historical OS or Windows claim.",
+  "environment": {
+    "platform": "Linux-6.18.57-x86_64-with-glibc2.2.5",
+    "python": "3.8.20 (default, Oct  2 2024, 16:34:12) \n[Clang 18.1.8 ]",
+    "executable": "/workspace/scratch/c65930e4593e/work/python-runtimes/cpython-3.8.20-linux-x86_64-gnu/bin/python3.8",
+    "distribution": "Astral python-build-standalone 20241002 via uv",
+    "download_url": "https://releases.astral.sh/github/python-build-standalone/releases/download/20241002/cpython-3.8.20%2B20241002-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz",
+    "binary_sha256": "c70efda0ee43d9a0014ee570cad3abb4f46b0c11f6ea88f7c467a91faafd4f62",
+    "gallery_dependencies": {
+      "Pillow": "10.4.0",
+      "wcwidth": "0.8.5"
+    },
+    "runtime_libc_confstr": "glibc 2.41",
+    "platform_note": "platform.platform() on this standalone Python reports an older ABI symbol baseline; runtime_libc_confstr records the loaded system libc version."
+  },
+  "invocation": {
+    "runner": "/workspace/scratch/c65930e4593e/work/run_python38_verification.py",
+    "equivalent": "python3.8 -m unittest discover -s tests -v",
+    "test_environment": {
+      "MOTD_TEST_PYTHON38": "/workspace/scratch/c65930e4593e/work/python38-tests/bin/python",
+      "MOTD_TEST_POWERSHELL": "/workspace/scratch/fa0f8e340988/work/powershell-7.6.10/pwsh",
+      "MOTD_TEST_WRITE_RECORD": "0",
+      "POWERSHELL_TELEMETRY_OPTOUT": "1",
+      "DOTNET_CLI_TELEMETRY_OPTOUT": "1"
+    }
+  },
+  "result": {
+    "tests_run": 238,
+    "passed": 226,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 12,
+    "skips": [
+      {
+        "test": "test_native_guards_filter_sessions_and_prevent_duplicate_display (test_fish_startup.FishStartupTests)",
+        "reason": "Install Fish or set MOTD_TEST_FISH2/3/4"
+      },
+      {
+        "test": "test_toml_one_zero_values_match_standard_library (test_python_compatibility.BundledTomlTests)",
+        "reason": "Differential reference needs Python 3.11+ stdlib tomllib"
+      },
+      {
+        "test": "test_bash32_automatically_renders_with_portable_backend (test_shell_compatibility.ShellCompatibilityTests)",
+        "reason": "Set MOTD_TEST_BASH32 to an actual Bash 3.2 binary for the historical boundary test"
+      },
+      {
+        "test": "test_optional_historical_bash_binaries_render_instead_of_rejecting (test_shell_compatibility.ShellCompatibilityTests)",
+        "reason": "Set MOTD_TEST_BASH1/2/32/43 to real historical Bash executables"
+      },
+      {
+        "test": "test_optional_historical_startup_guards_on_a_real_pty (test_shell_compatibility.ShellCompatibilityTests)",
+        "reason": "Set MOTD_TEST_BASH1/2 or MOTD_TEST_ZSH2 for real historical startup tests"
+      },
+      {
+        "test": "test_optional_historical_zsh_launchers_and_no_bash_fallback (test_shell_compatibility.ShellCompatibilityTests)",
+        "reason": "Set MOTD_TEST_ZSH2/3/4 to actual historical Zsh executables"
+      },
+      {
+        "test": "test_existing_numeric_ownership_is_preserved_and_restored (test_transactions.TransactionTests)",
+        "reason": "numeric ownership restoration requires root"
+      },
+      {
+        "test": "test_batch_text_prints_metacharacters_literally_without_powershell (test_windows_adapters.NativeWindowsAdapterTests)",
+        "reason": "Requires native Windows cmd.exe"
+      },
+      {
+        "test": "test_cmd_demo_suppresses_configured_hooks (test_windows_adapters.NativeWindowsAdapterTests)",
+        "reason": "Requires native Windows cmd.exe"
+      },
+      {
+        "test": "test_cmd_filename_metacharacters_are_data (test_windows_adapters.NativeWindowsAdapterTests)",
+        "reason": "Requires native Windows cmd.exe"
+      },
+      {
+        "test": "test_cmd_launcher_runs_embedded_renderer_at_requested_geometry (test_windows_adapters.NativeWindowsAdapterTests)",
+        "reason": "Requires native Windows cmd.exe"
+      },
+      {
+        "test": "test_default_windows_export_uses_create_only_manifest (test_windows_adapters.NativeWindowsAdapterTests)",
+        "reason": "Requires native Windows cmd.exe"
+      }
+    ],
+    "elapsed_seconds": 127.141,
+    "source_unchanged_during_run": true,
+    "successful": true
+  },
+  "log": "build/verification-python38-v04.log",
+  "log_sha256": "dfb798ec7b831b21d1cfe3b0badb58fc8b7f06aac156861296e7d5e297fd0c64",
+  "source_sha256": {
+    "motd.py": "dd4c8e379796adce0b44b3809ac292c5ab848693c3cb9f69ead360034a35c6a4",
+    "runtime/designs.sh": "8b3063487ad72aa43d51158f7ecc3a9121f1fa0b6d04a01fe95c89e7f309c64c",
+    "runtime/motd.bash": "138368aac5c27b3de7ab72e56c9a1a055577704d9bc2e47feef77fa265cc2368",
+    "runtime/motd.ps1": "ea883b1b33ccf5953a0a828e201a494d1f7cb20136a50a290b18eb8487004832",
+    "runtime/motd.sh": "4f95498151cb1ece7ad3c07897b77be93f4e7f5384998884f024d47296c76214",
+    "tests/test_cli.py": "25e35b8cb02a2d14a72ae7029494d2c3de580001056c0a1b0a4f511ca440fedc",
+    "tests/test_design_configuration.py": "9503d9e5d6af755400c01bc17d6d9f025c99373ab5cbc7169ca129cd531298e1",
+    "tests/test_designs_powershell.py": "1bbb52120543f2ef06195e266ab58ef1afac3d5962ac2c26d3c5ddb16d6172e4",
+    "tests/test_designs_unix.py": "f9b369db16b168ebee50f98dd9a3c37701e027c330f656b09a7eb4be8747f6dd",
+    "tests/test_fish_startup.py": "1ef0e0ef90580c85e16a407a28a2cff5dd080555bf1c434a7735e6b76e4c830a",
+    "tests/test_gallery.py": "7076f06fec1b9ad06a84f5c895bcf41438fa715d48245ab87de7b1d9326eb049",
+    "tests/test_generation.py": "7e483d3738fe8efcee565025426f2e0dc80cb4e282d3b87f9e34bd7e57ee76a7",
+    "tests/test_installation.py": "0c207ca08c72d4d52b67a5e7924151fac58af6f366af97fb8762ac504a98b482",
+    "tests/test_native_platforms.py": "1050855c1433289fecad96848066a1062ff33ea56faa5baaac77d2d1ef5a4431",
+    "tests/test_path_safety.py": "f9be78dcb78925a5590eaf6976a2aff71d8e1b103eb1490c74f744b5d4796bfc",
+    "tests/test_portable_export.py": "00a353d61433dffe1995bc6f525cad2c4bda3867a866c00055c53e513759a066",
+    "tests/test_powershell.py": "a8f847b00ec0a15195bb8c028a4c78d79e39ef9171f082ecd1778c88107f5fee",
+    "tests/test_python_compatibility.py": "de47a3d867776d2c2212ddffa0fdf267be5a2126f69df36d785bdeded2bbf4d6",
+    "tests/test_runtime.py": "7208f2af79659adac1f97df65b3d37be9b84d2ecdd516f270fe6a505b07423e3",
+    "tests/test_shell_compatibility.py": "232875f8d3ed134ed3778efff64d884942cf67ae788750fe8fd7eaf5ebd60f24",
+    "tests/test_transactions.py": "f260a911d50972c3de1d59d85e4c2d15c6a27d3b3af86e082c3b149716ef6871",
+    "tests/test_unix_collectors.py": "1ec27a1c2c813e6cc28b617bab2c3ea975d5fb207089b8611a9b076689c2c21d",
+    "tests/test_windows_adapters.py": "f31f271c0b600138ac282dcf560f1f45350d911de3169d8f25c14b28abf2a49f",
+    "tests/test_wizard.py": "4dd30fe419613f4034e9a263e53c54d6c4631eb8b3ddc61892c1715a14290626",
+    "tests/test_wizard_resize_review.py": "7d69a388ddffa0f765b66cbcb03eca6a4e16315009828c3d5e2a3c0d65864e4a",
+    "tools/build_gallery.py": "476de4d5ed792c83f6706289318020f6bf85ec307e2defa1ef1c8255530ce07a",
+    "tools/embed_runtime.py": "56ccd67c81c220abdcfddc7c10931df37d4a79ea7aea93c6b63925d6bc372358",
+    "tools/embed_toml.py": "275d11bc4ada3528cdc02fa18d96afad35350abdb788c40bc9a53deff1a5018a"
+  }
+}

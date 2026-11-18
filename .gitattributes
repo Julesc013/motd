@@ -6,3 +6,7 @@
 reference/** -text
 *.ansi binary
 *.png binary
+# These two files are unmodified native Windows CI artifacts. Their CRLF bytes
+# and UTF-8 BOM are covered by the retained archive/file hashes.
+build/verification-powershell2-v04.xml -text
+build/verification-powershell2-v04-probe.json -text

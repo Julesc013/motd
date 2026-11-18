@@ -11,9 +11,12 @@ files contain clearly labelled synthetic fixture data.
 | `workshop.zsh` / `home-lab.zsh` | Zsh entry point for shared modern/portable Unix collection; delegates to Bash or sh |
 | `workshop.sh` / `home-lab.sh` | Portable Unix display with the same section model and available local collectors |
 | `workshop.ps1` / `home-lab.ps1` | Native PowerShell with legacy syntax targets and capability-aware collectors |
+| `workshop.fish` / `home-lab.fish` | Fish entry point reusing the portable Unix collector through `/bin/sh` |
+| `workshop.cmd` / `home-lab.cmd` | Windows cmd entry point reusing the embedded PowerShell core; requires PowerShell 2+ |
 | `public-console.issue` | Static console pre-login text, serialized for agetty |
 | `public-ssh-banner.txt` | Static public SSH pre-authentication text |
 | `public-notice.txt` | Generic public text without consumer-specific escape conversion |
+| `public-notice.cmd` | Native ASCII batch notice with no PowerShell dependency |
 | `wizard-theme.svg` / `.png` | An actual wizard page rendered with synthetic data |
 
 Preview before attaching a Bash output:
@@ -47,6 +50,7 @@ Unmodified preset hints adapt to PowerShell commands. Try their demonstrations:
 ```sh
 zsh workshop.zsh --demo
 sh workshop.sh --demo
+fish workshop.fish --demo
 pwsh -NoProfile -File workshop.ps1 -Demo
 ```
 
@@ -55,6 +59,10 @@ under the machine's existing execution policy. For the PowerShell1 launch target
 use `powershell.exe -NoProfile -Command "& './workshop.ps1' -Demo -Plain"` or the
 call operator inside the host. PS1–4 remain targeted until real-engine tests
 are available. See [coverage and attachment routes](../docs/compatibility.md).
+
+From Windows cmd, `workshop.cmd -Demo -Width 40 -Rows 25 -Plain` invokes the
+PowerShell-backed dashboard; `public-notice.cmd` prints only the static ASCII
+notice. These copyable files do not modify startup profiles or install anything.
 
 ## Terminal PNGs
 
@@ -65,9 +73,18 @@ from actual sized-PTY output with synthetic data; raw ANSI transcripts and
 effective recipes accompany it. The renderer changes its layout and content
 budget before capture. PNG compression preserves every decoded pixel.
 
+The separate [design sampler](designs/README.md) compares classic, cards, ledger,
+briefing and dashboard structures, with independent density and detail contrasts.
+Open `designs/index.html` locally for its filters and recipe/transcript links.
+
 `tools/build_examples.py` renders the SVG wizard page using the real UI and a
-fixed 100-by-38 terminal. Its PNG is a review/export copy, regenerated with:
+fixed 100-by-38 terminal. The four wizard PNGs independently render the same
+frame function at 40×25, 40×50, 80×25 and 80×50, with ten control rows and an
+adaptive preview in the remaining rows. `wizard-theme.png` is the 80×25 alias;
+`wizard-call-samples-80x50.png` adds display-only before/after call samples.
+Their ANSI transcripts and pixel/source hashes are in `wizard-manifest.json`.
+Regenerate them directly from the live frame code:
 
 ```sh
-inkscape examples/wizard-theme.svg --export-type=png --export-filename=examples/wizard-theme.png
+python3 tools/build_examples.py --png --optimizer /path/to/oxipng
 ```

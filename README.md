@@ -101,7 +101,7 @@ each selection. Cold preview startup still depends on the selected interpreter.
 | 80×50 | 10 | 80×40 |
 
 The renderers reduce detail and omit whole sections when a short viewport needs
-it, keeping complete borders and a visible omitted-section count. Normal runtime
+it, keeping complete borders and naming omitted sections. Normal runtime
 overrides accept 8–200 rows and 40–240 columns. The preview uses those limits in
 unusually large windows. If the window becomes too small during an answer, the
 answer remains intact and the full screen returns when the window is enlarged.

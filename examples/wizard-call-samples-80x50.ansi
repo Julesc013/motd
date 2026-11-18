@@ -1,13 +1,13 @@
-[1;36mMOTD 0.3.0 | Theme and call samples[0m[0m
- 1. Cyan[0m
- 2. Green [selected][0m
- 3. Amber[0m
- 4. Mono[0m
+[1;36mMOTD 0.4.0 | Theme[0m[0m
+  1. Cyan[0m
+> 2. Green[0m
+  3. Amber[0m
+  4. Mono[0m
 [0m
-[0m
-Number chooses | Enter accepts | P H Q[0m
+Choose a number, then Enter. ? explains the keys.[0m
+Up/Down | Enter accepts | ? help Q quit[0m
 Choice [2]: [0m
-[1;36mPREVIEW 80x32 | demo | calls sample[0m[0m
+[1;36mPREVIEW 80x32 | demo | H calls sample[0m[0m
 BEFORE 1 | fastfetch [sample][0m
      /\     demo@workshop[0m
     /  \    OS: Example Linux x86_64[0m

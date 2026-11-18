@@ -1,5 +1,5 @@
-[?1h=+--------------------------------------+
-[33m| WORKSHOP STATUS | DEMO               |[0m
+[?1h=[33m+ DEMO | WORKSHOP STATUS --------------+[0m
+[90m| Host demo-host | Up 4d 06h           |[0m
 [33m| SYSTEM  demo-host | 8 logical CPUs   |[0m
 | Windows / Unix | User operator       |
 | Up 4d 06h | PowerShell capability... |

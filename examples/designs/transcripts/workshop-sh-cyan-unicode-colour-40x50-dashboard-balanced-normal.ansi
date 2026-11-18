@@ -1,0 +1,43 @@
+[1;36mDEMO | WORKSHOP STATUS / DASHBOARD[0m
+[90mdemo-host | up 86400 s | RAM 12582912 K~[0m
+[36m┌ SYSTEM ──────────────────────────────┐[0m
+[36m│[0m Host: demo-host | Linux demo-kernel [0m [36m│[0m
+[36m│[0m Up: 86400 s | Load: 0.25 0.18 0.12  [0m [36m│[0m
+[36m└──────────────────────────────────────┘[0m
+
+[36m┌ RESOURCES ───────────────────────────┐[0m
+[36m│[0m Memory available: 12582912 KiB      [0m [36m│[0m
+[36m│[0m Root: 42% used; 286 GiB available   [0m [36m│[0m
+[36m│[0m Total RAM: 16777216 KiB             [0m [36m│[0m
+[36m└──────────────────────────────────────┘[0m
+
+[36m┌ SERVICES ────────────────────────────┐[0m
+[36m│[0m Services: 8 running; 0 failed       [0m [36m│[0m
+[36m│[0m sshd: running                       [0m [36m│[0m
+[36m└──────────────────────────────────────┘[0m
+
+[36m┌ PROCESSES ───────────────────────────┐[0m
+[36m│[0m CPU: compiler 32.4% (pid 2184)      [0m [36m│[0m
+[36m│[0m RSS: database 842112 KiB (pid 1401) [0m [36m│[0m
+[36m│[0m I/O bytes: database 1090519040 B (p~[0m [36m│[0m
+[36m│[0m CPU = ps%; I/O = cumulative read+wr~[0m [36m│[0m
+[36m└──────────────────────────────────────┘[0m
+
+[36m┌ SESSIONS ────────────────────────────┐[0m
+[36m│[0m Sessions: 3 logged-in terminals     [0m [36m│[0m
+[36m│[0m jules  pts/0  10:21  (192.0.2.10)   [0m [36m│[0m
+[36m└──────────────────────────────────────┘[0m
+
+[36m┌ CONNECTIONS ─────────────────────────┐[0m
+[36m│[0m TCP: 12 established; 5 listening    [0m [36m│[0m
+[36m│[0m ssh :22      2 established          [0m [36m│[0m
+[36m└──────────────────────────────────────┘[0m
+
+[36m┌ ATTENTION ───────────────────────────┐[0m
+[36m│[0m DEMO fixture; no live machine data. [0m [36m│[0m
+[36m└──────────────────────────────────────┘[0m
+
+[36m┌ HINTS ───────────────────────────────┐[0m
+[36m│[0m Tasks: top - CPU and memory         [0m [36m│[0m
+[36m│[0m I/O: iotop -o - If installed and pe~[0m [36m│[0m
+[36m└──────────────────────────────────────┘[0m

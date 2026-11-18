@@ -1,0 +1,24 @@
+[1;36mDEMO | WORKSHOP STATUS / BRIEFING[0m
+[90mws-bench-07 | up 4d 06h 12m | Workshop ~[0m
+[1;36mAttention: No configured alerts in co...[0m
+
+[1;36mSystem: ws-bench-07 | up 4d 06h 12m | D~[0m
+   Domain workshop.example
+
+[1;36mCapacity: RAM 8.0Gi/32.0Gi | Disk 220Gi~[0m
+   RAM  8.0Gi/32.0Gi    ####....
+   DISK 220Gi/600Gi     ###.....
+
+[1;36mServices: 16 running; 0 failed[0m
+   SSH       RUN | RDP        RUN
+
+[1;36mTop workloads: cpu: 2418 badblocks 82.4%[0m
+   CPU avg 2418 bad... 82.4%
+   RAM RSS 1632 pos... 1.3Gi
+   I/O /s 2418 ba... 181Mi/s
+
+[1;36mPeople online: 4 sessions / 1 users[0m
+
+[1;36mConnections: 8 TCP / 3 admin[0m
+
+[1;36mUseful commands: Tasks               top[0m

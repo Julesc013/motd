@@ -1,0 +1,28 @@
+[?1h=[36m DEMO - synthetic | WORKSHOP STATUS | DASHBOARD                                 [0m
+[90m Host demo-host | Up 4d 06h                                                     [0m
+[36m┌ SYSTEM ─────────────────────────────┐[0m  [36m┌ RESOURCES ──────────────────────────┐[0m
+[36m│ demo-host | 8 logical CPUs          │[0m  [36m│ MEM 6.0G/16.0G [███░░░░░]           │[0m
+│ Windows / Unix | User operator      │  │ DISK 120.0G/512.0G [██░░░░░░]       │
+│ Up 4d 06h | PowerShell capabilit... │  │ Swap/pagefile 512M/8.0G             │
+│                                     │  [90m│ Compressed memory: 256 MiB (demo)   │[0m
+│                                     │  [90m│ Pressure: memory some avg10 0.00%   │[0m
+[36m└─────────────────────────────────────┘[0m  [36m└─────────────────────────────────────┘[0m
+[36m┌ SERVICES ───────────────────────────┐[0m  [36m┌ PROCESSES ──────────────────────────┐[0m
+[36m│ 16 run / 21 loaded                  │[0m  [36m│ CPU total (s) / memory              │[0m
+[32m│ [RUN] sshd  [RUN] storage-worker    │[0m  │ CPU   152.4s   812 storage-worker   │
+│ [RUN] backup  [STOP] optional-web   │  │ MEM     2.0G  1120 database         │
+│                                     │  │ CPU    38.6s  1120 database         │
+│                                     │  │ MEM     768M   812 storage-worker   │
+│                                     │  │ CPU    18.7s   946 disk-check       │
+[36m└─────────────────────────────────────┘[0m  [36m└─────────────────────────────────────┘[0m
+[36m┌ SESSIONS ───────────────────────────┐[0m  [36m┌ CONNECTIONS ────────────────────────┐[0m
+[36m│ 4 registered logins                 │[0m  [36m│ 8 TCP / 3 listeners                 │[0m
+│ operator  tty1   console            │  │ :22 -> 192.0.2.24:51042 Established │
+│ operator  pts/1  192.0.2.24 (SSH)   │  │ :22 -> 192.0.2.31:49720 Established │
+│ operator  pts/2  192.0.2.31 (SSH)   │  │ :443 -> 198.51.100.8:54016 Estab... │
+[36m└─────────────────────────────────────┘[0m  [36m└─────────────────────────────────────┘[0m
+[36m┌ ATTENTION ──────────────────────────┐[0m  [36m┌ HINTS ──────────────────────────────┐[0m
+[90m│ Scope: selected local observations. │[0m  │ Tasks: Get-Process - Local proce... │
+│                                     │  │ Services: Get-Service - Windows ... │
+│                                     │  │ Storage: Get-PSDrive -PSProvider... │
+[36m└─────────────────────────────────────┘[0m  [36m└─────────────────────────────────────┘[0m

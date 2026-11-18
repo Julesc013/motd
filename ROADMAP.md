@@ -34,10 +34,18 @@ Completion evidence:
   backends/presets, plus density/detail contrasts; all transcripts and PNG hashes.
 - Wizard frames at the four sizes, including safe before/after sample mode.
 
+The local implementation and retained verification gates above are complete for
+0.4.0: 524 classic cases, 140 sampler cases, five wizard frames, native Python
+3.8/current-Python suites, and the recorded shell/native-host matrices. See
+`build/verification-gallery-v04.json` and the audit for exact hashes, counts,
+skips and the example-builder qualification on the current-Python run. Native
+interactive Windows console resizing remains an explicit coverage gap below.
+
 ## 2. Close the highest-value native coverage gaps
 
-Run the legacy PowerShell harness on actual 1.0, 2.0, 3.0, 4.0 and 5.0 engines
-when those environments are available. A prepared harness is not a test pass.
+Run the legacy PowerShell harness on actual 1.0, 3.0, 4.0 and 5.0 engines
+when those environments are available. Retain and repeat the actual PS2/Server
+2022 check obtained during this review for the final source. A prepared harness is not a test pass.
 Record host OS, engine, encoding, terminal capability, source hashes and skipped
 collectors. Investigate actual failures before widening a support claim.
 
@@ -49,7 +57,33 @@ and permissions; do not infer all distributions from it.
 Keep contributor setup optional: normal generation must not acquire gallery,
 historical-engine or test dependencies.
 
-## 3. Harden remaining bounded correctness risks
+Drive the wizard in a real Windows console, resizing with a partially typed
+answer, and check its old-console line-mode fallback. Pure frame rendering and
+native cmd/PowerShell/export jobs do not establish that interactive behavior.
+
+## 3. Add only explicit, tested integration adapters
+
+Native macOS profile installation is separate from running the existing Unix
+output there. It needs startup-file selection, existing customization preservation
+and tested upgrade/uninstall behavior. Windows profiles, CMD AutoRun and sign-in
+or RDP policy routes are separate mechanisms, each requiring an explicit scope
+and native safety contract. A text export must never imply that a service or
+policy was configured.
+
+Persistent shell prompts and per-command hints are also separate from an arrival
+MOTD. First specify which shell event and information the user wants, how an
+existing prompt/completion system is preserved, and whether any command runs.
+Keep prompt work lightweight and avoid collecting the whole dashboard per
+command. Implement one demonstrably useful native adapter with reversible
+ownership before expanding to another shell.
+
+Treat csh/tcsh and older non-POSIX Bourne shells as separate grammar/startup
+targets. Invoking a compatible exported sh script manually can already be useful,
+but is not proof of native generation or installation support. A future native
+adapter needs an actual engine and startup test; do not duplicate the collector
+merely to add an entry point.
+
+## 4. Harden remaining bounded correctness risks
 
 Retain the implemented 16 MiB POSIX snapshot limit and bounded import reads, with
 their negative tests. Document exactly which file metadata is restored. Add ACL/xattr preservation
@@ -66,7 +100,7 @@ handle-based path checks, reparse-point policy, ACL/ownership behavior, crash
 recovery and profile ownership. The create-only exporter is not a starting
 transaction engine and must not silently grow into one.
 
-## 4. Keep maintenance proportional to the product
+## 5. Keep maintenance proportional to the product
 
 Check canonical runtime/TOML embedding in CI and build examples mechanically.
 Keep one current release evidence index; retain older logs with historical scope.
