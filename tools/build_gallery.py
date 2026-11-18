@@ -45,6 +45,7 @@ sys.path.insert(0, str(ROOT))
 import motd
 
 SIZES = ((40, 25), (40, 50), (80, 25), (80, 50))
+PRESENTATION_SIZES = ((80, 25), (80, 50), (120, 50), (160, 50))
 PRESETS = ('workshop', 'home-lab')
 SHELLS = ('bash', 'zsh', 'sh', 'powershell')
 THEMES = ('cyan', 'green', 'amber', 'mono')
@@ -367,16 +368,23 @@ def write_index(output, manifest):
 <h1>MOTD terminal gallery</h1><p>Actual output captured through sized pseudo-terminals, with synthetic data and disabled hooks. Each PNG preserves the entire requested terminal grid, including unused rows. Every PNG is lossless; identical pictures share a file without losing their individual capture records.</p>
 <p>CASES logical captures · UNIQUE unique PNGs · <a href="manifest.json">Evidence manifest</a> · <a href="README.md">Reproduction notes</a></p>
 <div class="filters" id="filters"></div><div class="status" id="status"></div><div class="cards" id="cards"></div>
-<script>const cases=PAYLOAD;const keys=['preset','shell','size','design','density','detail','bar_layout','theme','charset','colour'];const filters=document.getElementById('filters');for(const key of keys){const label=document.createElement('label');label.textContent=key;const select=document.createElement('select');select.dataset.key=key;for(const value of ['All',...new Set(cases.map(c=>c[key]))]){const option=document.createElement('option');option.textContent=value;select.append(option)}select.addEventListener('change',render);label.append(select);filters.append(label)}function render(){const selected=cases.filter(c=>[...filters.querySelectorAll('select')].every(s=>s.value==='All'||c[s.dataset.key]===s.value));document.getElementById('status').textContent=selected.length+' cases shown';const cards=document.getElementById('cards');cards.replaceChildren();for(const c of selected){const card=document.createElement('article');card.className='card';const link=document.createElement('a');link.href=c.png;link.target='_blank';const image=document.createElement('img');image.loading='lazy';image.src=c.png;image.alt=c.id;link.append(image);card.append(link);const meta=document.createElement('div');meta.className='meta';const h=document.createElement('h2');h.textContent=c.preset+' · '+c.shell+' · '+c.size;meta.append(h);const p=document.createElement('p');p.textContent=c.design+' / '+c.density+' / '+c.detail+' / '+c.bar_layout+' bars · '+c.theme+' / '+c.charset+' / '+c.colour+' · '+c.content_rows+' used rows';meta.append(p);const actions=document.createElement('div');actions.className='actions';for(const [text,path]of[['PNG',c.png],['ANSI transcript',c.transcript],['Recipe',c.recipe]]){const a=document.createElement('a');a.textContent=text;a.href=path;actions.append(a)}meta.append(actions);card.append(meta);cards.append(card)}}render();</script></html>'''
+<script>const cases=PAYLOAD;const keys=['sample_group','axis','variant','size','preset','shell','design','density','detail','bar_layout','theme','charset','colour'];const filters=document.getElementById('filters');for(const key of keys){const label=document.createElement('label');label.textContent=key;const select=document.createElement('select');select.dataset.key=key;for(const value of ['All',...new Set(cases.map(c=>c[key]))]){const option=document.createElement('option');option.textContent=value;select.append(option)}select.addEventListener('change',render);label.append(select);filters.append(label)}function render(){const selected=cases.filter(c=>[...filters.querySelectorAll('select')].every(s=>s.value==='All'||c[s.dataset.key]===s.value));document.getElementById('status').textContent=selected.length+' cases shown';const cards=document.getElementById('cards');cards.replaceChildren();for(const c of selected){const card=document.createElement('article');card.className='card';const link=document.createElement('a');link.href=c.png;link.target='_blank';const image=document.createElement('img');image.loading='lazy';image.src=c.png;image.alt=c.id;link.append(image);card.append(link);const meta=document.createElement('div');meta.className='meta';const h=document.createElement('h2');h.textContent=c.preset+' · '+c.shell+' · '+c.size;meta.append(h);const p=document.createElement('p');p.textContent=(c.axis ? c.axis+' = '+c.variant+' · ' : c.variant ? c.variant+' · ' : '')+c.design+' / '+c.density+' / '+c.detail+' / '+c.bar_layout+' bars · '+c.theme+' / '+c.charset+' / '+c.colour+' · '+c.content_rows+' used rows';meta.append(p);const actions=document.createElement('div');actions.className='actions';for(const [text,path]of[['PNG',c.png],['ANSI transcript',c.transcript],['Recipe',c.recipe]]){const a=document.createElement('a');a.textContent=text;a.href=path;actions.append(a)}meta.append(actions);card.append(meta);cards.append(card)}}render();</script></html>'''
     document = document.replace('CASES', str(total)).replace('UNIQUE', str(unique)).replace('PAYLOAD', payload)
     (output / 'index.html').write_text(document, encoding='utf-8')
     overview = ['# Actual terminal PNG gallery', '',
                 f'{total} logical captures; {unique} unique lossless PNGs.', '',
                 'Open [index.html](index.html) locally to filter by preset, interpreter, size, design, density, detail, theme, character set and colour mode.', '',
-                'The requested sizes are **40×25, 40×50, 80×25 and 80×50**. The full grid is preserved; no terminal output was cropped or resized to make a layout fit. The final row is reserved for the shell prompt.', '',
+                'Terminal sizes: **' + ', '.join(dict.fromkeys(c['size'].replace('x', '×') for c in manifest['cases'])) + '**. The full grid is preserved; no terminal output was cropped or resized to make a layout fit. The final row is reserved for the shell prompt.', '',
                 'Each record in [manifest.json](manifest.json) links its raw ANSI transcript, effective recipe, exact command, interpreter version, source hashes, cell geometry and lossless PNG pixel hash. Records may share a PNG when their actual output is identical.', '',
                 'Fixtures are synthetic. Configured before/after commands do not run. Static public notices have no invented colour/theme variants.', '',
                 '## Size comparisons', '']
+    if manifest.get('selection') in ('axis-sampler', 'composition-sampler'):
+        overview[-2:] = ['## Controlled comparisons', '',
+            'Axis comparisons change one setting against the baseline recorded in the manifest. Context needed to make a setting visible (for example custom separator notes) is held constant within that axis. Combined recipes keep design=classic and set the independent policies directly.', '',
+            '| Setting / combination | Choice | Size | Evidence |', '|---|---|---|---|']
+        overview += [f'| {c.get("axis") or "composition"} | {c.get("variant", "")} | {c["size"]} | [PNG]({c["png"]}) · [Recipe]({c["recipe"]}) · [ANSI]({c["transcript"]}) |' for c in manifest['cases']]
+        (output / 'README.md').write_text('\n'.join(overview) + '\n', encoding='utf-8')
+        return
     if manifest.get('selection') == 'design-sampler':
         overview[-2:] = ['## Design comparisons', '',
             'This bounded sampler has 120 structural comparisons (five designs × four sizes × two presets × three backends), 15 full-detail density contrasts, and five brief-detail views. Colors and character modes are covered by the separate 524-case classic gallery.', '',
@@ -468,6 +476,8 @@ def presentation(case):
 
 def case_identifier(case):
     columns, rows = case['geometry']
+    if case.get('sample_name'):
+        return case['sample_name'] + f'-{columns}x{rows}'
     name = '-'.join(case[key] for key in ('preset', 'shell', 'theme', 'charset', 'colour'))
     name += f'-{columns}x{rows}'
     if presentation(case) != DEFAULT_PRESENTATION:
@@ -496,10 +506,99 @@ def design_sampler_specs():
 
 
 def capture_specs(args):
+    if getattr(args, 'axis_sampler', False): return axis_sampler_specs()
+    if getattr(args, 'composition_sampler', False): return composition_sampler_specs()
     if args.design_sampler: return design_sampler_specs()
     keys = ('preset', 'shell', 'theme', 'charset', 'colour', 'geometry', 'design', 'density', 'detail', 'bar_layout')
     return [dict(zip(keys, values)) for values in itertools.product(args.presets, args.shells,
             args.themes, args.charsets, args.colours, args.sizes, args.designs, args.densities, args.details, args.bar_layouts)]
+
+
+def presentation_spec(name, patch, geometry, *, group, axis='', variant='', baseline=None):
+    """A literal recipe delta, never a new renderer or mock screenshot."""
+    return {'preset': 'workshop', 'shell': 'bash', 'theme': patch.get('theme', 'cyan'),
+            'charset': patch.get('charset', 'unicode'),
+            'colour': 'plain' if patch.get('color') == 'never' else 'colour',
+            'geometry': geometry, 'design': patch.get('design', 'classic'),
+            'density': patch.get('density', 'balanced'), 'detail': patch.get('detail', 'full'),
+            'bar_layout': patch.get('bar_layout', 'inline'), 'sample_group': group,
+            'sample_name': name, 'display_patch': patch, 'axis': axis, 'variant': variant,
+            'baseline': baseline or {}}
+
+
+def axis_sampler_specs():
+    """Change one setting at a time against a declared per-axis baseline."""
+    axes = {
+        'design': list(DESIGNS), 'theme': list(THEMES),
+        'density': list(DENSITIES), 'detail': list(DETAILS),
+        'panel_layout': ['stack', 'columns'],
+        'panel_frame': ['continuous', 'separate', 'none'],
+        'border_style': ['single', 'rounded', 'double', 'heavy', 'ascii'],
+        'border_visibility': ['all', 'outer', 'sections', 'none'],
+        'heading_style': ['rule', 'plain', 'inline', 'hidden'],
+        'heading_align': ['left', 'center', 'right'],
+        'separator_text': ['none', 'summary', 'custom'],
+        'label_style': ['full', 'short'], 'overflow': ['ellipsis', 'clip'],
+        'padding': [0, 1, 2, 3], 'section_gap': [0, 1, 2],
+        'bar_layout': ['inline', 'wide'],
+        'color_emphasis': ['quiet', 'balanced', 'vivid'],
+        'charset': ['ascii', 'unicode'], 'color': ['always', 'never'],
+        'top_entries': [1, 3, 5], 'show_swap': [True, False],
+        'show_compression': [True, False], 'show_pressure': [True, False],
+        'section_titles': [{}, {'system': 'Machine identity', 'resources': 'Capacity',
+                               'services': 'Service health', 'processes': 'Busy programs'}],
+        'section_notes': [{}, {'resources': 'One snapshot; bounded collection',
+                              'services': 'Required services remain visible'}],
+        'section_detail': [{}, {'resources': 'brief', 'services': 'full', 'processes': 'full'}],
+        'sections': [list(motd.SECTION_IDS), ['system', 'resources', 'services', 'attention', 'hints']],
+        'priority': [list(motd.DEFAULT_PRIORITY), list(reversed(motd.DEFAULT_PRIORITY))],
+    }
+    specs = []
+    for axis, values in axes.items():
+        baseline = {'width': 160, 'rows': 50, 'detail': 'full',
+                    'sections': list(motd.SECTION_IDS)}
+        if axis == 'separator_text':
+            baseline['section_notes'] = {'system': 'Workshop / local observations',
+                                         'resources': 'Capacity overview', 'services': 'Service health'}
+        if axis == 'section_notes': baseline['separator_text'] = 'custom'
+        if axis == 'overflow':
+            baseline['section_titles'] = {'resources': 'A deliberately long resource heading to demonstrate terminal-cell clipping without changing the measurements'}
+        for index, value in enumerate(values):
+            label = str(value).lower() if not isinstance(value, (dict, list)) else ('default' if index == 0 else 'custom')
+            patch = dict(baseline); patch[axis] = value
+            name = 'axis-' + axis.replace('_', '-') + '-' + label
+            for geometry in PRESENTATION_SIZES:
+                specs.append(presentation_spec(name, patch, geometry, group='axis', axis=axis,
+                                               variant=label, baseline=baseline))
+    return specs
+
+
+def composition_sampler_specs():
+    """All combinations keep Classic and compose explicit low-level policies."""
+    recipes = {
+        'classic-workshop': {},
+        'rounded-green': {'theme': 'green', 'border_style': 'rounded', 'separator_text': 'summary'},
+        'double-amber': {'theme': 'amber', 'border_style': 'double', 'heading_align': 'center'},
+        'open-inventory': {'panel_frame': 'none', 'heading_style': 'inline', 'label_style': 'short'},
+        'quiet-rules': {'panel_frame': 'none', 'heading_style': 'rule', 'color_emphasis': 'quiet'},
+        'wide-capacity': {'bar_layout': 'wide', 'sections': ['system', 'resources', 'services', 'attention', 'hints']},
+        'paired-panels': {'panel_layout': 'columns', 'panel_frame': 'separate', 'bar_layout': 'wide', 'border_style': 'rounded'},
+        'spacious-cards': {'panel_frame': 'separate', 'density': 'comfortable', 'padding': 2},
+        'compact-operations': {'density': 'compact', 'padding': 0, 'label_style': 'short', 'separator_text': 'summary'},
+        'mono-ascii': {'theme': 'mono', 'charset': 'ascii', 'color': 'never', 'panel_frame': 'separate'},
+        'headline-briefing': {'panel_frame': 'none', 'heading_style': 'plain', 'detail': 'brief', 'section_gap': 1},
+        'annotated-rules': {'heading_align': 'right', 'separator_text': 'custom',
+                            'section_notes': {'resources': 'Capacity', 'services': 'Local service observations'}},
+    }
+    result = []
+    for name, overrides in recipes.items():
+        patch = {'width': 160, 'rows': 50, 'design': 'classic', 'detail': 'full',
+                 'sections': list(motd.SECTION_IDS)}
+        patch.update(overrides)
+        for geometry in PRESENTATION_SIZES:
+            result.append(presentation_spec('composition-' + name, patch, geometry,
+                                           group='composition', variant=name))
+    return result
 
 
 def parse_csv(raw, allowed, name):
@@ -580,6 +679,10 @@ def verify_gallery(output, *, require_full=False, require_sampler=False):
             raise GalleryError('Presentation metadata differs from the captured recipe: ' + recipe)
         if not case['shell'].startswith('static-') and recipes[recipe][3] != case.get('bar_layout', 'inline'):
             raise GalleryError('Bar metadata differs from the captured recipe: ' + recipe)
+        if case.get('display_patch'):
+            effective = motd.load_config(inside(output, recipe))['display']
+            if any(effective[key] != value for key, value in case['display_patch'].items()):
+                raise GalleryError('Customization metadata differs from captured recipe: ' + recipe)
         png = case['png']
         if png not in images:
             path = inside(output, png)
@@ -640,18 +743,22 @@ def build(args):
             columns, rows = specification['geometry']
             design, density, detail = presentation(specification)
             bar_layout = specification.get('bar_layout', 'inline')
-            key = (preset, shell, theme, design, density, detail, bar_layout)
+            key = (preset, shell, theme, design, density, detail, bar_layout,
+                   specification.get('sample_name', ''))
             if key not in templates:
                 config = motd.preset_config(preset); motd.select_shell(config, shell)
                 config['display'].update(theme=theme, design=design, density=density, detail=detail,
                                          bar_layout=bar_layout)
+                config['display'].update(specification.get('display_patch', {}))
                 config = motd.validate_config(config)
                 artifact = motd.generate_artifact(config)
-                stem = '-'.join(key[:3] if presentation(specification) == DEFAULT_PRESENTATION else key[:-1])
-                if bar_layout != 'inline': stem += '-bars-' + bar_layout
+                stem = specification.get('sample_name') or '-'.join(key[:3] if presentation(specification) == DEFAULT_PRESENTATION else key[:6])
+                if bar_layout != 'inline' and not specification.get('sample_name'): stem += '-bars-' + bar_layout
                 path = temporary / (stem + motd.artifact_suffix(config))
                 path.write_text(artifact, encoding='utf-8')
-                recipe = Path('recipes') / (stem + '.toml')
+                group = specification.get('axis', '').replace('_', '-')
+                recipe = Path('recipes') / group / (stem + '.toml')
+                (output / recipe).parent.mkdir(parents=True, exist_ok=True)
                 (output / recipe).write_text(motd.dump_config(config), encoding='utf-8')
                 templates[key] = (path, recipe, digest(artifact.encode()))
             artifact, recipe, artifact_hash = templates[key]
@@ -663,7 +770,9 @@ def build(args):
             visible = grid.plain_text()
             if charset == 'ascii' and any(ord(ch) > 127 for ch in visible):
                 raise GalleryError(identifier + ': ASCII output contains non-ASCII cells')
-            transcript = Path('transcripts') / (identifier + '.ansi')
+            group = specification.get('axis', '').replace('_', '-')
+            transcript = Path('transcripts') / group / (identifier + '.ansi')
+            (output / transcript).parent.mkdir(parents=True, exist_ok=True)
             (output / transcript).write_bytes(raw)
             grid_hash = grid.fingerprint()
             if grid_hash in png_cache: png, details = png_cache[grid_hash]
@@ -675,7 +784,8 @@ def build(args):
                 same = next((item for item in png_cache.values() if item[1]['rgba_sha256'] == pixel_hash), None)
                 if same: png, details = same
                 else:
-                    png = Path('png') / (identifier + '.png')
+                    png = Path('png') / group / (identifier + '.png')
+                    (output / png).parent.mkdir(parents=True, exist_ok=True)
                     details = save_lossless(image, output / png)
                     bytes_before += details['before_optimization_bytes']
                 png_cache[grid_hash] = (png, details)
@@ -683,6 +793,7 @@ def build(args):
             cases.append({'id': identifier, 'preset': preset, 'shell': shell, 'theme': theme,
                           'design': design, 'density': density, 'detail': detail, 'bar_layout': bar_layout,
                           'sample_group': specification.get('sample_group', 'matrix'),
+                          **{key: specification[key] for key in ('axis', 'variant', 'baseline', 'display_patch') if key in specification},
                           'charset': charset, 'colour': colour, 'size': f'{columns}x{rows}', 'columns': columns, 'rows': rows,
                           'content_rows': grid.highest_row + 1, 'maximum_columns_used': grid.max_columns,
                           'png': str(png), 'transcript': str(transcript), 'recipe': str(recipe),
@@ -693,7 +804,7 @@ def build(args):
                           'transcript_sha256': digest(raw), 'cell_grid_sha256': grid_hash,
                           'terminal_modes_ignored': sorted(set(grid.ignored_modes)), 'observed_capture_seconds': elapsed, **details})
             if number % 16 == 0 or number == len(matrix): print(f'Captured {number}/{len(matrix)} shell cases', flush=True)
-        if args.static and not args.design_sampler:
+        if args.static and not (args.design_sampler or args.axis_sampler or args.composition_sampler):
             for target in ('issue', 'ssh-banner', 'text'):
                 config = motd.preset_config('public-console'); config['target'] = target
                 artifact = motd.generate_artifact(config)
@@ -727,14 +838,14 @@ def build(args):
                                   'transcript_sha256': digest(raw), 'cell_grid_sha256': grid.fingerprint(),
                                   'terminal_modes_ignored': [], 'observed_capture_seconds': elapsed,
                                   'note': 'Literal bytes displayed by cat; no real getty or SSH server is claimed.', **details})
-    comparisons = contact_sheets(output, cases, renderer, None, args.opt_level, False) if args.comparisons and not args.design_sampler else []
+    comparisons = contact_sheets(output, cases, renderer, None, args.opt_level, False) if args.comparisons and not (args.design_sampler or args.axis_sampler or args.composition_sampler) else []
     if args.comparisons: comparisons += design_sheets(output, cases, renderer)
     optimize_gallery(output, cases, comparisons, optimizer, args.opt_level, args.zopfli, args.jobs)
     unique = {c['png']: c for c in cases}
     if source_hashes() != sources:
         raise GalleryError('Source files changed during capture; rebuild from stable sources')
     manifest = {'schema_version': 2, 'generator': motd.VERSION, 'source_sha256': sources,
-                'selection': 'design-sampler' if args.design_sampler else 'matrix',
+                'selection': 'axis-sampler' if args.axis_sampler else 'composition-sampler' if args.composition_sampler else 'design-sampler' if args.design_sampler else 'matrix',
                 'environment': {'system': platform.platform(), 'python': platform.python_version(), 'pillow': PILLOW_VERSION,
                                 'wcwidth': WCWIDTH_VERSION, 'interpreters': interpreters},
                 'raster': {'font': str(renderer.path), 'font_sha256': digest(renderer.path.read_bytes()), 'font_size_px': renderer.font_size, 'font_variants': font_metadata(renderer),
@@ -759,7 +870,7 @@ def build(args):
     expected = {c['png'] for c in cases} | {c['transcript'] for c in cases} | {c['recipe'] for c in cases} | {c['path'] for c in comparisons}
     for directory in ('png', 'transcripts', 'recipes', 'comparisons'):
         if not (output/directory).is_dir(): continue
-        for path in (output/directory).iterdir():
+        for path in (output/directory).rglob('*'):
             if path.is_file() and str(path.relative_to(output)) not in expected: path.unlink()
     if args.zip:
         archive = Path(args.zip).resolve(); archive.parent.mkdir(parents=True, exist_ok=True)
@@ -784,6 +895,8 @@ def main(argv=None):
     parser.add_argument('--require-full', action='store_true', help='With --verify, require all 512 shell and 12 static cases')
     parser.add_argument('--require-sampler', action='store_true', help='With --verify, require the fixed 140-case design sampler')
     parser.add_argument('--design-sampler', action='store_true', help='Capture a fixed 140-case presentation sampler; excludes static notices')
+    parser.add_argument('--axis-sampler', action='store_true', help='Capture independent controls at 80x25, 80x50, 120x50 and 160x50')
+    parser.add_argument('--composition-sampler', action='store_true', help='Capture 12 combined Classic recipes at the four presentation sizes')
     parser.add_argument('--presets', default=','.join(PRESETS))
     parser.add_argument('--shells', default=','.join(SHELLS))
     parser.add_argument('--themes', default=','.join(THEMES))
@@ -804,14 +917,16 @@ def main(argv=None):
     parser.add_argument('--no-comparisons', dest='comparisons', action='store_false')
     parser.add_argument('--zip', help='Write a repository-root-extractable gallery archive')
     args = parser.parse_args(argv)
+    if sum((args.design_sampler, args.axis_sampler, args.composition_sampler)) > 1:
+        raise GalleryError('Select one sampler per output directory')
     if not args.output:
-        args.output = str(ROOT / ('examples/designs' if args.design_sampler or args.require_sampler else 'examples/gallery'))
+        args.output = str(ROOT / ('gallery/axes' if args.axis_sampler else 'gallery/compositions' if args.composition_sampler else 'gallery/designs' if args.design_sampler or args.require_sampler else 'gallery/compatibility'))
     if args.verify: return verify_gallery(args.output, require_full=args.require_full, require_sampler=args.require_sampler)
     for name, allowed in [('presets', PRESETS), ('shells', SHELLS), ('themes', THEMES), ('charsets', CHARSETS), ('colours', COLOURS), ('designs', DESIGNS), ('densities', DENSITIES), ('details', DETAILS), ('bar_layouts', BAR_LAYOUTS)]:
         setattr(args, name, parse_csv(getattr(args, name), allowed, name))
     if args.design_sampler and args.bar_layouts != ('inline',):
         raise GalleryError('The fixed design sampler uses inline bars; use a separate --output for a wide-bar matrix')
-    sizes = parse_csv(args.sizes, tuple(f'{c}x{r}' for c, r in SIZES), 'sizes')
+    sizes = parse_csv(args.sizes, tuple(dict.fromkeys(f'{c}x{r}' for c, r in SIZES + PRESENTATION_SIZES)), 'sizes')
     args.sizes = tuple(tuple(map(int, x.split('x'))) for x in sizes)
     return build(args)
 
