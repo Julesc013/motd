@@ -4,7 +4,11 @@ A small configurator for messages of the day. Start from a preset, preview the s
 
 The configurator needs **Python 3.8 or later**. It contains a readable, licensed TOML parser for Python versions before 3.11; no package download is needed. Generation, inspection and previews are portable across Linux, macOS and Windows. Generated displays do not need Python, TOML, this repository, or the configurator at login. Choose **Bash, Zsh, portable sh, fish, native PowerShell or a CMD launcher**, or export static text. Their prerequisites and collector coverage differ; see the [compatibility guide](docs/compatibility.md).
 
-Version 0.4 adds five different presentations, independent spacing and detail preferences, section priority, more approachable wizard controls, older Python support and create-only Windows export. Workshop and home-lab remain configurations over shared collectors. Automatic login installation remains Linux-specific; generating a compatible file does not certify every host or configure its login service. Exact executed engines and unverified targets are listed separately.
+**0.5.0-alpha.1** consolidates all presentations through one composer per runtime family. Classic remains the foundation: borders, headings, separator notes, labels, density, detail and colours can change independently. Named designs are settings presets. The normal setup path is a guided wizard with an always-visible, cancellable preview of actual generated output.
+
+[Release notes](docs/release-0.5.0-alpha.1.md) · [64 selected captures](gallery/showcase/README.md) · [All galleries](gallery/README.md) · [Project review](docs/project-review-2026-11-18.md)
+
+Automatic login installation remains Linux-specific. Generating a compatible file does not certify every host or configure its login service. Exact executed engines and unverified targets are listed separately in the compatibility guide.
 
 ## Start here
 
@@ -35,7 +39,7 @@ installer show create/open/export actions, rather than offering unsupported
 installation choices. Windows exports create new files and a hash manifest;
 they do not overwrite existing files or claim a Linux-style rollback journal.
 
-On a suitable terminal, the wizard uses successive screens with numbered choices. Destination, design, readability, sections, content and calls are grouped into pages. In screen menus with a live choice preview, type a number and Enter to preview, then Enter again to accept; Up/Down also moves the selection. Ordinary menus and line mode accept a number and Enter directly. `?` explains choices and controls. You can go back, request a full preview, review the installation plan, save/build, or cancel. Choosing options does not install anything.
+On a suitable terminal, the wizard asks one high-level question at a time: arrangement, spacing, detail, colours, borders, headings and gauges. Number or arrow keys update the preview immediately; **Enter** accepts, **B** goes back, and **A** opens that decision's fine controls. The draft keeps unrelated choices. Resizing or changing a choice cancels obsolete preview work. The preview uses synthetic observations and does not execute configured calls. Choosing options does not install anything.
 
 ## Choose a presentation
 
@@ -44,15 +48,13 @@ On a suitable terminal, the wizard uses successive screens with numbered choices
 | `classic` | The original continuous frame and compact information grid. |
 | `cards` | Separate panels with clear boundaries and breathing room. |
 | `ledger` | Open section labels and aligned observations without an outer box. |
-| `briefing` | Attention first, then short headings with optional explanatory detail. |
+| `briefing` | Open short headings with optional explanatory detail; configured order is retained. |
 | `dashboard` | A metric summary with paired cards on wide terminals and stacked cards when narrow. |
 
-The [design sampler](examples/designs/README.md) shows actual generated output at
-the four requested terminal sizes. Its [local filterable index](examples/designs/index.html)
-also includes density/detail contrasts. These choices reuse collection code.
+The [individual controls](gallery/axes/README.md) and [combined Classic recipes](gallery/compositions/README.md) show actual output at **80×25, 80×50, 120×50 and 160×50**. The [64-image showcase](gallery/showcase/README.md) offers a reproducible selection. The [design sampler](gallery/designs/README.md) additionally retains narrow compatibility views. Every layout uses the shared compositor and collectors.
 
 Resource bars can sit beside a reading (`inline`, the existing default) or use
-their own full panel row (`wide`). The [bar comparison](examples/bars/README.md)
+their own full panel row (`wide`). The [bar comparison](gallery/bars/README.md)
 shows both at the four terminal sizes on Bash, portable sh and PowerShell.
 Labels remain when a short viewport cannot fit a gauge; missing data stays
 unavailable. A dashboard bar fills its own card, including when cards are paired.
@@ -83,7 +85,7 @@ The default `--ui auto` selects the screen interface for a compatible terminal a
 python3 motd.py --help
 ```
 
-This is a page rendered by the actual wizard with synthetic fixture data:
+This is an actual guided wizard frame with synthetic fixture data:
 
 ![Wizard theme selection with a preview](examples/wizard-theme.svg)
 
@@ -176,7 +178,7 @@ The following gallery is rendered from synthetic fixture data by the actual engi
 
 ![Home-lab synthetic preview](examples/home-lab.svg)
 
-The [PNG gallery](examples/gallery/README.md) covers **40×25, 40×50, 80×25 and 80×50** terminals across both dashboard presets, four output routes, four themes, ASCII/Unicode and colour/plain modes. Open `examples/gallery/index.html` locally for filters. Each capture retains its command, recipe, raw ANSI output, interpreter version and hashes. PNG optimization is lossless; a wider or taller screenshot comes from a newly executed layout, not resizing a smaller output. See [gallery reproduction](docs/gallery.md).
+The [PNG gallery](gallery/compatibility/README.md) covers **40×25, 40×50, 80×25 and 80×50** terminals across both dashboard presets, four output routes, four themes, ASCII/Unicode and colour/plain modes. Open `gallery/compatibility/index.html` locally for filters. Each capture retains its command, recipe, raw ANSI output, interpreter version and hashes. PNG optimization is lossless; a wider or taller screenshot comes from a newly executed layout, not resizing a smaller output. See [gallery reproduction](docs/gallery.md).
 
 Ordinary configuration is data. Optional commands are explicit argument arrays; shell expressions require an explicitly chosen shell invocation. Inspecting an existing script does not execute it.
 

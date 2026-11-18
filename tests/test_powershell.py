@@ -73,6 +73,7 @@ class PowerShellExecutionTests(unittest.TestCase):
         self.config["display"]["sections"] = ["system", "resources", "processes", "services", "attention"]
         self.config["display"]["width"] = 100
         self.config["display"]["rows"] = 40
+        self.config["display"]["border_style"] = "double"
 
     def render(self, *arguments, config=None, timeout=12, env=None):
         self.script.write_text(motd.generate_artifact(config or self.config), encoding="utf-8")
@@ -98,7 +99,7 @@ class PowerShellExecutionTests(unittest.TestCase):
     def test_actual_demo_geometry_data_and_resource_bars(self):
         result = self.render("-Demo", "-Plain", "-Width", "80", "-Rows", "20")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("DEMO - synthetic", result.stdout)
+        self.assertIn("DEMO | Host demo-host", result.stdout)
         self.assertIn("CPU total (s)", result.stdout)
         self.assertIn("[####--------]", result.stdout)
         self.assertNotIn("\x1b", result.stdout)
@@ -165,10 +166,11 @@ class PowerShellExecutionTests(unittest.TestCase):
         result = self.render("-NoHooks", "-Plain")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertNotIn("synthetic", result.stdout)
-        self.assertIn("I/O  cumulative process R+W bytes", result.stdout)
+        self.assertIn(motd.SECTION_TEXT["io"][0], result.stdout)
+        self.assertIn("cumulative process R+W bytes", result.stdout)
         self.assertRegex(result.stdout, r"totals are not rates|unavailable \(OS API/access missing\)")
-        self.assertRegex(result.stdout, r"CONNECTIONS (\d+ TCP / \d+ listen / \d+ UDP|unavailable)")
-        self.assertRegex(result.stdout, r"SESSIONS\s+(.+\(current\)|local registered records)")
+        self.assertRegex(result.stdout, r"CONNECTIONS(?:\s*\|\s*|\s+)(\d+ TCP / \d+ listen / \d+ UDP|unavailable)")
+        self.assertRegex(result.stdout, r"SESSIONS(?:\s*\|\s*|\s+)(.+\(current\)|local registered records)")
         self.assertNotIn("all healthy", result.stdout.lower())
 
     def test_live_local_memory_storage_and_process_observations(self):
@@ -209,21 +211,21 @@ class PowerShellExecutionTests(unittest.TestCase):
         self.config["display"].update(charset="unicode", color="never")
         result = self.render("-Demo", env=env)
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("\u250c", result.stdout)
+        self.assertIn("\u2554", result.stdout)
         self.assertNotIn("\x1b[", result.stdout)
         override = self.render("-Demo", "-Color", "-Ascii", env=env)
         self.assertEqual(override.returncode, 0, override.stderr)
         self.assertIn("\x1b[", override.stdout)
-        self.assertNotIn("\u250c", override.stdout)
+        self.assertNotIn("\u2554", override.stdout)
         self.config["display"].update(charset="ascii", color="always")
         forced = self.render("-Demo", env=env)
         self.assertEqual(forced.returncode, 0, forced.stderr)
         self.assertIn("\x1b[", forced.stdout)
-        self.assertNotIn("\u250c", forced.stdout)
+        self.assertNotIn("\u2554", forced.stdout)
         plain = self.render("-Demo", "-Plain", "-Unicode", env=env)
         self.assertEqual(plain.returncode, 0, plain.stderr)
         self.assertNotIn("\x1b[", plain.stdout)
-        self.assertIn("\u250c", plain.stdout)
+        self.assertIn("\u2554", plain.stdout)
 
     def test_all_requested_sizes_and_charsets_expand_actual_content(self):
         self.config["display"]["sections"] = list(motd.SECTION_IDS)
@@ -238,11 +240,14 @@ class PowerShellExecutionTests(unittest.TestCase):
                         captures[rows] = result.stdout.splitlines()
                         self.assertTrue(all(len(line) == width for line in captures[rows]), result.stdout)
                         self.assertLessEqual(len(captures[rows]), rows - 1)
-                        for label in ("SYSTEM", "SERVICES", "PROCESSES", "SESSIONS", "CONNECTIONS", "ATTENTION", "HINTS", "I/O"):
-                            self.assertIn(label, result.stdout)
+                        hidden_start = next((i for i, line in enumerate(captures[rows]) if "Hidden:" in line), len(captures[rows]))
+                        hidden = "\n".join(captures[rows][hidden_start:]).lower()
+                        for section in motd.SECTION_IDS:
+                            self.assertTrue(motd.SECTION_TEXT[section][0] in result.stdout or section.lower() in hidden,
+                                            section + " was neither displayed nor named as hidden")
                         self.assertIn("6.0G/16.0G" if width == 40 else "6.0 GiB / 16.0 GiB", result.stdout)
                         if charset == "-Unicode":
-                            self.assertTrue(captures[rows][0].startswith("\u250c"))
+                            self.assertTrue(captures[rows][0].startswith("\u2554"))
                             self.assertIn("\u2588", result.stdout)
                         else:
                             result.stdout.encode("ascii")
@@ -256,7 +261,8 @@ class PowerShellExecutionTests(unittest.TestCase):
         result = subprocess.run([POWERSHELL, "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", command],
                                 capture_output=True, text=True, encoding="utf-8", timeout=12)
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("HOME LAB", result.stdout)
+        self.assertIn("Host demo-host", result.stdout)
+        self.assertIn("CPU total (s)", result.stdout)
         self.assertTrue(all(len(line) == 40 for line in result.stdout.splitlines()))
 
     def test_trap_preserves_failure_and_rejects_partial_observations(self):
@@ -313,19 +319,20 @@ class PowerShellExecutionTests(unittest.TestCase):
                 self.assertTrue(lines[0].startswith("+"))
                 self.assertTrue(lines[-1].startswith("+"))
                 footer_start = next((i for i, line in enumerate(lines) if "Hidden:" in line), len(lines))
-                hidden = "\n".join(lines[footer_start:])
-                if "ATTENTION" not in hidden:
-                    self.assertIn("ATTENTION", result.stdout)
+                hidden = "\n".join(lines[footer_start:]).lower()
+                if "attention" not in hidden:
+                    self.assertIn(motd.SECTION_TEXT["attention"][0], result.stdout)
                     self.assertIn("91%", result.stdout)
-                if "RESOURCES" not in hidden:
+                if "resources" not in hidden:
                     self.assertIn("MEM ", result.stdout)
                     self.assertIn("DISK ", result.stdout)
                     self.assertIn("6.0G/16.0G", result.stdout)
-                for title in ("SYSTEM", "SERVICES", "PROCESSES", "SESSIONS", "CONNECTIONS", "ATTENTION", "HINTS", "I/O"):
-                    self.assertIn(title, result.stdout)
+                for section in motd.SECTION_IDS:
+                    self.assertTrue(motd.SECTION_TEXT[section][0] in result.stdout or section.lower() in hidden,
+                                    section + " was neither displayed nor named as hidden")
                 if rows >= 25:
-                    self.assertNotIn("ATTENTION", hidden)
-                    self.assertNotIn("RESOURCES", hidden)
+                    self.assertNotIn("attention", hidden)
+                    self.assertNotIn("resources", hidden)
                     self.assertIn("91%", result.stdout)
 
     def test_unix_service_providers_share_required_and_excluded_filters(self):

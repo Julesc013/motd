@@ -119,11 +119,11 @@ class WideResourceTests(unittest.TestCase):
             for columns in (40, 80):
                 for design in ('cards', 'briefing'):
                     text = self.run_view(shell, design, columns, 50)
-                    pattern = r'^\| ([#.]+) \|$' if design == 'cards' else r'^ {3}([#.]+)$'
+                    pattern = r'^\| ([#.]+) \|$' if design == 'cards' else r'^ ([#.]+) $'
                     bars = re.findall(pattern, text, re.M)
                     with self.subTest(shell=shell, columns=columns, design=design):
                         self.assertEqual(len(bars), 3, text)
-                        self.assertTrue(all(len(bar) == columns - 4 for bar in bars))
+                        self.assertTrue(all(len(bar) == columns - (4 if design == 'cards' else 2) for bar in bars))
                         # The filled part depicts the quantity actually named.
                         # A Bash launcher selects the portable backend on macOS
                         # and older Bash, so its filename cannot identify the

@@ -890,7 +890,7 @@ def build(args):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('--output', help='Destination (default: examples/gallery, or examples/designs for the sampler)')
+    parser.add_argument('--output', help='Destination (default: gallery/compatibility, gallery/designs, gallery/axes, or gallery/compositions for the selected sampler)')
     parser.add_argument('--verify', action='store_true', help='Verify retained evidence without executing scripts or recapturing')
     parser.add_argument('--require-full', action='store_true', help='With --verify, require all 512 shell and 12 static cases')
     parser.add_argument('--require-sampler', action='store_true', help='With --verify, require the fixed 140-case design sampler')

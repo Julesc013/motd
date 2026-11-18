@@ -24,21 +24,21 @@ for installation scope; choosing a scope does not install anything. Start with
 **home-lab** for fewer sections or **workshop** for a fuller operational overview.
 **public-console** starts a static notice intended for a pre-login consumer.
 
-On Destination, check the output interpreter against the computer that will run
+At the destination decision, check the output interpreter against the computer that will run
 the file. Bash, Zsh, sh and Fish serve Unix routes; PowerShell has its own output;
 CMD launches the PowerShell dashboard. A separate Windows batch notice contains
 ASCII text and needs no PowerShell.
 
 ## 2. Choose a reading style
 
-On Design and readability, try a different Design:
+At the arrangement decision, try a different starting arrangement. Number or arrow keys preview it immediately; Enter accepts, B goes back and A opens fine controls:
 
 | Design | Starting point |
 |---|---|
 | Classic | Compact framed overview. |
 | Cards | Separate panels with room between topics. |
 | Ledger | Open headings and aligned facts. |
-| Briefing | Attention and essential context first. |
+| Briefing | Open short headings; configured order remains. |
 | Dashboard | Panels alongside each other when space permits. |
 
 **Spacing bias** changes compactness; **Information detail** changes how much

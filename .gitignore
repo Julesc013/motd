@@ -29,3 +29,6 @@ build/*
 !build/verification-gallery-v04.json
 !build/verification-review-20261117.json
 !build/review-20261117/
+
+dist/
+!build/alpha-20261118/

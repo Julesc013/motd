@@ -30,7 +30,7 @@ and host are always recorded; a PNG is not proof that an old OS was tested.
 
 ## Design and readability sampler
 
-The separate `examples/designs/` gallery covers **140 actual PTY captures** without
+The separate `gallery/designs/` gallery covers **140 actual PTY captures** without
 multiplying the baseline matrix by every layout preference:
 
 | Group | Selection | Captures |
@@ -55,7 +55,7 @@ not an implied additional PNG certification.
 
 ## Inline and wide resource bars
 
-The separate `examples/bars/` comparison holds home-lab, balanced density, normal
+The separate `gallery/bars/` comparison holds home-lab, balanced density, normal
 detail and the cyan/Unicode/colour settings constant. It varies cards/dashboard,
 inline/wide bars, Bash/sh/PowerShell and the four terminal sizes: **48 captures**.
 Wide gauges use their actual panel width; when rows are scarce, numeric labels
@@ -68,7 +68,7 @@ used observations. This is a presentation comparison, not evidence that distinct
 OS providers measure identical quantities.
 
 ```sh
-python3 tools/build_gallery.py --output examples/bars \
+python3 tools/build_gallery.py --output gallery/bars \
   --presets home-lab --shells bash,sh,powershell --themes cyan \
   --charsets unicode --colours colour --designs cards,dashboard \
   --bar-layouts inline,wide --no-static --no-comparisons \
@@ -137,7 +137,7 @@ Build the bounded sampler separately:
 
 ```sh
 python3 tools/build_gallery.py --design-sampler \
-  --output examples/designs \
+  --output gallery/designs \
   --powershell /path/to/pwsh --optimizer /path/to/oxipng
 ```
 
@@ -146,9 +146,9 @@ accept comma-separated values. These options extend the selected matrix only;
 they do not change the default classic completeness contract. `--design-sampler`
 uses the fixed selections in the table above.
 
-Open `examples/gallery/index.html` locally for the filterable index, or follow the
-PNG/transcript links in `examples/gallery/README.md`. The archive extracts into
-`examples/gallery/` relative to a repository root. Each raw transcript remains
+Open `gallery/compatibility/index.html` locally for the filterable index, or follow the
+PNG/transcript links in `gallery/compatibility/README.md`. The archive extracts into
+`gallery/compatibility/` relative to a repository root. Each raw transcript remains
 available for independent inspection and re-rendering.
 
 ## Wizard resize examples
@@ -174,8 +174,8 @@ does not require Pillow, wcwidth or a particular installed raster font.
 
 ```sh
 python3 tools/build_gallery.py --verify --require-full
-python3 tools/build_gallery.py --output examples/designs --verify --require-sampler
-python3 tools/build_gallery.py --output examples/bars --verify
+python3 tools/build_gallery.py --output gallery/designs --verify --require-sampler
+python3 tools/build_gallery.py --output gallery/bars --verify
 ```
 
 This checks the complete 524-case matrix, repository source hashes, every recipe
@@ -198,3 +198,33 @@ The subsequent [discussion-review evidence](../build/verification-review-2026111
 pins the regenerated source: 524 classic, 140 design and48 bar cases, with394
 gallery/comparison PNGs plus five wizard frames. It retains its own hashes and
 verification results; the preceding v0.4-stage record remains historical.
+
+## 0.5 alpha: organized gallery and controlled settings
+
+The root [gallery index](../gallery/README.md) groups the retained evidence by
+purpose. New presentation captures use **80×25, 80×50, 120×50 and 160×50**.
+Compatibility and design samplers additionally retain the historical narrow grids.
+
+```sh
+python3 tools/build_gallery.py --axis-sampler --output gallery/axes
+python3 tools/build_gallery.py --composition-sampler --output gallery/compositions
+python3 tools/build_showcase.py
+python3 tools/build_gallery.py --verify --output gallery/axes
+python3 tools/build_gallery.py --verify --output gallery/compositions
+python3 tools/build_showcase.py --verify
+```
+
+There are 28 independent-axis groups and 12 combined Classic recipes. Each axis
+records any context needed to expose the setting, then changes only that setting.
+Some choices legitimately produce the same picture at a particular size; their
+individual recipes and transcripts remain recorded. The seeded showcase selects
+16 distinct decoded pictures at each requested size, without padding its count
+with identical images. Its contact sheets are reduced navigation overviews;
+linked originals preserve every cell.
+
+After runtime or generator changes, regenerate compatibility, design and bar
+collections too. Their source hashes deliberately reject stale evidence. Use
+`--optimizer /path/to/oxipng --opt-level max` for optional lossless optimization;
+all decoded pixels are checked. The optimized size is not a mathematical-minimum
+claim. Wizard PNGs come from real interactive PTY sessions via
+`python3 tools/build_examples.py --png`.

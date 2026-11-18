@@ -112,7 +112,7 @@ invalid fractions do not become zero-filled healthy bars.
 
 Generated Unix outputs accept `--bar-layout inline|wide`; native PowerShell
 accepts `-BarLayout inline|wide`. Omitting the setting keeps the existing inline
-appearance. See the [retained comparisons](../examples/bars/README.md).
+appearance. See the [retained comparisons](../gallery/bars/README.md).
 
 ## Choose a structure, then tune it
 
@@ -288,3 +288,26 @@ contain configuration metadata.
 Builds on Windows use the create-only exporter, also available elsewhere with `--create-only`. It writes new output/recipe files and a final `.export.json` hash manifest in existing directories. Existing files are refused; use a new destination name for a revision. An ordinary failed write removes only newly created files whose identity and content still match this attempt. Changed files are preserved for review.
 
 This exporter is separate from Linux managed installation. It has no overwrite journal, crash recovery, ACL restoration or guarantee against an attacker changing parent directories concurrently. Use a directory you control. Generation and recipe recovery accept regular UTF-8 source files up to 2 MB; path names containing terminal controls or newlines are rejected.
+
+## Unified presentation controls (0.5 alpha)
+
+All named designs resolve to the same composer. The [presentation contract](../specs/presentation-contract.md)
+contains the complete enum table and inheritance rules. `auto` panel/heading
+settings inherit the named design. Explicit settings change that axis only.
+Classic's defaults are double borders, uppercase full section labels and summary
+metadata; these are ordinary settings, not a separate rendering path.
+
+```sh
+python3 motd.py build --preset workshop --design classic --theme green \
+  --panel-layout columns --panel-frame separate --border-style rounded \
+  --heading-style rule --heading-align center --separator-text custom \
+  --section-title 'resources=Capacity' --section-note 'resources=Local observations' \
+  --bar-layout wide --label-style short --overflow ellipsis \
+  --width 160 --rows 50 --output ./custom.bash --save-config ./custom.toml
+```
+
+`section_titles` and `section_notes` are TOML maps from registered section IDs to
+literal text. A note is displayed with `separator_text = "custom"`. Empty/missing
+notes do not create content. Colour controls do not alter measurement formulas.
+The [axis gallery](../gallery/axes/README.md) records baselines and exact recipes;
+[combined examples](../gallery/compositions/README.md) compose the same controls.

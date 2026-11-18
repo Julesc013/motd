@@ -104,3 +104,17 @@ Initial development version for `Julesc013/motd`.
 This version is a tested starting point. Real machine SSH/agetty/systemd
 integration, root-specific ownership restoration and non-Linux execution are
 not established by the temporary-directory test suite.
+
+## 0.5.0-alpha.1 — 2026-11-18
+
+- Resolve named designs into shared layout policies and compose default/customized
+  Classic through the same Unix and PowerShell rendering paths.
+- Preserve Classic's compact useful content, semantic colours and Unicode gauges;
+  expose independent framing, headings, metadata, labels and overflow controls.
+- Replace the normal wizard settings-page path with guided decisions, immediate
+  generated previews, cancellation/cache handling and contextual fine controls.
+- Organize gallery evidence, add four requested presentation sizes, controlled
+  axis comparisons, combined Classic recipes and a seeded 64-image showcase.
+- Add source-grounded EXT-IT review and staged shared field/observation contracts.
+- Package reproducible source/gallery archives and publish only after exact-main
+  native verification and complete draft-asset checks.

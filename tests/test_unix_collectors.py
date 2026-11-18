@@ -49,7 +49,8 @@ class UnixCollectorTests(unittest.TestCase):
 
     def script(self, config=None, fake_os=False):
         config = config or motd.preset_config('workshop', shell='sh')
-        source = (ROOT / 'runtime' / 'motd.sh').read_text()
+        source = ((ROOT / 'runtime' / 'designs.sh').read_text() + '\n' +
+                  (ROOT / 'runtime' / 'motd.sh').read_text())
         source = source.replace('# @MOTD_CONFIG@', motd.portable_runtime_assignments(config))
         if fake_os:
             # Redirect fixed kernel reads only in this test copy. The installed

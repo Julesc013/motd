@@ -66,14 +66,14 @@ notice. These copyable files do not modify startup profiles or install anything.
 
 ## Terminal PNGs
 
-The [full gallery](gallery/README.md) includes all four terminal sizes requested:
+The [full gallery](../gallery/compatibility/README.md) includes all four terminal sizes requested:
 40×25, 40×50, 80×25 and 80×50. Open `gallery/index.html` locally to filter by
 preset, output route, theme, character set and colour mode. Each picture comes
 from actual sized-PTY output with synthetic data; raw ANSI transcripts and
 effective recipes accompany it. The renderer changes its layout and content
 budget before capture. PNG compression preserves every decoded pixel.
 
-The separate [design sampler](designs/README.md) compares classic, cards, ledger,
+The separate [design sampler](../gallery/designs/README.md) compares classic, cards, ledger,
 briefing and dashboard structures, with independent density and detail contrasts.
 Open `designs/index.html` locally for its filters and recipe/transcript links.
 

@@ -29,7 +29,7 @@ jobs:
         run: |
           $env:MOTD_TEST_POWERSHELL = @(Get-Command '${{ matrix.engine }}' -CommandType Application)[0].Source
           & $env:MOTD_TEST_POWERSHELL -NoProfile -Command '$PSVersionTable | Format-List'
-          foreach ($pattern in @('test_designs_powershell.py', 'test_runtime_review.py', 'test_legacy_powershell.py', 'test_windows_adapters.py', 'test_portable_export.py', 'test_python_compatibility.py')) {
+          foreach ($pattern in @('test_presentation_powershell.py', 'test_designs_powershell.py', 'test_runtime_review.py', 'test_legacy_powershell.py', 'test_windows_adapters.py', 'test_portable_export.py', 'test_python_compatibility.py')) {
             python -m unittest discover -s tests -p $pattern -v
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           }
@@ -56,6 +56,15 @@ jobs:
                   config = motd.preset_config('workshop', shell='powershell')
                   config['display'].update(design=design, bar_layout=bars, sections=list(motd.SECTION_IDS))
                   (folder / (design + '-' + bars + '.ps1')).write_text(motd.generate_artifact(config), encoding='utf-8')
+          for name, patch in {
+              'axes-custom': {'panel_layout': 'columns', 'panel_frame': 'separate', 'border_style': 'rounded',
+                              'heading_align': 'right', 'separator_text': 'custom', 'label_style': 'short',
+                              'section_notes': {'resources': 'Literal capacity note'}, 'overflow': 'clip'},
+              'axes-open': {'panel_frame': 'none', 'heading_style': 'inline', 'border_visibility': 'none'},
+          }.items():
+              config = motd.preset_config('workshop', shell='powershell')
+              config['display'].update(patch)
+              (folder / (name + '.ps1')).write_text(motd.generate_artifact(config), encoding='utf-8')
           '@ | python -
           exit $LASTEXITCODE
       - name: Probe actual PS2 and available Windows components

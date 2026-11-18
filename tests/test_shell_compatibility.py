@@ -439,7 +439,8 @@ class ShellCompatibilityTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn('hook 1 failed (127)', result.stderr)
         self.assertFalse(sentinel.exists())
-        self.assertIn('Portable Unix', result.stdout)
+        self.assertIn('HOME LAB', result.stdout)
+        self.assertIn('Storage: unavailable', result.stdout)
 
     def test_sh_hook_deadline_keeps_partial_output_and_stops_when_requested(self):
         config = self.config()
