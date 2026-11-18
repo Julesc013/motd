@@ -54,6 +54,36 @@ PRESET_NAMES = ('workshop', 'home-lab', 'public-console')
 MAX_ARTIFACT_BYTES = 2_000_000
 DESIGNS = ('classic', 'cards', 'ledger', 'briefing', 'dashboard')
 DETAILS = ('brief', 'normal', 'full')
+# Presentation is data. Named designs supply defaults for these independent axes;
+# explicit values stay intact when any unrelated preference changes.
+PRESENTATION_OPTIONS = {
+    'panel_layout': ('auto', 'stack', 'columns'),
+    'panel_frame': ('auto', 'continuous', 'separate', 'none'),
+    'heading_style': ('auto', 'rule', 'plain', 'inline', 'hidden'),
+    'border_style': ('single', 'rounded', 'double', 'heavy', 'ascii'),
+    'border_visibility': ('all', 'outer', 'sections', 'none'),
+    'heading_align': ('left', 'center', 'right'),
+    'separator_text': ('none', 'summary', 'custom'),
+    'label_style': ('full', 'short'),
+    'overflow': ('ellipsis', 'clip'),
+}
+PRESENTATION_DEFAULTS = {key: values[0] for key, values in PRESENTATION_OPTIONS.items()}
+PRESENTATION_DEFAULTS['overflow'] = 'ellipsis'
+DESIGN_POLICIES = {
+    'classic': ('stack', 'continuous', 'rule'),
+    'cards': ('stack', 'separate', 'rule'),
+    'dashboard': ('columns', 'separate', 'rule'),
+    'ledger': ('stack', 'none', 'inline'),
+    'briefing': ('stack', 'none', 'plain'),
+}
+SECTION_TEXT = {
+    'system': ('System', 'Sys'), 'resources': ('Memory and storage', 'Resources'),
+    'services': ('Services', 'Svc'), 'processes': ('Processes', 'Proc'),
+    'sessions': ('Sessions', 'Users'), 'connections': ('Connections', 'Net'),
+    'attention': ('Attention', 'Alerts'), 'hints': ('Useful commands', 'Hints'),
+    'io': ('Disk I/O', 'I/O'),
+}
+
 DEFAULT_PRIORITY = ('attention', 'resources', 'system', 'services', 'processes',
                     'io', 'sessions', 'connections', 'hints')
 
@@ -113,7 +143,8 @@ def preset_config(name='workshop', shell='bash'):
                     'charset': 'auto', 'color': 'auto',
                     'design': 'classic', 'density': 'balanced', 'detail': 'normal',
                     'padding': 1, 'section_gap': 0, 'color_emphasis': 'balanced',
-                    'bar_layout': 'inline',
+                    'bar_layout': 'inline', **PRESENTATION_DEFAULTS,
+                    'section_titles': {}, 'section_notes': {},
                     'priority': list(DEFAULT_PRIORITY), 'section_detail': {},
                     'width': 132, 'rows': 25, 'top_entries': 3,
                     'sections': list(SECTION_IDS[:-1]), 'show_swap': True,
@@ -226,6 +257,13 @@ def validate_config(data):
                          ('bar_layout', ('inline', 'wide'))]:
         if d[key] not in options:
             raise MotdError(f'display.{key} must be one of {", ".join(options)}')
+    for key, choices in PRESENTATION_OPTIONS.items():
+        if d[key] not in choices:
+            raise MotdError(f'display.{key} must be one of {", ".join(choices)}')
+    for key in ('section_titles', 'section_notes'):
+        _keys(d[key], SECTION_IDS, f'display.{key}')
+        for section, text in d[key].items():
+            _text(text, f'display.{key}.{section}', 120)
     for key, lo, hi in [('width', 40, 240), ('rows', 8, 200), ('top_entries', 1, 10),
                         ('padding', 0, 3), ('section_gap', 0, 2)]:
         _number(d[key], lo, hi, f'display.{key}')
@@ -356,11 +394,25 @@ def runtime_assignments(config):
               'IO_PROCESS_LIMIT': p['process_limit'], 'IO_SCAN_BUDGET_MS': p['io_scan_ms'],
               'MESSAGES': ['INFO|' + x for x in c['messages']],
               'HINTS': ['|'.join(h[k] for k in ('id', 'label', 'command', 'note')) for h in c['hints']]}
+    values.update({key.upper(): d[key] for key in PRESENTATION_OPTIONS})
     result = '\n'.join(_assignment(k, v) for k, v in values.items())
     result += '\ndeclare -A SECTION_DETAIL=()\n'
     result += '\n'.join('SECTION_DETAIL[' + shlex.quote(key) + ']=' + shlex.quote(value)
                         for key, value in sorted(d['section_detail'].items()))
-    return result
+    return result + '\n' + presentation_callbacks(c)
+
+
+def presentation_callbacks(config):
+    """Serialize one section-text registry as literal shell callbacks."""
+    d = config['display']
+    lines = ['motd_presentation_text() {', '    case \"$1:$2\" in']
+    for section, labels in SECTION_TEXT.items():
+        for style, label in zip(('full', 'short'), labels):
+            title = d['section_titles'].get(section, label)
+            lines.append('        ' + section + ':' + style + ') printf \"%s\\n\" ' + shlex.quote(title) + ' ;;')
+        lines.append('        ' + section + ':note) printf \"%s\\n\" ' + shlex.quote(d['section_notes'].get(section, '')) + ' ;;')
+    lines += ['    esac', '}']
+    return '\n'.join(lines) + '\n'
 
 
 def hook_wrapper(config):
@@ -439,7 +491,9 @@ def portable_runtime_assignments(config):
         'SHOW_PRESSURE': int(d['show_pressure']),
         'SECTIONS': ' '.join(d['sections']),
     }
+    settings.update({key.upper(): d[key] for key in PRESENTATION_OPTIONS})
     lines = [f'{key}={shlex.quote(str(value))}' for key, value in settings.items()]
+    lines.append(presentation_callbacks(c))
     lines += ['motd_section_detail() {', '    case "$1" in']
     for section, detail in sorted(d['section_detail'].items()):
         lines.append('        ' + section + ') printf "%s\\n" ' + shlex.quote(detail) + ' ;;')
